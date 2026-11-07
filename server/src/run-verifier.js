@@ -32,6 +32,19 @@ function validateRunShape(run) {
   if (!Number.isSafeInteger(run.players) || run.players < 1 || run.players > 5) throw new Error('Run player count must be between 1 and 5.');
   const frameCount = getFrameCount(run.frames, run.players);
   if (frameCount === 0 || frameCount > MAX_FRAME_COUNT) throw new Error('Run frames are missing or exceed the replay limit.');
+  if (run.actions !== undefined) {
+    if (run.ruleset !== require('../../src/js/ruleset')) throw new Error('Recorded flight actions require the current game ruleset.');
+    if (!Array.isArray(run.actions) || run.actions.length > 19) throw new Error('Flight actions must contain at most 19 level transitions.');
+    let previousFrame = -1;
+    for (const action of run.actions) {
+      if (!action || action.type !== 'continue' || !Number.isSafeInteger(action.frame) ||
+          action.frame < 0 || action.frame > frameCount || action.frame <= previousFrame ||
+          Object.keys(action).some(key => !['frame', 'type'].includes(key))) {
+        throw new Error('Flight action is invalid or outside the input history.');
+      }
+      previousFrame = action.frame;
+    }
+  }
   if (Buffer.byteLength(stableJson(run)) > MAX_RUN_BYTES) throw new Error('Run log exceeds the 5 MB limit.');
 }
 

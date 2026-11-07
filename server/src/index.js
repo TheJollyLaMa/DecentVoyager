@@ -160,6 +160,7 @@ function createService(options = {}) {
           rewardsAddress: config.rewardsAddress,
           replayApi: typeof require('./game-adapter').Game.replay === 'function',
           captureApi: true,
+          transitionActions: true,
           signerConfigured: Boolean(vouchers.address),
           queueMode: env.GITHUB_TOKEN ? (env.GITHUB_REPO ? 'github' : 'misconfigured') : 'local',
           pinning: env.PINATA_JWT ? 'configured' : 'skipped'
@@ -254,7 +255,7 @@ function createService(options = {}) {
   async function processRun({ run, address, signature, verifiedTicket, checkpoint = false }) {
     const verified = await verifyRun({ run, address, signature, isPilot: (player) => pilotRegistry.isPilot(player), replay: options.replay });
     if (checkpoint && !(verified.result.captures || []).some(capture => !capture.kind)) {
-      throw new Error('No guarded Supporter capture was found in the replay.');
+      throw new Error(`No guarded Supporter capture was found in the replay. Replay ended at level ${verified.result.level ?? 'unknown'} (${verified.result.state ?? 'unknown'}). Older flights that used Continue may be missing transition inputs; repeating the same signed evidence will not repair them. Keep the evidence for review and start a new flight after updating Voyager.`);
     }
     try { ticketService.consume(verifiedTicket, run, verified.runHash, usedTickets, { checkpoint }); }
     catch (error) { error.statusCode = 422; throw error; }

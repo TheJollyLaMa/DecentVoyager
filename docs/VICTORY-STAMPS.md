@@ -15,6 +15,15 @@ For Decent Pilots, the preferred automatic queue flow is:
 
 Deploy the referee's `/captures` API before this frontend. The gameplay ruleset and deployed contracts are unchanged. This update adds wallet-scoped browser reward history (`decent-voyager-rewards/1`) and preserves the original signed outbox, including older-ruleset requests. Browser history is not an IPFS backup; keep it until pending verification/transfers resolve. Approved wallet transactions are not performed by automated validation.
 
+Manual Continue/Enter at cleared-level celebrations is recorded as a signed
+frame-indexed `continue` action. Replay applies it before the corresponding input
+frame, only if the preceding level is actually complete. Automatic transitions
+are unchanged, and old action-free evidence is not rewritten. Older flights
+that skipped celebrations without recording the clicks can fail replay: retry
+does not repair missing evidence. Keep that evidence for review and start a new
+flight with the updated client. Deploy the referee's `transitionActions` health
+capability before publishing this client.
+
 The GitHub issue flow remains a fallback when a pilot needs to submit a claim manually or the referee cannot be used. Open **☥ profile → Flight Logs**, connect your own wallet using the header fox, and use **Stamp DNFT**, **Request mint on GitHub**, or **Copy claim JSON**. Flight Logs never requests accounts automatically. The GitHub issue form must actually be submitted; a prepared request is not accepted, minted, or paid. The existing trusted workflow validates/deduplicates the request into `victory-stamps.json`; the owner reviews it and batches it on Base. This legacy path requires the DecentHead IPFS session and remains subject to explicit user/provider action.
 
 Metadata is ERC-1155/OpenSea-shaped: name, description, `ipfs://` image, external URL, leaf attributes for **all** stats, score and ship values (including nested weapon/pickup counters), level/name/difficulty, seed/start/duration, and completedAt as Unix seconds (`display_type: date`). `properties.record` preserves the complete JSON-safe LevelRecord, including the bounded battle log, schema, game/version, claimant and Base identity. `null` statistics become an “Unavailable” attribute while the raw record retains null.
