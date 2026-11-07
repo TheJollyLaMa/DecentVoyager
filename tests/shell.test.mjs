@@ -101,6 +101,10 @@ test('static shell preserves bundle/canvas and host-module ordering for relative
   assert.doesNotMatch(html, /id="flight-diagnostics"|class="credit"|Your wallet\. Your flight/);
   const footer=html.slice(html.indexOf('<footer>'),html.indexOf('</footer>'));
   assert.doesNotMatch(footer, /<button|reward-dock/);
+  assert.doesNotMatch(html, /data-open-rewards/);
+  const shell=readFileSync(new URL('../src/js/shell/main.mjs',import.meta.url),'utf8');
+  assert.match(shell, /walletStatus\.textContent\.trim\(\) === 'Connect only when you choose\.'/);
+  assert.match(shell, /#status\[data-idle-prompt\]\{display:none\}/);
   assert.ok(html.indexOf('class="flight-actions"') > html.indexOf('</main>'));
   const reports=readFileSync(new URL('../src/js/shell/flight-reports.mjs',import.meta.url),'utf8');
   assert.match(reports, /createDialog\('Flight reports', 'flight-diagnostics'\)/);

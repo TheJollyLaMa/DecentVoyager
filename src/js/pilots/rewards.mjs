@@ -31,7 +31,6 @@ export function mountRewards({
     button('Refresh rewards', () => void load()), retry, pendingList, status, list);
   let opener = null;
   const announce = count => {
-    for (const control of document.querySelectorAll('[data-open-rewards]')) control.textContent = `Captured rewards${count ? ` · ${count}` : ''}`;
     window.dispatchEvent(new CustomEvent('voyager:rewards-count', { detail: { count } }));
   };
   window.addEventListener('voyager:open-rewards', event => {
@@ -40,9 +39,6 @@ export function mountRewards({
     if (window.voyager?.isNetworkMode?.()) { if (!root.open) root.showModal(); }
     else openDialog(root);
   });
-  for (const control of document.querySelectorAll('[data-open-rewards]')) {
-    control.addEventListener('click', () => window.dispatchEvent(new CustomEvent('voyager:open-rewards', { detail: { opener: control } })));
-  }
   root.addEventListener('close', () => opener?.focus?.());
   let pilot = { address: null, isPilot: false };
   let generation = 0;
