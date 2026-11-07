@@ -190,7 +190,7 @@ export class VoyagerAbout extends Base {
         <p class="quiet">White Lotus lives do not erase lives lost for Perfect awards. Game over starts a fresh level-1 voyage; saved best scores and historical battle records remain. Phone controls work without a wallet; actual MetaMask/iPhone testing is device-specific.</p>
       </section>
       <section aria-labelledby="links"><h2 id="links">Project links</h2><div class="chips">${chips(config.links)}${chips(config.relatedDapps)}</div></section>
-      <footer>Mandelblum art by TheJollyLaMa · header by DecentHead · radio by DBuskRadio · open source.<br>Your wallet. Your flight. Your choice.</footer>
+      <footer>Another Decent Frankenstein brought to you by TheJollyLaMa and A Decent Agency</footer>
     </dialog>`;
     const dialog = this.shadowRoot.querySelector('dialog');
     this.shadowRoot.querySelector('.close').addEventListener('click', () => dialog.close());
