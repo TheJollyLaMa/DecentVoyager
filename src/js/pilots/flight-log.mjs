@@ -22,7 +22,6 @@ export function mountFlightLog({ getGame = () => window.voyager?.game || window.
   const action = document.getElementById('flight-sign');
   const prompt = document.getElementById('flight-sign-prompt');
   const promptNote = document.getElementById('flight-sign-note');
-  const retryAction = document.getElementById('flight-retry');
   const status = document.getElementById('flight-status');
   const transferring = new Set();
   let statusTimer = null;
@@ -51,11 +50,9 @@ export function mountFlightLog({ getGame = () => window.voyager?.game || window.
     prompt.toggleAttribute('data-victory', state === 'victory');
   };
   window.setInterval(refreshPrompt, 250);
-  const refreshOutbox = () => { if (retryAction) retryAction.hidden = !pilot.isPilot || !outbox.read().length; }
-  retryAction?.addEventListener('click', async () => { try { await retryAndCollect(); refreshOutbox(); } catch (error) { notify(error.message); } });
-  window.addEventListener('voyager:pilot', event => { pilot.address = event.detail?.address || null; pilot.isPilot = !!event.detail?.isPilot; tickets.setPilot(pilot); if (!pilot.isPilot && action) action.hidden = true; if (pilot.isPilot) { void outbox.retry().finally(refreshOutbox); } else refreshOutbox(); });
-  window.setInterval(() => { if (pilot.isPilot && outbox.read().length) void outbox.retry().finally(refreshOutbox); }, 60000);
-  refreshOutbox();
+  const retryEvidence = () => { void outbox.retry().catch(error => notify(error.message)); };
+  window.addEventListener('voyager:pilot', event => { pilot.address = event.detail?.address || null; pilot.isPilot = !!event.detail?.isPilot; tickets.setPilot(pilot); if (!pilot.isPilot && action) action.hidden = true; if (pilot.isPilot) retryEvidence(); });
+  window.setInterval(() => { if (pilot.isPilot && outbox.read().length) retryEvidence(); }, 60000);
   window.addEventListener('asteroid:event', event => {
     const detail = event.detail || {};
     if (detail.type === 'vaultSpawned') {
@@ -70,7 +67,7 @@ export function mountFlightLog({ getGame = () => window.voyager?.game || window.
     }
     if (detail.type === 'levelStart') {
       const currentId = getGame()?.getRunLog?.()?.runId || null;
-      if (currentId && currentId !== runId) { records = []; captures = []; promptedRun = null; if (action) action.hidden = true; tickets.runStarted(currentId); }
+      if (currentId && currentId !== runId) { records = []; captures = []; promptedRun = null; notify(''); if (action) action.hidden = true; tickets.runStarted(currentId); }
       runId = currentId || runId;
     }
     if (detail.type === 'levelRecord' && detail.record && !records.some(record => record.id === detail.record.id)) { records.push(detail.record); }
@@ -168,7 +165,6 @@ export function mountFlightLog({ getGame = () => window.voyager?.game || window.
       onStatus('Verifying the flight with the referee...');
       await outbox.enqueue({ address, run: runLog, runHash, signature, checkpoint });
     }
-    refreshOutbox();
     const result = verified()?.result;
     if (!result) throw new Error(`Signed evidence saved; verification is queued. ${outbox.read().find(entry => entry.runHash === runHash)?.lastError || 'Retry from Flight Logs.'}`);
     if (pilot.address !== address) throw new Error('Wallet changed; reconnect and retry.');

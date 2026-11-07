@@ -74,6 +74,10 @@ try {
     await page.evaluate(() => import('./js/shell/main.mjs'));
     await page.waitForTimeout(1500);
     await setup();
+    assert.equal(await page.locator('#flight-retry').count(), 0, 'no main-screen retry button');
+    await page.evaluate(() => {
+      document.getElementById('flight-status').textContent = 'Verification is queued. Old flight replay ended at level 4.';
+    });
     await page.evaluate(() => {
       const game = window.asteroidGame;
       game.startCampaign(1, 'pilot', 44);
@@ -82,6 +86,7 @@ try {
       window.dispatchEvent(new CustomEvent('asteroid:event', { detail: { type: 'levelStart' } }));
       window.dispatchEvent(new CustomEvent('asteroid:event', { detail: { type: 'supporterCaptured', tier: 1, prize: { tokenId: 70 } } }));
     });
+    assert.equal(await page.locator('#flight-status').textContent(), '', 'new flight clears stale verification status');
     const briefing = page.locator('#supporter-briefing');
     await briefing.getByRole('button', { name: 'Collect to wallet', exact: true }).click();
     await briefing.getByText('Fixture wallet rejected transfer', { exact: true }).waitFor();
