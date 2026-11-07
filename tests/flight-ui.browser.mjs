@@ -86,7 +86,7 @@ try {
     await page.mouse.click(2, 2);
     assert.equal(await progress.isVisible(), false);
 
-    for (const id of ['voyager-rewards', 'flight-diagnostics', 'asteroid-admin']) {
+    for (const id of ['flight-diagnostics', 'asteroid-admin']) {
       await page.evaluate(id => document.getElementById(id).showModal(), id);
       const dialog = page.locator(`#${id}`);
       assert.equal(await dialog.getByRole('button', { name: 'Close', exact: true }).count(), 0);

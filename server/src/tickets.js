@@ -5,6 +5,8 @@ const { getAddress } = require('ethers');
 const { stableJson } = require('./run-verifier');
 const RULESET = require('../../src/js/ruleset');
 const { gameForRuleset } = require('./replay-rulesets');
+const inputLog = require('../../src/js/inputlog');
+const { normalizeFrames } = require('./game-adapter');
 
 const TICKET_TTL_MS = 6 * 60 * 60 * 1000;
 const UINT32_MAX = 0xffffffff;
@@ -63,17 +65,31 @@ function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TT
     return { ticket, address: ticketAddress.toLowerCase(), expiresAt };
   }
 
-  function consume(verifiedTicket, run, runHash, usedTickets = new Map()) {
+  function consume(verifiedTicket, run, runHash, usedTickets = new Map(), { checkpoint = false } = {}) {
     for (const [id, value] of usedTickets) if (now() - value.usedAt >= ttlMs) usedTickets.delete(id);
     const existing = usedTickets.get(verifiedTicket.ticket.id);
-    if (existing && (existing.runId !== run.runId || existing.runHash !== runHash || existing.address !== verifiedTicket.address)) {
+    if (existing && (existing.runId !== run.runId || existing.address !== verifiedTicket.address ||
+        (!existing.checkpoint && !checkpoint && existing.runHash !== runHash))) {
       throw new Error('Flight ticket has already been used for a different run. Request a new ticket.');
+    }
+    if (existing?.evidence) {
+      const identity = value => stableJson(Object.fromEntries(
+        ['runId', 'ruleset', 'seed', 'difficulty', 'startLevel', 'players', 'mode', 'startedAt', 'version'].map(key => [key, value[key] ?? null])));
+      const previous = inputLog.decode(normalizeFrames(existing.evidence.frames)), next = inputLog.decode(normalizeFrames(run.frames));
+      if (identity(existing.evidence) !== identity(run) ||
+          stableJson(previous.slice(0, Math.min(previous.length, next.length))) !== stableJson(next.slice(0, Math.min(previous.length, next.length))) ||
+          (!checkpoint && next.length < previous.length)) {
+        throw new Error('Flight checkpoint does not match the signed input history.');
+      }
+      if (checkpoint && (!existing.checkpoint || next.length <= previous.length)) return;
     }
     usedTickets.set(verifiedTicket.ticket.id, {
       runId: run.runId,
       runHash,
       address: verifiedTicket.address,
-      usedAt: now()
+      usedAt: now(),
+      checkpoint,
+      evidence: run
     });
   }
 

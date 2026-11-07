@@ -159,6 +159,7 @@ function createService(options = {}) {
           ruleset: require('../../src/js/ruleset'),
           rewardsAddress: config.rewardsAddress,
           replayApi: typeof require('./game-adapter').Game.replay === 'function',
+          captureApi: true,
           signerConfigured: Boolean(vouchers.address),
           queueMode: env.GITHUB_TOKEN ? (env.GITHUB_REPO ? 'github' : 'misconfigured') : 'local',
           pinning: env.PINATA_JWT ? 'configured' : 'skipped'
@@ -188,7 +189,8 @@ function createService(options = {}) {
         if (!await pilotRegistry.isPilot(address)) return response(res, 401, { error: 'Wallet is not a Decent Pilot.' });
         return response(res, 201, ticketService.issue(address));
       }
-      if (req.method === 'POST' && url.pathname === '/runs') {
+      if (req.method === 'POST' && ['/runs', '/captures'].includes(url.pathname)) {
+        const checkpoint = url.pathname === '/captures';
         const body = await readJsonBody(req);
         const run = body.run || body.runLog;
         const address = normalizeAddress(body.address);
@@ -200,26 +202,22 @@ function createService(options = {}) {
         if (!recovered || recovered !== address) throw new Error('Run signature does not match the player address.');
         const currentTime = now();
         for (const [candidate, entry] of idempotency) if (currentTime - entry.createdAt > 24 * 60 * 60 * 1000) idempotency.delete(candidate);
-        const previous = idempotency.get(run && run.runId);
+        const identity = checkpoint ? `capture:${run?.runId}:${hash}` : run?.runId;
+        while (inFlight.has(run && run.runId)) await inFlight.get(run.runId);
+        const previous = idempotency.get(identity);
         if (previous) {
           if (previous.player !== address || previous.hash !== hash) return response(res, 409, { error: 'runId was already used for a different signed run.' });
           return response(res, 200, { ...previous.response, idempotent: true });
         }
-        if (inFlight.has(run && run.runId)) {
-          await inFlight.get(run.runId);
-          const completed = idempotency.get(run.runId);
-          if (completed && completed.player === address && completed.hash === hash) return response(res, 200, { ...completed.response, idempotent: true });
-          return response(res, 409, { error: 'runId is already being processed.' });
-        }
         let verifiedTicket;
         try { verifiedTicket = ticketService.verify({ address, run, usedTickets }); }
         catch (error) { error.statusCode = 422; throw error; }
-        const task = processRun({ run, address, signature: body.signature, verifiedTicket });
+        const task = processRun({ run, address, signature: body.signature, verifiedTicket, checkpoint });
         inFlight.set(run && run.runId, task);
         try {
           const result = await task;
           const payload = { runId: run.runId, runHash: hash, vouchers: result.vouchers, queue: result.queue, pinning: result.pinning };
-          idempotency.set(run.runId, { player: address, hash, response: payload, createdAt: now() });
+          idempotency.set(identity, { player: address, hash, response: payload, createdAt: now() });
           return response(res, 201, payload);
         } finally { inFlight.delete(run && run.runId); }
       }
@@ -253,9 +251,12 @@ function createService(options = {}) {
     }
   });
 
-  async function processRun({ run, address, signature, verifiedTicket }) {
+  async function processRun({ run, address, signature, verifiedTicket, checkpoint = false }) {
     const verified = await verifyRun({ run, address, signature, isPilot: (player) => pilotRegistry.isPilot(player), replay: options.replay });
-    try { ticketService.consume(verifiedTicket, run, verified.runHash, usedTickets); }
+    if (checkpoint && !(verified.result.captures || []).some(capture => !capture.kind)) {
+      throw new Error('No guarded Supporter capture was found in the replay.');
+    }
+    try { ticketService.consume(verifiedTicket, run, verified.runHash, usedTickets, { checkpoint }); }
     catch (error) { error.statusCode = 422; throw error; }
     const records = (verified.result.records || []).map((value) => value.record || value);
     const captures = verified.result.captures || [];
@@ -264,6 +265,7 @@ function createService(options = {}) {
     const queued = [];
     const pinResults = [];
     for (const record of records) {
+      if (checkpoint) continue;
       if (!record || typeof record.id !== 'string') throw new Error('Replay produced a level record without an id.');
       if (run.difficulty === 'cadet' || record.level !== 20) continue;
       const card = run.battleCards && run.battleCards[record.id] || (records.length === 1 ? run.battleCard || run.card : null);
@@ -284,6 +286,7 @@ function createService(options = {}) {
     for (const capture of captures) {
       const completion = capture.kind === 'marathon-completion';
       const perfect = capture.kind === 'perfect-ace' || capture.kind === 'perfect-pilot';
+      if (checkpoint && capture.kind) continue;
       if (capture.kind && !completion && !perfect) throw new Error('Replay produced an unsupported award kind.');
       if ((completion || perfect) && (run.players !== 1 || run.difficulty === 'cadet' || run.startLevel !== 1 ||
           verified.result.state !== 'victory' || records.length !== 20 ||
@@ -304,7 +307,9 @@ function createService(options = {}) {
       const prize = canonicalPrize;
       const bonus = capture.kind === 'perfect-pilot' ? prizeDefinitions.PILOT_BONUS : null;
       const receiptRecord = completion || perfect ? records[19] : records.find((record) => record.level === capture.level);
-      if (!receiptRecord) throw new Error('Supporter award is missing its verified level receipt.');
+      if (!receiptRecord && (completion || perfect)) throw new Error('Supporter award is missing its verified level receipt.');
+      const captureIdentity = !capture.kind ? `${verifiedTicket.ticket.id}:${run.runId}:tier${capture.tier}:${prize.tokenId}` : null;
+      const receiptId = receiptRecord?.id || `capture:${run.runId}:tier${capture.tier}:${prize.tokenId}`;
       const inventory = await rewardInventory.read(address, prize.tokenId, bonus);
       if (inventory.claimed) {
         queued.push({ kind: 'prize', tokenId: String(prize.tokenId), status: 'already-claimed' });
@@ -318,7 +323,7 @@ function createService(options = {}) {
         nftContract: prize.nftContract || capture.nftContract || env.SUPPORTER_NFT_ADDRESS || DEFAULT_NFT_ADDRESS,
         tokenId: prize.tokenId,
         awardId: `supporter:${config.nftAddress.toLowerCase()}:${prize.tokenId}`,
-        recordId: receiptRecord.id, bonus,
+        recordId: receiptId, bonus,
         // Each capture needs its own replay key: VoyagerPrizes consumes the voucher runId on claim.
         runId: completion || perfect ? `${run.runId}:${capture.kind}` : `${run.runId}:tier${Number(capture.tier)}`,
         deadline
@@ -329,7 +334,8 @@ function createService(options = {}) {
         project: prize.project || '', tokenId: String(prize.tokenId), label: prize.label || '',
         metadataURI: prize.metadataURI,
         awardKind: capture.kind || 'guarded-pickup',
-        receiptRecordId: receiptRecord.id,
+        receiptRecordId: receiptId,
+        ...(captureIdentity ? { captureIdentity } : {}),
         ...(bonus ? { bonus: { ...bonus, status: 'atomic-with-nft' } } : {}),
         voucher: voucher.value, signature: voucher.signature, digest: voucher.digest,
         queuedAt: new Date().toISOString(), status: 'pending'

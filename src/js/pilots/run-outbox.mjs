@@ -1,14 +1,27 @@
 export const OUTBOX_KEY = 'decent-voyager-run-outbox/1';
 
 function browserStorage() { try { return globalThis.localStorage; } catch { return null; } }
-export function createRunOutbox({ storage = browserStorage(), fetchImpl = globalThis.fetch, baseUrl = () => globalThis.DECENT_CONFIG?.voyager?.refereeUrl || '', onChange = () => {} } = {}) {
-  let memory = [], retrying = null;
-  const read = () => { try { const value = JSON.parse(storage?.getItem(OUTBOX_KEY) ?? JSON.stringify(memory)); return Array.isArray(value) ? value : []; } catch { return [...memory]; } };
-  const write = items => { memory = items; try { storage?.setItem(OUTBOX_KEY, JSON.stringify(items)); } catch { /* Keep the retry queue available in memory for this page session. */ } onChange(); };
+export function createRunOutbox({ storage = browserStorage(), fetchImpl = globalThis.fetch, baseUrl = () => globalThis.DECENT_CONFIG?.voyager?.refereeUrl || '', onChange = () => {}, onAccepted = () => {} } = {}) {
+  let memory = [], retrying = null, storageFailed = false;
+  const read = () => {
+    if (storageFailed) return [...memory];
+    try { const value = JSON.parse(storage?.getItem(OUTBOX_KEY) ?? JSON.stringify(memory)); return Array.isArray(value) ? value : []; }
+    catch { return [...memory]; }
+  };
+  const write = items => {
+    memory = items;
+    try { storage?.setItem(OUTBOX_KEY, JSON.stringify(items)); storageFailed = false; }
+    catch (error) {
+      storageFailed = true;
+      onChange();
+      throw new Error(`Could not persist signed flight evidence: ${error.message}. Keep this page open and free browser storage before retrying.`);
+    }
+    onChange();
+  };
   async function submit(item) {
     const url = baseUrl();
     if (!url) throw new Error('Referee server is not configured');
-    const response = await fetchImpl(`${url.replace(/\/$/, '')}/runs`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(item) });
+    const response = await fetchImpl(`${url.replace(/\/$/, '')}/${item.checkpoint ? 'captures' : 'runs'}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(item) });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
       throw new Error(body?.error || `Referee rejected run (${response.status})`);
@@ -32,7 +45,7 @@ export function createRunOutbox({ storage = browserStorage(), fetchImpl = global
     const batch = read();
     const remaining = [];
     for (const item of batch) {
-      try { await submit(item); }
+      try { onAccepted(item, await submit(item)); }
       catch (error) { remaining.push({ ...item, lastError: error.message }); }
     }
     const added = read().filter(item => !batch.some(entry => entry.runHash === item.runHash && entry.address?.toLowerCase() === item.address?.toLowerCase()));

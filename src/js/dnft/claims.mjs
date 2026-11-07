@@ -5,6 +5,7 @@ import { validAddress, parseQueue } from './validation.mjs';
 import { node, button, link, createDialog, openDialog } from './ui.mjs';
 import { requirePilot } from '../pilots/gate.mjs';
 import { flightStatGroups } from './flight-stats.mjs';
+import { mountRewardGallery } from '../pilots/rewards.mjs';
 export function issueUrl(claim) {
   const json = JSON.stringify(claim, null, 2);
   const params = new URLSearchParams({ template: 'victory-stamp.yml', labels: 'victory-stamp', title: `Victory stamp: L${claim.level} ${claim.difficulty} · ${claim.recordId}`, claim: json, body: `### Claim JSON\n\n\`\`\`json\n${json}\n\`\`\`` });
@@ -19,13 +20,15 @@ export function mountClaims() {
   const hero = node('div', '', { className: 'flight-log-hero' });
   hero.append(node('img', '', { src: new URL('../../assets/brand/voyager-disc.png', import.meta.url).href, alt: 'Mandelblum flight insignia' }), node('p', 'Your voyages, firepower and survival record. Saved totals include failed and abandoned attempts, not just victories. The current attempt joins these totals when it ends.'));
   const totals = node('section', '', { 'aria-label': 'Total flight stats' });
-  const intro = node('p', 'Every cleared level keeps its battle card below. Only level 20 earns an achievement NFT; signing a flight log or requesting a mint is not an NFT transfer. Open Captured rewards for verified Base claims.');
+  const intro = node('p', 'Every cleared level keeps its battle card below. Level 20 earns an achievement NFT. Captured NFTs and their wallet collection actions are above.');
   const status = node('p', '', { role: 'status', 'aria-live': 'polite', className: 'asteroid-status' });
-  const list = node('section', '', { 'aria-label': 'Cleared levels' }); dialog.append(hero, totals, node('h2', 'Battle archive'), intro, status, list);
+  const rewards = node('section');
+  const list = node('section', '', { 'aria-label': 'Cleared levels' }); dialog.append(hero, totals, rewards, node('h2', 'Battle archive'), intro, status, list);
+  const gallery = mountRewardGallery(rewards);
   let renderGeneration = 0;
   let opener = null;
   const announce = () => window.dispatchEvent(new CustomEvent('voyager:vault-count', { detail: { count: vault.entries.length } }));
-  window.addEventListener('voyager:open-vault', event => { opener = event.detail?.opener || null; sync(); openDialog(dialog); render(); });
+  window.addEventListener('voyager:open-vault', event => { opener = event.detail?.opener || null; sync(); openDialog(dialog); render(); gallery.activate(); });
   function sync() { vault.merge(window.asteroidGame?.getWinRecords?.() || []); announce(); }
   async function action(entry, task) {
     if (busy.has(entry.record.id)) return;
@@ -149,6 +152,7 @@ export function mountClaims() {
   window.addEventListener('voyager:pilot', event => { window.__voyagerPilot = event.detail; render(); });
   dialog.addEventListener('close', () => {
     if (dialog.open) return;
+    gallery.deactivate();
     renderGeneration++;
     for (const canvas of list.querySelectorAll('canvas')) { canvas.width = 0; canvas.height = 0; }
     opener?.focus?.();
