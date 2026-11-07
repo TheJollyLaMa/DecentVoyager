@@ -21,9 +21,16 @@ app-title{padding-top:0!important}
   header.append(slim);
 }
 quiet('wallet-connect', `.identity-note{display:none!important}
+#status[data-idle-prompt]{display:none}
 .orb[data-state="connected"] #connect{background:radial-gradient(circle at 32% 28%,#baffce55,#124f28 72%);--glow:#7dff8c;box-shadow:0 0 0 3px #7dff8c,0 0 30px #7dff8c77}
 #status{max-width:150px;font-size:11px}
 @media(max-width:600px){#status{max-width:100px;font-size:10px}}`);
+const walletStatus = header.querySelector('wallet-connect')?.shadowRoot?.querySelector('#status');
+if (walletStatus) {
+  const hideIdlePrompt = () => walletStatus.toggleAttribute('data-idle-prompt', walletStatus.textContent.trim() === 'Connect only when you choose.');
+  new MutationObserver(hideIdlePrompt).observe(walletStatus, { childList:true, characterData:true, subtree:true });
+  hideIdlePrompt();
+}
 quiet('ipfs-status', '#label{display:none!important}');
 for (const side of ['left', 'right']) {
   quiet(`ankh-menu[side="${side}"]`, `.options{z-index:1;max-width:calc(100vw - 32px);box-sizing:border-box}
