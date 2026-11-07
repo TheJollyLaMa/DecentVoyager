@@ -1,1 +1,1 @@
-module.exports = 'voyager-1.4-open-sector';
+module.exports = 'voyager-1.5-mandelblum-boss';

@@ -308,7 +308,7 @@ function drawScene() {
         fx.drawScreen(ctx, game);
     }
     hud.drawHud(ctx, game, fx, { muted: audio.muted, crt: display.crt });
-    drawOverlay(ctx, game, fx);
+    drawOverlay(ctx, game, fx, { signPrompt: document.getElementById('flight-sign-prompt')?.hidden === false });
 }
 
 let last = null;
@@ -344,7 +344,7 @@ function frameError(error) {
     freezeBattle();
     setFault('frame-error', 'The battle hit an error and is paused.');
     diagnostics.record('frame-error', error);
-    hud.setToast('Flight error: open Flight reports in the profile menu.', 12000);
+    hud.setToast('Flight error: open Error details in the warning.', 12000);
 }
 function frame(timestamp) {
     try {

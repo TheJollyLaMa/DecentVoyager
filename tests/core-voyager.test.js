@@ -188,6 +188,7 @@ test('sector II has twenty harder levels and unlocks through warp', () => {
     const game = activeGame('ace', true, 2);
     game.startLevel(10);
     game.asteroids = [];
+    game.bossDefeated = true;
     game.scrollY = game.level.length;
     game.step([{}]);
     assert.equal(game.state, 'warping');
@@ -211,6 +212,7 @@ test('Pilot and Ace reach level 20 with no wallet, no captures and old locked pr
                 game.asteroids = [];
                 game.pickups = [];
                 game.enemyBullets = [];
+                if (level === 10 || level === 20) game.bossDefeated = true;
                 game.scrollY = game.level.length;
                 game.step([{}]);
                 if (level === 20) {

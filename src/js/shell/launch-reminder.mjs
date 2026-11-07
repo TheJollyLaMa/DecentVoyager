@@ -1,5 +1,6 @@
 import { pilotController } from '../pilots/whitelist.mjs';
 import { flightLog } from '../pilots/flight-log.mjs';
+import { bindBackdropClose } from '../dnft/ui.mjs';
 
 export async function prepareWalletLaunch({ wallet, pilots, tickets, difficulty }) {
   const snapshot = wallet?.snapshot();
@@ -75,6 +76,7 @@ export function mountLaunchReminder() {
   });
   dialog.querySelector('[data-wallet-launch-cancel]').addEventListener('click', close);
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
+  bindBackdropClose(dialog, close);
   window.addEventListener('voyager:launch-request', event => {
     event.preventDefault();
     if (pending) return;

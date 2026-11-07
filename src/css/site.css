@@ -48,9 +48,16 @@ canvas { display:block; width:100cqw; height:100cqh; object-fit:contain; backgro
 .flight-actions:not(:has(button:not([hidden]))) #flight-status:empty { display:none; }
 #flight-status:not(:empty) { padding:6px 12px; border-radius:99px; background:#070c1ce0; color:#adbdd7; font-size:12px; }
 .flight-sign { padding:10px 18px; border:0; border-radius:12px; cursor:pointer; color:#04101a; font:800 13px system-ui; background:linear-gradient(120deg,var(--gold),var(--green)); box-shadow:0 0 24px #ffe65c44; }
+.flight-sign-prompt { position:absolute; z-index:5; left:50%; top:73%; transform:translate(-50%,-50%); width:min(460px,calc(100% - 32px)); text-align:center; padding:16px; border:1px solid #ffe65c88; border-radius:18px; background:#080d20f5; box-shadow:0 0 32px #ffe65c22; }
+.flight-sign-prompt[data-victory] { top:86%; padding:10px 16px; }
+.flight-sign-prompt .flight-sign { min-height:56px; padding:16px 32px; font-size:20px; box-shadow:0 0 30px #7dff8c55; }
+.flight-sign-prompt .flight-sign:disabled { opacity:.65; cursor:wait; }
+.flight-sign-prompt p { margin:8px 0 0; color:#dce7f2; font:13px/1.4 system-ui; max-height:72px; overflow:auto; }
+@media(max-width:600px) { .flight-sign-prompt .flight-sign { font-size:18px; min-height:48px; padding:12px 24px; } .flight-sign-prompt { padding:12px; } }
 #wallet-launch { width:min(560px,calc(100vw - 64px)); max-height:calc(100dvh - 64px); overflow:auto; padding:26px; border:1px solid var(--cyan); border-radius:18px; background:#080d20; color:#e8f2ff; font:16px/1.6 system-ui,sans-serif; box-shadow:0 0 60px #56edff22; }
 #wallet-launch::backdrop { background:#020610cc; }
 #wallet-launch h2 { margin:0 0 20px; font-size:24px; line-height:1.3; }
+.dialog-close { position:sticky; top:0; float:right; margin:0 0 12px 12px; z-index:3; width:44px; height:44px; padding:0; border:1px solid #c9d6e355; border-radius:50%; background:#080d20; color:#e8f2ff; font-size:26px; cursor:pointer; }
 .wallet-launch-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
 .wallet-launch-actions button { min-height:44px; padding:12px 16px; border:1px solid #c9d6e355; border-radius:10px; background:#10203a; color:#e8f2ff; font:700 15px system-ui,sans-serif; cursor:pointer; }
 .wallet-launch-actions [data-wallet-launch-connect] { background:var(--green); color:#04101a; }
@@ -60,7 +67,7 @@ canvas { display:block; width:100cqw; height:100cqh; object-fit:contain; backgro
 #supporter-briefing::backdrop { background:#020610c9; }
 #supporter-briefing h2 { margin:8px 0 20px; font-size:24px; line-height:1.3; }
 .capture-kicker { color:var(--gold); font:700 14px ui-monospace,Menlo,monospace; }
-[data-capture-dismiss] { float:right; width:44px; height:44px; border:1px solid #c9d6e355; border-radius:50%; background:#080d20; color:#e8f2ff; font-size:24px; cursor:pointer; margin:-12px -12px 0 8px; }
+[data-capture-dismiss] { position:sticky; top:0; z-index:3; float:right; width:44px; height:44px; border:1px solid #c9d6e355; border-radius:50%; background:#080d20; color:#e8f2ff; font-size:24px; cursor:pointer; margin:0 0 12px 8px; }
 .capture-art { position:relative; display:grid; place-items:center; min-height:140px; margin:20px auto; padding:16px; max-width:340px; border:1px solid #7dff8c66; border-radius:16px; background:#040814; overflow:hidden; }
 .capture-art::before { content:''; position:absolute; inset:-100%; background:conic-gradient(from 0deg,transparent 0deg 60deg,#56edff55 64deg,transparent 68deg 150deg,#ffe65c66 155deg,transparent 160deg 240deg,#7dff8c55 245deg,transparent 250deg); animation:capture-beams 12s linear infinite; pointer-events:none; }
 .capture-art img { position:relative; display:block; width:100%; max-height:280px; object-fit:contain; animation:capture-float 3s ease-in-out infinite; }

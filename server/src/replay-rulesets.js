@@ -4,8 +4,10 @@ const Game = require('../../src/js/game');
 const RULESET = require('../../src/js/ruleset');
 const LegacyGame = require('../legacy/voyager-1.3-mini-emblem/game');
 const LEGACY_RULESET = require('../legacy/voyager-1.3-mini-emblem/ruleset');
+const OpenSectorGame = require('../legacy/voyager-1.4-open-sector/game');
+const OPEN_SECTOR_RULESET = require('../legacy/voyager-1.4-open-sector/ruleset');
 
-const games = new Map([[RULESET, Game], [LEGACY_RULESET, LegacyGame]]);
+const games = new Map([[RULESET, Game], [LEGACY_RULESET, LegacyGame], [OPEN_SECTOR_RULESET, OpenSectorGame]]);
 
 function gameForRuleset(ruleset) {
   const implementation = games.get(ruleset);

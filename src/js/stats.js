@@ -29,7 +29,7 @@ const PATH_INTERVAL = 0.25;
 const COUNTER_FIELDS = [
     'shotsFired', 'volleys', 'hits', 'asteroidsSpawned', 'asteroidsDestroyed', 'asteroidsMissed',
     'shootersDestroyed', 'fragmentsDestroyed', 'enemyShotsFired', 'enemyShotsDodged', 'hitsTaken',
-    'collisions', 'shieldBlocks', 'damageTaken', 'pickupsMissed', 'miniHitsAbsorbed', 'timeInPov', 'timeInOverview'
+    'collisions', 'shieldBlocks', 'damageTaken', 'pickupsMissed', 'miniHitsAbsorbed', 'bossesDestroyed', 'timeInPov', 'timeInOverview'
 ];
 
 // Lifetime / run totals: counters are summed, maxCombo is a max, closestCall a min.
@@ -214,6 +214,7 @@ class LevelTracker {
             accuracy: ratio(s.hits, s.shotsFired),
             asteroidsSpawned: s.asteroidsSpawned,
             asteroidsDestroyed: s.asteroidsDestroyed,
+            bossesDestroyed: s.bossesDestroyed,
             asteroidsMissed: s.asteroidsMissed,
             shootersDestroyed: s.shootersDestroyed,
             fragmentsDestroyed: s.fragmentsDestroyed,

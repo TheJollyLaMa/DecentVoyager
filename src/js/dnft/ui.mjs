@@ -11,6 +11,15 @@ export function installStyle() {
     .asteroid-panel { color:#eefaff; background:#091320; border:2px solid #68e7cf; border-radius:16px; padding:22px; width:min(900px,calc(100vw - 52px)); max-height:80dvh; overflow:auto; font:15px/1.6 system-ui; box-shadow:0 0 50px #39eec633; }
     .asteroid-panel::backdrop { background:#020712d9; }
     .asteroid-panel h2,.asteroid-panel h3 { color:#88ffee; margin:8px 0 14px; }
+    .asteroid-panel .panel-heading { position:sticky; top:-22px; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:12px 0; background:#091320; }
+    .asteroid-panel .panel-close { flex:none; width:44px; height:44px; padding:0; border-radius:50%; font-size:26px; }
+    .flight-log-hero { display:flex; align-items:center; gap:24px; margin:22px 0; }
+    .flight-log-hero img { width:100px; height:100px; object-fit:contain; }
+    .flight-log-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:14px; margin:18px 0 30px; }
+    .flight-log-grid > div { background:#102132; border:1px solid #36586a; border-radius:12px; padding:18px; }
+    .flight-log-grid strong { display:block; color:#88ffee; font-size:24px; line-height:1.4; }
+    .flight-log-grid span { color:#bdd0e4; }
+    .asteroid-panel .battle-preview { width:100%; max-width:480px; height:auto; display:block; margin:18px 0; }
     .asteroid-panel button { cursor:pointer; padding:10px 15px; color:#ebffff; background:#183347; border:1px solid #77efd4; border-radius:9px; font:600 14px system-ui; margin:5px; }
     .asteroid-panel button:disabled { opacity:.45; cursor:not-allowed; }
     .asteroid-panel button:focus-visible,.asteroid-panel a:focus-visible { outline:3px solid #fbc770; outline-offset:3px; }
@@ -28,10 +37,27 @@ export function installStyle() {
 export function createDialog(title, id) {
   installStyle();
   const dialog = node('dialog', '', { id, className: 'asteroid-panel', 'aria-labelledby': `${id}-title` });
-  dialog.append(node('h2', title, { id: `${id}-title` }), button('Close', () => dialog.close()));
+  const heading = node('div', '', { className: 'panel-heading' });
+  const close = button('×', () => dialog.close());
+  close.className = 'panel-close'; close.setAttribute('aria-label', `Close ${title}`);
+  heading.append(node('h2', title, { id: `${id}-title` }), close);
+  dialog.append(heading);
+  bindBackdropClose(dialog);
   dialog.addEventListener('keydown', event => event.stopPropagation());
   dialog.addEventListener('keyup', event => event.stopPropagation());
   document.body.append(dialog); return dialog;
+}
+export function bindBackdropClose(dialog, dismiss = () => dialog.close()) {
+  let outside = false;
+  const isOutside = event => {
+    const box = dialog.getBoundingClientRect();
+    return event.target === dialog && (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom);
+  };
+  dialog.addEventListener('pointerdown', event => { outside = isOutside(event); });
+  dialog.addEventListener('click', event => {
+    if (outside && isOutside(event)) dismiss();
+    outside = false;
+  });
 }
 export function openDialog(dialog) {
   const game = window.asteroidGame;

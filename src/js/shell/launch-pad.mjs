@@ -9,6 +9,9 @@ export function mountLaunchPad({ getGame = () => window.voyager?.game || window.
     arena.hidden = !arenaOpen;
   };
   const closeArena = () => { arenaOpen = false; refresh(); canvas?.focus({ preventScroll: true }); };
+  document.addEventListener('pointerdown', event => {
+    if (arenaOpen && !event.composedPath().includes(arena)) closeArena();
+  });
   const launch = () => {
     const game = getGame();
     if (!game) return;

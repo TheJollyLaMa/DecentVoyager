@@ -111,7 +111,7 @@ test('static shell preserves bundle/canvas and host-module ordering for relative
   assert.match(shell, /#status\[data-idle-prompt\]\{display:none\}/);
   assert.ok(html.indexOf('class="flight-actions"') > html.indexOf('</main>'));
   const reports=readFileSync(new URL('../src/js/shell/flight-reports.mjs',import.meta.url),'utf8');
-  assert.match(reports, /createDialog\('Flight reports', 'flight-diagnostics'\)/);
+  assert.match(reports, /createDialog\('Battle diagnostics', 'flight-diagnostics'\)/);
   assert.match(reports, /id: 'diagnostic-download'/);
   assert.match(reports, /voyager:open-reports/);
   for (const path of ['js/pilots/whitelist.mjs','js/pilots/flight-log.mjs','js/arena/lobby.mjs']) assert.ok(html.includes(path));

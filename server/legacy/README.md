@@ -1,5 +1,12 @@
 # Archived replay rulesets
 
+`voyager-1.4-open-sector/` contains the exact 17-file simulation closure from
+`a81e722cad2a64f2d535f550f6d16d36bf0b5ef2`, extracted with `git archive`.
+It preserves the open 20-level Pilot/Ace campaign before final bosses were added.
+Authenticated flights under this ruleset replay here, not under the new boss
+rules. The same MAC, wallet, seed, single-use and six-hour lifetime checks apply.
+It retains the Apache-2.0 license and is immutable evidence.
+
 `voyager-1.3-mini-emblem/` contains the exact simulation and its local dependency
 closure from Decent Voyager commit
 `3fe3375d4487ef1fe6ec9e6c78aa7737f2f9d3b7` (merged PR #16).

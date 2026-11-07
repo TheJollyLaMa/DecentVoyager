@@ -50,10 +50,10 @@ Only completing **level 20** on Pilot/Ace earns a new achievement NFT.
 Intermediate battle records remain available locally and in IPFS progress saves.
 Guarded Supporter pickups and marathon/Perfect awards are unchanged.
 Previously signed vouchers remain claimable; new referee issuance and admin
-requests enforce level 20. The ruleset is `voyager-1.4-open-sector`; deploy the
+requests enforce level 20. The ruleset is `voyager-1.5-mandelblum-boss`; deploy the
 referee before the matching frontend and start a new flight after updating.
-The immediately previous `voyager-1.3-mini-emblem` flights are verified using the
-exact archived simulation from merge `3fe3375`, not today's campaign rules.
+Previous `voyager-1.3-mini-emblem` and `voyager-1.4-open-sector` flights are verified
+using their exact archived simulations, not today's campaign rules.
 Ticket and run rulesets must match, and the original ticket MAC, signing wallet,
 seed, six-hour expiry, replay and funded-stock checks still apply. New tickets
 and online arenas use the current ruleset. Unknown older versions remain rejected.
@@ -81,16 +81,26 @@ and no vendor/Canopy edits. The existing local outbox is pending evidence;
 persisted referee vouchers are the cross-visit redemption source.
 
 The footer keeps project links, without rewards buttons, a diagnostics
-block or tagline. **Flight reports** in the right profile menu opens the local
-report/download/recovery dialog; active fault banners also link to it.
+block or tagline. The right profile menu contains **Flight Logs** (saved lifetime
+totals, organized telemetry and up to three 480px battle previews) and **Captured
+rewards** only. The manual stays in About. Previews are released when closed;
+totals include failed/abandoned attempts once finalized. All modals close with an
+upper-right x, an outside click or Escape; dismissing launch cancels it, and
+dismissing the capture briefing resumes only the local battle it paused.
+Active fault warnings alone offer **Error details** for local diagnostic
+download/recovery; this is separate from gameplay history.
 The **Decent ecosystem** Pages link opens in a separate tab to preserve the game.
 The wallet's idle “Connect only when you choose.” prompt is hidden; connection
 progress, connected identity and error messages remain visible.
 The header stacks above the contained game canvas; while an ankh menu is open,
 its tools also stack above the radio. Both ankh targets stay at least 44px on
 mobile. These host styles preserve the bundled DecentHead vendor files.
-Flight signing, retry and status controls use a separate row below the canvas,
-not an overlay that can intercept start-screen buttons.
+**Sign flight log** is a large centered action on eligible game-over/victory
+screens, above restart/menu controls. It never covers active gameplay or the
+landing screen, and never signs without a click and wallet approval. Retry and
+status controls retain their separate row below the canvas. The completed run
+is captured before awaiting the signer so starting another flight cannot change
+the evidence being signed.
 
 Crowded-level safeguards include ordered spatial collision queries, capped
 cosmetic debris/fireworks and a maximum 3-million-pixel / 2x-DPR canvas. A long
@@ -120,7 +130,7 @@ Supporter encounters display the actual metadata-derived NFT artwork and a
 hovering project/version/token name, with a slow card spin and bounded glow
 passes. Destroying the last guard emits a presentation-only `vaultUnlocked`
 event with an original laser/fanfare and expanding rings. Capturing the token
-adds a linked project briefing: local play pauses until Continue voyage, while
+adds a linked project briefing: local play pauses until the x/backdrop dismisses it, while
 online play explicitly warns that the referee continues. The briefing includes
 metadata, Base token and filtered agency-Canopy links, and distinguishes a
 recorded capture from an on-chain transfer. Sign the flight log at victory or
@@ -132,6 +142,33 @@ pulse and glow; collection adds bounded fireworks/rings and a 2.2-second banner.
 The ticket-ready status expires after five seconds and clears immediately on
 launch. Errors and claim instructions are not timed out. No reward mechanics,
 collision shapes or replay inputs change in this presentation update.
+
+### Mandelblum final bosses
+
+Levels 10 and 20 stop scrolling 600 world units before the gate and spawn one
+giant Core/Sovereign. Destroy it to release the gate and earn the normal level
+record. Bosses persist through local respawns, cannot be killed by ramming,
+cannot fragment or be dragged by Singularity, and count in saved boss/kill stats.
+They have 2,400/3,000 HP and a replenishing 20/25 damage-per-second core budget,
+both scaled by player count: even maximum firepower needs about two minutes;
+misses and low-tier weapons take longer. Existing weapon damage still applies
+within that budget. Five/seven-way fan shots and gold-to-pink laser lanes
+(1.5 seconds warning, 1.5 seconds live) are deterministic across both views.
+Level 20 uses twin lanes; Ace fires fans faster. Boss volleys stop adding bullets
+above 120 live enemy bullets and produce no unbounded spawns/canvas surfaces.
+
+Reuse decision: adapt this app's `Asteroid`, `Bullet`, collision buckets, bounded
+Mandelblum sprites, native dialog controls, `VictoryVault` and `renderBattleCard`
+at pre-change commit `a81e722`. The Canopy inventory points to Voyager's existing
+game modules and proposed—not implemented—Busking/Smarthome game consumers; no
+compatible boss donor was identified in that scope. No shared extraction,
+vendor edit, new service or public inventory update is needed. Receiving-app
+tests cover gate locks, timed damage budget, lasers, persistence and replay.
+Optional browser validation: `node tests/flight-ui.browser.mjs` uses the existing
+Playwright installation (`PLAYWRIGHT_MODULE` can point to it). It exercises
+desktop/phone x and backdrop clicks, preview cleanup, sign errors, both boss
+views and a synthetic two-minute five-ship boss stress run; no real wallet
+signature or NFT transaction is submitted.
 
 Reuse: adapted this app's metadata-derived Supporter image cache,
 `drawSupporterToken`, FX budgets, WebAudio synthesis and native-dialog patterns.
@@ -162,7 +199,7 @@ text is size 13 or larger, set on darker plates.
 
 The live warning strip above the canvas shows only a problem active in the
 current page session: a frame error, performance pause or graphics restart. It
-clears once play resumes. Earlier visits remain in Flight reports, labelled
+clears once play resumes. Earlier visits remain in Error details, labelled
 "Previous visit".
 
 ### Flash protection and flight reports
@@ -179,7 +216,7 @@ restores the context, rendering restarts automatically at reduced quality while
 the battle stays paused until the pilot presses P or **Resume battle**. Online
 referee play continues.
 
-**Flight reports & recovery**, below the game, exports a JSON report and offers
+**Error details**, in the active fault warning, exports a JSON report and offers
 manual resume. The latest 40 entries survive reloads in browser storage when
 available (otherwise memory only). Reports include ruleset, recent errors/stacks,
 level/view/state, entity counts and canvas size; not wallets, signatures, replay
@@ -367,9 +404,9 @@ stats and win records are saved per difficulty in `localStorage`, and can be bac
   connect, and a full About / flight manual (click the Decent Voyager title): rewards, flight school, a multiplayer
   walkthrough, the Supporter DNFT ("Coming soon" until `supporterDnft` is set in the config, then buyable) and links.
 - **DBusk radio** docked in the header. It never autoplays.
-- **☥ profile menu (right ankh)**: **Victory Vault**, **Rewards waiting** (referee-signed level-pass DNFTs and Supporter
+- **☥ profile menu (right ankh)**: **Flight Logs**, **Captured rewards** (referee-signed level-20 DNFTs and Supporter
   prizes queued for you; they wait there every time you log in until you claim on Base) and **Flight manual**.
-- **Victory Vault + DNFT stamps**: every cleared level becomes a record with a rendered battle card. Pin the card and
+- **Flight Logs + DNFT stamps**: every cleared level becomes a record with a rendered battle card. Pin the card and
   full-stat metadata to IPFS, then request a mint via a prefilled GitHub issue. See [docs/VICTORY-STAMPS.md](docs/VICTORY-STAMPS.md).
 - **Decent Pilots whitelist**: `contributor-accounts.json`. Every wallet action (signed flight logs, vouchers,
   vault prizes, arena) is limited to listed pilots. Anyone else plays Sector I with no wallet prompts.
@@ -446,7 +483,7 @@ production winning-flight queue append and funded claim remain an acceptance gat
   and `window.AsteroidRender`.
 - `src/js/input/` handles keyboard and gamepads. `window.voyager` exposes `game`, `step`, `draw` and `setNetworkMode`.
 - `src/js/shell/`, `src/js/dnft/`, `src/js/admin/`, `src/js/pilots/`, `src/js/arena/` and `src/js/chain/` are ES modules
-  for the header, Victory Vault, admin panel, pilot whitelist/flight log, arena lobby and contract ABIs/addresses.
+  for the header, Flight Logs, admin panel, pilot whitelist/flight log, arena lobby and contract ABIs/addresses.
 - `src/vendor/` holds unmodified DecentHead 2.0.0 and DBuskRadio copies (see `src/vendor/PROVENANCE.txt`).
 
 ## Tests

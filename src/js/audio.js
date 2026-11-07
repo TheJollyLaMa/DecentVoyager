@@ -174,6 +174,17 @@ function createAudio({ onError = error => console.error('Voyager audio:', error)
     };
 
     const sounds = {
+        bossArrived: () => {
+            tone({ frequency: 70, endFrequency: 180, duration: 0.8, type: 'sawtooth', volume: 0.12 });
+            tone({ frequency: 350, endFrequency: 90, duration: 0.7, type: 'sine', volume: 0.09, delay: 0.15 });
+        },
+        bossLaserWarning: () => {
+            for (let i = 0; i < 3; i++) tone({ frequency: 660 + i * 110, duration: 0.12, type: 'square', volume: 0.06, delay: i * 0.3 });
+        },
+        bossDefeated: () => {
+            explosion(100, true);
+            for (let i = 0; i < 4; i++) tone({ frequency: [392, 523, 659, 784][i], duration: 0.35, type: 'triangle', volume: 0.08, delay: i * 0.15 });
+        },
         shot: (e) => {
             if (throttle('shot', 0.035)) (LASERS[e.weapon] || LASERS.blaster)();
         },

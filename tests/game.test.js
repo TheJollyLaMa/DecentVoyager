@@ -153,8 +153,9 @@ test('reaching the jump gate completes the level, unlocks and saves progress', (
     assert.equal(resumed.selectedLevel, 1);
 });
 
-test('clearing level 10 wins the campaign', () => {
+test('clearing level 10 after defeating its boss wins the campaign', () => {
     const game = playingGame(10);
+    game.bossDefeated = true;
     game.scrollY = game.level.length;
     game.update(0.016, {});
     assert.equal(game.state, 'victory');

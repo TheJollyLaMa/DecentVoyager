@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Paste a Pilot or Ace level 20 Victory Vault claim JSON. Earlier levels are flight history, not new achievement mints.
+        Paste a Pilot or Ace level 20 Flight Logs claim JSON. Earlier levels are flight history, not new achievement mints.
         This requests review; it does not mint an NFT.
         All IPFS metadata and claimant addresses are public. Do not include keys or private information.
   - type: textarea

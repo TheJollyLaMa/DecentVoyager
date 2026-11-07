@@ -1,6 +1,7 @@
 const checkCollision = require('./collision');
 const Spaceship = require('./spaceship');
 const Bullet = require('./bullet');
+const Boss = require('./boss');
 const { createRng, range } = require('./rng');
 const { getLevel, LEVEL_COUNT, TOTAL_LEVEL_COUNT, getCampaignLevelCount } = require('./levels');
 const { populateLevel } = require('./levelLayout');
@@ -146,6 +147,8 @@ class Game {
     }
 
     resetWorld() {
+        this.bossSpawned = false;
+        this.bossDefeated = false;
         this.scrollY = 0;
         this.asteroids = [];
         this.pickups = [];
@@ -323,7 +326,7 @@ class Game {
 
     serialize() {
         const plain = (value) => JSON.parse(JSON.stringify(value));
-        return plain({ version: 1, seed: this.seed, state: this.state, difficulty: this.difficulty, level: this.level, scrollY: this.scrollY, time: this.time, score: this.score, view: this.view, ship: this.ship, ships: this.ships, stateTimer: this.stateTimer, levelTime: this.levelTime, asteroids: this.asteroids, pickups: this.pickups, playerBullets: this.playerBullets.map((b) => ({ ...b, hits: b.hits ? [...b.hits] : null })), enemyBullets: this.enemyBullets, vault: this.vault ?? null, runCaptures: this.runCaptures, playerStats: this.playerStats, mode: this.mode });
+        return plain({ version: 1, seed: this.seed, state: this.state, difficulty: this.difficulty, level: this.level, scrollY: this.scrollY, time: this.time, score: this.score, view: this.view, ship: this.ship, ships: this.ships, stateTimer: this.stateTimer, levelTime: this.levelTime, asteroids: this.asteroids, pickups: this.pickups, playerBullets: this.playerBullets.map((b) => ({ ...b, hits: b.hits ? [...b.hits] : null })), enemyBullets: this.enemyBullets, vault: this.vault ?? null, runCaptures: this.runCaptures, playerStats: this.playerStats, mode: this.mode, bossSpawned: this.bossSpawned, bossDefeated: this.bossDefeated });
     }
 
     applySnapshot(snapshot) {
@@ -333,6 +336,8 @@ class Game {
             if (snapshot[key] !== undefined && snapshot[key] !== null) this[key] = clone(snapshot[key]);
         }
         this.vault = snapshot.vault == null ? null : clone(snapshot.vault);
+        this.bossSpawned = Boolean(snapshot.bossSpawned);
+        this.bossDefeated = Boolean(snapshot.bossDefeated);
         this.asteroids = this.asteroids || [];
         this.pickups = this.pickups || [];
         this.enemyBullets = this.enemyBullets || [];
@@ -470,6 +475,17 @@ class Game {
 
         this.levelTime += dt;
         this.scrollY += this.level.scrollSpeed * dt;
+        if (this.isBossLevel && !this.bossDefeated && this.scrollY >= this.level.length - 600) {
+            this.scrollY = this.level.length - 600;
+            if (!this.bossSpawned) {
+                const boss = new Boss(this.level, this.playerCount);
+                boss.y = this.scrollY + 400;
+                this.asteroids.push(boss);
+                this.tracker.spawned(1);
+                this.bossSpawned = true;
+                this.emit('bossArrived', { name: boss.name, x: boss.x, y: boss.y });
+            }
+        }
         const ship = this.ship;
         this.tracker.tick(dt, ship, this.view);
 
@@ -590,6 +606,11 @@ class Game {
         for (const asteroid of this.asteroids) {
             if (!asteroid.active && asteroid.y - ship.y < ACTIVATION_DISTANCE) asteroid.active = true;
             asteroid.update(dt);
+            if (asteroid.boss) {
+                asteroid.y = this.scrollY + 400;
+                this.updateBossAttacks(asteroid, dt);
+                continue;
+            }
             if (!asteroid.shooter || !asteroid.active || !shipCanBeTargeted) continue;
             asteroid.fireCooldown -= dt;
             const ahead = asteroid.y - ship.y;
@@ -597,7 +618,38 @@ class Game {
                 this.fireEnemyBullet(asteroid);
                 asteroid.fireCooldown = this.level.fireInterval * range(this.rng, asteroid.vaultGuard ? 3.1 : 0.7, asteroid.vaultGuard ? 4.2 : 1.3);
             }
+
         }
+    }
+
+    get isBossLevel() { return this.level.number === 10 || this.level.number === 20; }
+
+    updateBossAttacks(boss, dt) {
+        if (this.state !== 'playing') return;
+        const phase = boss.clock % 12;
+        if (phase >= 8 && phase < 9.5 && !boss.laserLanes.length) {
+            const target = this.ships.find(ship => ship.lives > 0) || this.ship;
+            const lane = Math.max(70, Math.min(730, target.x));
+            boss.laserLanes = boss.final ? [Math.max(50, lane - 85), Math.min(750, lane + 85)] : [lane];
+            this.emit('bossLaserWarning', { x: boss.x, y: boss.y });
+        }
+        boss.fireCooldown -= dt;
+        if (boss.fireCooldown > 0 || this.enemyBullets.length > 120) return;
+        boss.fireCooldown = (boss.final ? 1.8 : 2.8) * (this.difficulty === 'ace' ? 0.7 : 1);
+        const target = this.ships.find(ship => ship.lives > 0) || this.ship;
+        const aim = Math.atan2(target.x - boss.x, target.y - boss.y);
+        const shots = boss.final ? 7 : 5;
+        for (let index = 0; index < shots; index++) {
+            const angle = aim + (index - (shots - 1) / 2) * 0.18;
+            const speed = Math.min(360, this.level.enemyBulletSpeed);
+            this.enemyBullets.push(new Bullet({
+                x: boss.x, y: boss.y - boss.size,
+                vx: Math.sin(angle) * speed, vy: Math.cos(angle) * speed,
+                size: 5, damage: this.level.bulletDamage, life: 5, owner: 'enemy', color: '#ff7ae6'
+            }));
+            this.tracker.enemyShot();
+        }
+        this.emit('enemyShot', { x: boss.x, y: boss.y });
     }
 
     fireEnemyBullet(asteroid) {
@@ -647,7 +699,7 @@ class Game {
             if (bullet.ownerWeapon === 'singularity') {
                 for (const index of candidates(bullet, 220)) {
                     const rock = this.asteroids[index];
-                    if (rock.hp <= 0) continue;
+                    if (rock.hp <= 0 || rock.boss) continue;
                     const dx = bullet.x - rock.x; const dy = bullet.y - rock.y; const distance = Math.hypot(dx, dy);
                     if (distance > 220 || distance === 0) continue;
                     const pull = (220 - distance) * 0.18; rock.vx += dx / distance * pull * FIXED_STEP; rock.vy += dy / distance * pull * FIXED_STEP;
@@ -679,6 +731,11 @@ class Game {
 
     destroyAsteroid(asteroid, awardPoints = true, byPlayerShot = false) {
         asteroid.hp = 0;
+        if (asteroid.boss) {
+            this.bossDefeated = true;
+            this.tracker.stats.bossesDestroyed += 1;
+            this.emit('bossDefeated', { name: asteroid.name, x: asteroid.x, y: asteroid.y });
+        }
         if (asteroid.vaultGuard) {
             const wasShielded = this.vault?.shielded;
             if (markGuardDestroyed(this.vault, asteroid)) this.emit('guardDestroyed', { tier: asteroid.vaultTier, kind: asteroid.kind, x: asteroid.x, y: asteroid.y });
@@ -687,7 +744,7 @@ class Game {
             }
         }
         if (awardPoints) {
-            const base = asteroid.shooter ? 150 : 50 + asteroid.maxHp * 25;
+            const base = asteroid.boss ? 5000 : asteroid.shooter ? 150 : 50 + asteroid.maxHp * 25;
             const points = Math.round(base * (1 + (this.level.number - 1) * 0.1) * this.scoreMultiplier);
             const scorerIndex = asteroid.lastPlayerIndex || 0;
             const scorer = this.playerStats[scorerIndex];
@@ -711,7 +768,12 @@ class Game {
         const ships = this.ships;
         for (let index = 0; index < ships.length; index++) {
             const ship = ships[index];
-            if (ship.lives <= 0) continue;
+            if (ship.lives <= 0 || ship.respawnTimer > 0) continue;
+            const boss = this.asteroids.find(rock => rock.boss && rock.hp > 0);
+            if (boss?.laserActive && ship.y <= boss.y && boss.laserLanes.some(x => Math.abs(ship.x - x) <= boss.laserWidth / 2 + ship.size)) {
+                this.damageShip(this.level.bulletDamage * 1.5, ship.x, ship.y, ship, index);
+                if (this.playerCount === 1 && this.state !== 'playing') return;
+            }
             for (const bullet of this.enemyBullets) {
                 if (!bullet.alive || !checkCollision(bullet, ship)) continue;
                 bullet.life = 0;
@@ -722,6 +784,11 @@ class Game {
             for (const asteroid of this.asteroids) {
                 if (asteroid.hp <= 0 || asteroid.phaseActive || !checkCollision(asteroid, ship)) continue;
                 this.tracker.collision();
+                if (asteroid.boss) {
+                    this.damageShip(60, asteroid.x, asteroid.y, ship, index);
+                    if (this.playerCount === 1 && this.state !== 'playing') return;
+                    continue;
+                }
                 const fragments = this.destroyAsteroid(asteroid, ship.shield > 0);
                 this.asteroids.push(...fragments);
                 this.damageShip((30 + asteroid.size) * (this.level.ramDamageMultiplier ?? 1), asteroid.x, asteroid.y, ship, index);
