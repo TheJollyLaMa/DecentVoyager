@@ -21,7 +21,7 @@ referee flight ticket. Failed connection, eligibility or ticket checks stay
 visible in the popup with retry, practice and back choices; they do not silently
 start a reward flight. Without wallet eligibility, Pilot/Ace still have 20 levels
 but no Supporter encounters or NFT rewards. With eligibility, one guarded encounter
-is scheduled in level 4, 5 or 6 and another in 17, 18 or 19 for new rotation
+is scheduled in level 9 or 10 and another in 17, 18 or 19 for new rotation
 tickets. Older tickets/online arenas retain levels 9/10 and 19/20. Missing either token does
 not end the voyage early; both captures remain required for Perfect rewards.
 
@@ -76,7 +76,7 @@ restarts. Prefetched/unused tickets can consume bag entries; this is not a globa
 or permanent no-repeat guarantee. Selection is fixed in the ticket MAC and replay,
 not chosen at redemption or rerolled by refreshing the capture presentation.
 
-The early encounter is in **level 4, 5 or 6** with **four guards, 9 total HP** and
+The first encounter is in **level 9 or 10** with **four guards, 9 total HP** and
 1.5–2.5-second initial fire delays; the later encounter is in **17, 18 or 19**
 with the original **eight guards, 43 total HP**. Both refill team power on capture.
 The 100-USDC Busking edition remains **Perfect Ace only**: full solo 20-level
@@ -88,6 +88,8 @@ project/Canopy links and Supporter purchase links with recorded listing prices;
 the purchase page rechecks the live listing. No new reserves or contract
 transactions are part of this update.
 
+Already-issued version-1 rotation plans retain their level 4/5/6 schedule for
+exact replay; new version-2 plans never offer a Supporter before level 9.
 Old tickets without a rotation plan and existing online arenas keep their original
 prize pools, guards and schedules, preserving exact replay. The gameplay ruleset
 is unchanged; new ticket behavior is explicitly MAC-bound. Deploy the referee
@@ -448,7 +450,7 @@ stats and win records are saved per difficulty in `localStorage`, and can be bac
   weapon again to upgrade it up to tier 3. The breathing ENS/ETH orb restores power and **◎** grants a temporary shield.
 - **Charge weapons**: the **Nova Charger** (and, in Sector II, the **Prism Lance** and **Singularity**) charge while
   fire is held and release a bigger blast. The HUD shows the charge meter.
-- **Guarded Supporter pickups (whitelisted Pilot or Ace)**: new rotation tickets schedule an easier pickup on level 4, 5 or 6. Destroy
+- **Guarded Supporter pickups (whitelisted Pilot or Ace)**: new rotation tickets schedule an easier pickup on level 9 or 10. Destroy
   its guards and fly into it to capture one of six affordable project Supporter DNFTs and refill power.
   **Sector II** follows level 10 automatically on Pilot/Ace, even if the token is missed.
   A stronger second pickup on level 17, 18 or 19 offers a different affordable project.

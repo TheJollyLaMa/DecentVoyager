@@ -148,8 +148,8 @@ try {
     const rotation = await page.evaluate(() => {
       const game = window.asteroidGame;
       game.setPlayers(5);
-      game.setNextRunSeed(1, { ticket: { rewardPlan: { version: 1, difficulty: 'pilot', tokens: [79, 80], levels: [4, 17] } }, mac: 'rotation-fixture' });
-      game.startCampaign(4, 'pilot');
+      game.setNextRunSeed(1, { ticket: { rewardPlan: { version: 2, difficulty: 'pilot', tokens: [79, 80], levels: [9, 17] } }, mac: 'rotation-fixture' });
+      game.startCampaign(9, 'pilot');
       const guards = game.vault.guards.length;
       for (let frame = 0; frame < 4000 && !game.runCaptures.length && game.state !== 'gameOver'; frame++) {
         game.step(game.ships.map((ship, index) => {
@@ -166,7 +166,7 @@ try {
       }
       return { guards, captured, replayed, level: game.level.number };
     });
-    assert.deepEqual(rotation, { guards: 4, captured: 1, replayed: 1, level: 4 });
+    assert.deepEqual(rotation, { guards: 4, captured: 1, replayed: 1, level: 9 });
     await briefing.getByRole('heading', { name: 'DecentCanopy v0.1.0 Supporter DNFT' }).waitFor();
     assert.match(await briefing.locator('[data-capture-link="support"]').getAttribute('href'), /listingId=17&priceUSDC=10000000/);
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('decent-voyager-recent-offers/1'))['0x0000000000000000000000000000000000000001'].at(-1)), 79);

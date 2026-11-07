@@ -19,7 +19,8 @@ The Node 20 service in `server/` verifies signed run logs by replaying them thro
 
 New `POST /tickets` callers can include `difficulty` and up to two numeric
 `recentOffers`. Pilot/Ace requests receive a MAC-bound `rewardPlan` with two
-different affordable token IDs, early level 4/5/6 and late level 17/18/19.
+different affordable token IDs, first encounter level 9/10 and late level 17/18/19.
+New plans use version 2; already-issued version-1 plans retain level 4/5/6 for exact replay.
 The per-wallet shuffled bag avoids the previous issued pair; recent actual
 offers from browser storage also constrain choice across server restarts.
 All six ordinary editions have recorded 10-USDC listings and funded custody.

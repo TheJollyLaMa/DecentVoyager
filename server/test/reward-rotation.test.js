@@ -26,6 +26,8 @@ test('shuffle bags cover every affordable project and avoid adjacent-flight repe
     for (let index = 0; index < 1000; index++) {
       const plan = rotation.next('wallet', difficulty);
       validateRewardPlan(plan);
+      assert.equal(plan.version, 2);
+      assert.ok([9, 10].includes(plan.levels[0]));
       assert.ok(plan.tokens.every(token => !previous.includes(token)));
       for (const token of plan.tokens) counts.set(token, counts.get(token) + 1);
       if (index < Math.ceil(ids.length / 2)) first.push(...plan.tokens);
@@ -47,9 +49,28 @@ test('recent actual offers survive server restart, difficulty switches stay elig
   assert.deepEqual(restarted.next('two', 'ace').tokens, first.tokens);
 });
 
-test('affordable early guards are measurably easier; legacy guards and premium awards remain unchanged', () => {
-  const plan = { version: 1, difficulty: 'pilot', tokens: [70, 80], levels: [4, 17] };
-  const early = createVault(1, 4, createRng(1), plan), late = createVault(2, 17, createRng(1), plan);
+test('new flights offer no Supporter before level 9 and spawn at either selected level, including the boss', () => {
+  for (const difficulty of ['pilot', 'ace']) {
+    for (const level of [9, 10]) {
+      const game = new Game({ seed: 1 });
+      game.setPilot({ address: 'pilot', isPilot: true });
+      game.setNextRunSeed(1, { ticket: { rewardPlan: { version: 2, difficulty, tokens: [70, 79], levels: [level, 19] } } });
+      game.startCampaign(1, difficulty);
+      for (let current = 1; current < level; current++) {
+        game.startLevel(current);
+        assert.equal(game.vault, null, `no pickup at ${difficulty} level ${current}`);
+      }
+      game.startLevel(level);
+      assert.equal(game.vault.level, level);
+      assert.equal(game.vault.prize.tokenId, 70);
+      assert.equal(game.vault.guards.length, 4);
+    }
+  }
+});
+
+test('affordable first guards are measurably easier; legacy guards and premium awards remain unchanged', () => {
+  const plan = { version: 2, difficulty: 'pilot', tokens: [70, 80], levels: [9, 17] };
+  const early = createVault(1, 9, createRng(1), plan), late = createVault(2, 17, createRng(1), plan);
   assert.equal(early.guards.length, 4);
   assert.equal(early.guards.reduce((sum, guard) => sum + guard.hp, 0), 9);
   assert.ok(early.guards.every(guard => guard.fireCooldown >= 1.5));
@@ -69,7 +90,7 @@ test('affordable early guards are measurably easier; legacy guards and premium a
 test('rotation ticket MAC binds token choices, levels and difficulty', () => {
   const service = createTicketService({ secret: 'test-secret-with-at-least-thirty-two-bytes!' });
   const address = Wallet.createRandom().address;
-  const plan = { version: 1, difficulty: 'ace', tokens: [77, 79], levels: [5, 19] };
+  const plan = { version: 2, difficulty: 'ace', tokens: [77, 79], levels: [10, 19] };
   const ticket = service.issue(address, plan);
   const run = { runId: 'rotation', seed: ticket.ticket.seed, ruleset: ticket.ticket.ruleset, difficulty: 'ace', ticket };
   service.verify({ address, run });
@@ -80,9 +101,14 @@ test('rotation ticket MAC binds token choices, levels and difficulty', () => {
   assert.throws(() => validateRewardPlan({ ...plan, tokens: [75, 79] }), /invalid/);
   assert.throws(() => validateRewardPlan({ ...plan, tokens: [76, 79] }), /invalid/);
   assert.throws(() => validateRewardPlan({ ...plan, levels: [3, 20] }), /invalid/);
+  assert.throws(() => validateRewardPlan({ ...plan, levels: [5, 19] }), /invalid/);
+  const oldPlan = { ...plan, version: 1, levels: [5, 19] };
+  const oldTicket = service.issue(address, oldPlan);
+  service.verify({ address, run: { ...run, seed: oldTicket.ticket.seed, ticket: oldTicket } });
+  assert.throws(() => validateRewardPlan({ ...oldPlan, levels: [9, 19] }), /invalid/);
 });
 
-test('a new affordable project captures early and replays to a funded voucher; premium ordinary pickups fail', async t => {
+test('a new affordable project captures at level 9 and replays to a funded voucher; premium ordinary pickups fail', async t => {
   const secret = 'test-secret-with-at-least-thirty-two-bytes!';
   const player = Wallet.createRandom(), queued = [];
   let fake = null;
@@ -102,7 +128,9 @@ test('a new affordable project captures early and replays to a funded voucher; p
   const issued = await response.json();
   assert.equal(response.status, 201);
   assert.ok(issued.ticket.rewardPlan.tokens.every(token => ![70, 71, 75, 76].includes(token)));
-  const plan = { version: 1, difficulty: 'pilot', tokens: [79, 80], levels: [4, 17] };
+  assert.equal(issued.ticket.rewardPlan.version, 2);
+  assert.ok([9, 10].includes(issued.ticket.rewardPlan.levels[0]));
+  const plan = { version: 2, difficulty: 'pilot', tokens: [79, 80], levels: [9, 17] };
   const ticket = service.ticketService.issue(player.address, plan);
   ticket.ticket.seed = 1;
   ticket.mac = `0x${createHmac('sha256', secret).update(stableJson(ticket.ticket)).digest('hex')}`;
@@ -110,7 +138,7 @@ test('a new affordable project captures early and replays to a funded voucher; p
   game.setPilot({ address: player.address, isPilot: true });
   game.setPlayers(5);
   game.setNextRunSeed(1, ticket);
-  game.startCampaign(4, 'pilot');
+  game.startCampaign(9, 'pilot');
   assert.equal(game.vault.prize.tokenId, 79);
   for (let frame = 0; frame < 4000 && !game.runCaptures.length && game.state !== 'gameOver'; frame++) {
     game.step(game.ships.map((ship, index) => {
@@ -131,7 +159,7 @@ test('a new affordable project captures early and replays to a funded voucher; p
   const captured = await post(run);
   assert.equal(captured.status, 201, JSON.stringify(captured.body));
   assert.equal(captured.body.vouchers[0].tokenId, '79');
-  fake = { ...game.summary(), captures: [{ tier: 1, level: 4, prize: PERFECT_PRIZES.ace }] };
+  fake = { ...game.summary(), captures: [{ tier: 1, level: 9, prize: PERFECT_PRIZES.ace }] };
   const denied = await post({ ...run, battleCards: {} });
   assert.equal(denied.status, 400);
   assert.match(denied.body.error, /unsupported Supporter/);
