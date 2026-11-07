@@ -85,6 +85,10 @@ test('header config is public Base-only with HTTPS project links and small local
   assert.match(supporter.marketUrl,/^https:\/\//);
   assert.ok(statSync(new URL(`../src/assets/${supporter.image}`,import.meta.url)).size<=250000);
   for (const link of [...config.links,...config.relatedDapps]) assert.match(link.url,/^https:\/\//);
+  assert.deepEqual(Array.from(config.links, link => link.label), ['GitHub · Decent Voyager', 'Ask to join · DecentAgency Discord', 'DecentMarket · supporter listings']);
+  assert.deepEqual(Array.from(config.relatedDapps, link => link.label), ['DecentBusking', 'DecentCanopy']);
+  assert.equal(config.links.at(-1).url, 'https://thejollylama.github.io/DecentMarket/');
+  assert.equal(config.relatedDapps[0].url, 'https://thejollylama.github.io/DecentBusking/');
   assert.ok([...config.links,...config.relatedDapps].filter(link => /canopy|ecosystem/i.test(link.label)).every(link => link.url === 'https://thejollylama.github.io/DecentCanopy/'));
   assert.equal(config.about.sections,undefined);
   assert.equal(config.art.titleIcon,'./assets/brand/voyager-disc.png');
@@ -116,6 +120,8 @@ test('static shell preserves bundle/canvas and host-module ordering for relative
 
 test('about content covers rewards, tutorials and the multiplayer walkthrough without dropdowns', () => {
   const source=readFileSync(new URL('../src/js/shell/about-modal.mjs',import.meta.url),'utf8');
+  assert.match(source, /<footer>Another Decent Frankenstein brought to you by TheJollyLaMa and A Decent Agency<\/footer>/);
+  assert.doesNotMatch(source, /Mandelblum art by|Your wallet\. Your flight\. Your choice/);
   assert.doesNotMatch(source,/<details/);
   for (const title of ['Level 20 achievement NFT','Guarded Supporter pickups','Marathon and Perfect awards','Sector II · Far Future','Arena pot']) assert.ok(ABOUT.rewards.some(item => item.title===title));
   assert.ok(ABOUT.couch.length>=3); assert.ok(ABOUT.online.length>=5);
