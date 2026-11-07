@@ -33,7 +33,7 @@ function validateRunShape(run) {
   const frameCount = getFrameCount(run.frames, run.players);
   if (frameCount === 0 || frameCount > MAX_FRAME_COUNT) throw new Error('Run frames are missing or exceed the replay limit.');
   if (run.actions !== undefined) {
-    if (run.ruleset !== require('../../src/js/ruleset')) throw new Error('Recorded flight actions require the current game ruleset.');
+    if (![require('../../src/js/ruleset'), 'voyager-1.5-mandelblum-boss'].includes(run.ruleset)) throw new Error('Recorded flight actions require a transition-aware game ruleset.');
     if (!Array.isArray(run.actions) || run.actions.length > 19) throw new Error('Flight actions must contain at most 19 level transitions.');
     let previousFrame = -1;
     for (const action of run.actions) {

@@ -32,6 +32,12 @@ export function installStyle() {
     .asteroid-status { color:#ffdb87; white-space:pre-wrap; }
     .asteroid-panel nav { display:flex; flex-wrap:wrap; gap:8px; }
     .asteroid-panel [aria-selected=true] { background:#215c60; }
+    .reward-rolodex { display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; padding:12px 4px 24px; }
+    .asteroid-panel .reward-thumbnail { flex:0 0 190px; display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px; margin:0; scroll-snap-align:start; }
+    .reward-thumbnail img { height:150px; object-fit:contain; }
+    .reward-thumbnail strong { line-height:1.5; }
+    .reward-thumbnail span { color:#bdd0e4; }
+    #voyager-reward-detail .reward-card img { display:block; width:min(360px,100%); margin:20px auto; }
   `, { id: 'asteroid-stamp-style' }); document.head.append(style);
 }
 export function createDialog(title, id) {

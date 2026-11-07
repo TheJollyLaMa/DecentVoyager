@@ -1,1 +1,1 @@
-module.exports = 'voyager-1.5-mandelblum-boss';
+module.exports = 'voyager-1.6-supporter-rolodex';

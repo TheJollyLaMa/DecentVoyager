@@ -1,4 +1,4 @@
-import { node, button, link } from '../dnft/ui.mjs';
+import { node, button, link, createDialog } from '../dnft/ui.mjs';
 import { flightLog } from './flight-log.mjs';
 import { OUTBOX_KEY } from './run-outbox.mjs';
 import { REWARD_KEY, rewardState } from './reward-state.mjs';
@@ -15,13 +15,24 @@ export function normalizeVouchers(value) {
 }
 
 export function mountRewardGallery(root, {
-  fetchImpl = globalThis.fetch, outbox = flightLog?.outbox,
+  fetchImpl = globalThis.fetch,
   getDetails = tokenId => window.AsteroidRender?.supporterDetails?.(tokenId)
 } = {}) {
   const status = node('p', '', { role: 'status', 'aria-live': 'polite', className: 'asteroid-status' });
-  const list = node('section', '', { 'aria-label': 'Captured NFTs' });
-  root.append(node('h2', 'Captured NFTs'), node('p', 'Inspect the projects you captured. Collect here or during the battle: sign the evidence, then approve the Base transfer. Base gas is paid by your wallet.'),
-    button('Refresh captured NFTs', () => void load()), status, list);
+  const list = node('section', '', { 'aria-label': 'Captured NFTs', className: 'reward-rolodex' });
+  const controls = node('nav', '', { 'aria-label': 'Browse captured NFTs' });
+  for (const [label, direction] of [['Previous NFT', -1], ['Next NFT', 1]]) {
+    controls.append(button(label, () => list.scrollBy({ left: direction * 210, behavior: 'smooth' })));
+  }
+  root.append(node('h2', 'Captured NFTs'), controls, status, list);
+  const detail = createDialog('Captured NFT', 'voyager-reward-detail');
+  const detailBody = node('section');
+  detail.append(detailBody);
+  let detailOpener = null;
+  detail.addEventListener('close', () => {
+    const opener = [...list.querySelectorAll('button')].find(item => item.getAttribute('aria-label') === detailOpener?.getAttribute('aria-label'));
+    opener?.focus();
+  });
   let generation = 0, pilot = window.__voyagerPilot || {};
   let active = false;
   const message = text => { status.textContent = text; };
@@ -37,23 +48,15 @@ export function mountRewardGallery(root, {
       ...saved.filter(entry => entry.kind === 'capture' && !vouchers.some(voucher => voucher.kind === 'prize' &&
         String(voucher.tokenId ?? voucher.voucher?.tokenId) === String(entry.capture.prize?.tokenId ?? entry.capture.tokenId)))
     ];
-    const pending = (outbox?.read() || []).filter(entry => entry.address.toLowerCase() === address.toLowerCase());
-    for (const item of pending) {
-      const row = node('article');
-      row.append(node('h3', 'Signed evidence awaiting verification'), node('p', item.lastError || 'Referee verification queued.'));
-      row.append(button('Verify & collect', async () => {
-        try { await flightLog.retryAndCollect(message); } catch (error) { message(error.message); }
-        finally { void load(); }
-      }));
-      list.append(row);
-    }
+    controls.hidden = entries.length < 2;
     if (!entries.length) list.append(node('p', 'No captured NFTs saved for this wallet yet. Verified vouchers from earlier visits appear here too.'));
     for (const entry of entries) {
       const voucher = entry.voucher, args = voucher?.voucher;
       const tokenId = voucher ? voucher.tokenId ?? args?.tokenId : entry.capture.prize?.tokenId ?? entry.capture.tokenId;
       const details = voucher?.kind === 'stamp' ? null : getDetails(tokenId);
       const row = node('article', '', { className: 'reward-card' });
-      row.append(node('h3', details?.name || (voucher?.kind === 'stamp' ? `Level ${args.level} achievement NFT` : `Supporter DNFT #${tokenId}`)));
+      const name = details?.name || (voucher?.kind === 'stamp' ? `Level ${args.level} achievement NFT` : `Supporter DNFT #${tokenId}`);
+      row.append(node('h3', name));
       if (details) {
         const image = node('img', '', { src: details.image, alt: details.name, loading: 'lazy' });
         image.addEventListener('error', () => { image.hidden = true; row.append(node('p', 'Artwork unavailable; project and metadata links remain below.')); }, { once: true });
@@ -81,8 +84,22 @@ export function mountRewardGallery(root, {
       collect.disabled = !!voucher || entry.status === 'collected';
       if (entry.status === 'collected') collect.textContent = 'Collected';
       row.append(collect);
-      list.append(row);
-      if (voucher) void check(voucher, entry, state, collect, address, generation);
+      const inspect = button('', () => {
+        detailOpener = inspect;
+        detail.querySelector('h2').textContent = name;
+        detailBody.replaceChildren(row);
+        detail.showModal();
+        if (voucher) void check(voucher, entry, state, collect, address, generation);
+      });
+      inspect.className = 'reward-thumbnail';
+      inspect.setAttribute('aria-label', `Inspect ${name}`);
+      if (details) {
+        const thumbnail = node('img', '', { src: details.image, alt: '', loading: 'lazy' });
+        thumbnail.addEventListener('error', () => { thumbnail.hidden = true; }, { once: true });
+        inspect.append(thumbnail);
+      }
+      inspect.append(node('strong', name), node('span', entry.status === 'collected' ? 'Collected on Base' : 'Captured'));
+      list.append(inspect);
     }
     window.dispatchEvent(new CustomEvent('voyager:rewards-count', { detail: { count: entries.filter(entry => entry.status !== 'collected').length } }));
   }
@@ -95,8 +112,9 @@ export function mountRewardGallery(root, {
       finally { context.provider.destroy?.(); }
       if (request !== generation || address !== pilot.address || !active) return;
       if (claimed) {
-        state.textContent = 'Collected on Base. This records the transfer, not your current NFT balance.';
+        state.textContent = 'Collected on Base.';
         collect.textContent = 'Collected';
+        collect.disabled = true;
         if (entry.status !== 'collected') rewardState().put({ id: `voucher:${voucher.digest}`, kind: 'voucher', address, voucher, status: 'collected' });
       } else if (entry.status === 'submitted') {
         state.textContent = 'Transfer submitted. Use Collect to check its receipt before retrying.';
@@ -131,10 +149,11 @@ export function mountRewardGallery(root, {
       message('');
     } catch (error) { if (request === generation) message(`${error.message}. Saved captures remain available above.`); }
   }
-  window.addEventListener('voyager:pilot', event => { pilot = event.detail || {}; void load(); });
+  window.addEventListener('voyager:pilot', event => { if (detail.open) detail.close(); pilot = event.detail || {}; void load(); });
+  window.addEventListener('voyager:reward-history-changed', () => void load());
   window.addEventListener('voyager:flight-outbox-changed', () => void load());
   window.addEventListener('storage', event => { if ([OUTBOX_KEY, REWARD_KEY].includes(event.key)) void load(); });
-  return { load, activate: () => { active = true; void load(); }, deactivate: () => { active = false; generation++; } };
+  return { load, activate: () => { active = true; void load(); }, deactivate: () => { active = false; generation++; if (detail.open) detail.close(); } };
 }
 export function mountRewards() {
   window.addEventListener('voyager:open-rewards', event => window.dispatchEvent(new CustomEvent('voyager:open-vault', { detail: event.detail })));

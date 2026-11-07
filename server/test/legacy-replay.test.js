@@ -12,13 +12,34 @@ const OLD_RULESET = require('../legacy/voyager-1.3-mini-emblem/ruleset');
 const { gameForRuleset } = require('../src/replay-rulesets');
 const { replayRun } = require('../src/game-adapter');
 const { createTicketService, TICKET_TTL_MS } = require('../src/tickets');
-const { stableJson, runHash, verifyRun } = require('../src/run-verifier');
+const { stableJson, runHash, verifyRun, validateRunShape } = require('../src/run-verifier');
 const { createService } = require('../src/index');
 const { makeVoucherService } = require('../src/vouchers');
 
 const SECRET = 'legacy-fixture-secret-at-least-thirty-two-bytes';
 const ADDRESS = '0x0000000000000000000000000000000000000001';
 const NOW = Date.UTC(2026, 10, 7, 9, 30);
+
+test('pre-rolodex boss flights keep original HP, signed plans and transition-aware replay', () => {
+  const BossGame = require('../legacy/voyager-1.5-mandelblum-boss/game');
+  const OldBoss = require('../legacy/voyager-1.5-mandelblum-boss/boss');
+  const NewBoss = require('../../src/js/boss');
+  const { getLevel } = require('../../src/js/levels');
+  assert.equal(createHash('sha256').update(readFileSync(require.resolve('../legacy/voyager-1.5-mandelblum-boss/game'))).digest('hex'),
+    '18d5e53bb66a64d548faf88c94bf16500be12501ff8d77624751f3d8127ad1d3');
+  assert.equal(gameForRuleset('voyager-1.5-mandelblum-boss'), BossGame);
+  for (const number of [10, 20]) {
+    assert.equal(new NewBoss(getLevel(number)).hp, new OldBoss(getLevel(number)).hp * 0.9);
+  }
+  const game = new BossGame({ seed: 44, now: () => NOW });
+  game.setPilot({ address: ADDRESS, isPilot: true });
+  game.setNextRunSeed(44, { ticket: { rewardPlan: { version: 2, difficulty: 'pilot', tokens: [77, 79], levels: [9, 19] } } });
+  game.startCampaign(9, 'pilot');
+  for (let frame = 0; frame < 180; frame++) game.step([{ fire: true }]);
+  const run = { ...game.getRunLog(), actions: [] };
+  validateRunShape(run);
+  assert.deepEqual(replayRun(run), game.summary());
+});
 
 function oldTicket(address = ADDRESS) {
   const ticket = createTicketService({ secret: SECRET, now: () => NOW }).issue(address).ticket;

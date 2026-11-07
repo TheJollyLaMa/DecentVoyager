@@ -925,7 +925,7 @@ const Asteroid = require('./asteroid');
 class Boss extends Asteroid {
     constructor(level, players = 1) {
         const final = level.number === 20;
-        super({ id: -level.number, x: 400, y: 0, size: final ? 120 : 100, hp: (final ? 3000 : 2400) * players });
+        super({ id: -level.number, x: 400, y: 0, size: final ? 120 : 100, hp: (final ? 2700 : 2160) * players });
         this.boss = true;
         this.name = final ? 'Mandelblum Sovereign' : 'Mandelblum Core';
         this.active = true;
@@ -6828,7 +6828,7 @@ function pick(rng, items) {
 module.exports = { createRng, range, pick };
 
 },{}],35:[function(require,module,exports){
-module.exports = 'voyager-1.5-mandelblum-boss';
+module.exports = 'voyager-1.6-supporter-rolodex';
 
 },{}],36:[function(require,module,exports){
 // Save format, validation, legacy migration and quota-tolerant persistence.

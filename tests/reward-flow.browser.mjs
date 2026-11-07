@@ -14,7 +14,7 @@ const browser = await chromium.launch();
 try {
   for (const width of [1415, 390]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
-    let verified = false, rejectReferee = false, posts = 0;
+    let verified = false, rejectReferee = false, posts = 0, expectedCaptureFrames = null;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(() => {
@@ -33,7 +33,12 @@ try {
         if (rejectReferee) return route.fulfill({ status: 503, json: { error: 'Fixture referee offline' } });
         verified = true;
         const body = route.request().postDataJSON();
-        return route.fulfill({ json: { runId: body.run.runId, runHash: body.runHash, vouchers: [voucher], queue: [] } });
+        if (body.run.ticket?.ticket?.rewardPlan && expectedCaptureFrames !== null) {
+          assert.equal(body.run.frames.frames, expectedCaptureFrames, 'collect uses the frozen presentation checkpoint');
+        }
+        const tokenId = String(body.run.ticket?.ticket?.rewardPlan?.tokens[0] || 70);
+        const reward = { ...voucher, digest: `fixture-${tokenId}`, tokenId, voucher: { ...voucher.voucher, tokenId } };
+        return route.fulfill({ json: { runId: body.run.runId, runHash: body.runHash, vouchers: [reward], queue: [] } });
       }
       if (url.includes('/vouchers/')) return route.fulfill({ json: { vouchers: verified ? [voucher] : [] } });
       if (url.endsWith('/tickets')) return route.fulfill({ json: { ticket: { id: 'fixture', address, seed: 44, expiresAt: new Date(Date.now() + 3600000).toISOString() }, mac: 'fixture' } });
@@ -102,7 +107,19 @@ try {
     await setup();
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('voyager:open-vault')));
     const logs = page.locator('#asteroid-victory-vault'), gallery = logs.locator('[aria-label="Captured NFTs"]');
-    const row = gallery.locator('.reward-card').first();
+    const nftDetail = page.locator('#voyager-reward-detail');
+    assert.equal(await logs.getByRole('button', { name: 'Refresh captured NFTs' }).count(), 0);
+    assert.equal(await logs.getByText('Signed evidence awaiting verification').count(), 0);
+    assert.equal(await logs.evaluate(dialog => dialog.querySelector('[aria-label="Captured NFTs"]').compareDocumentPosition(dialog.querySelector('.flight-log-hero')) & Node.DOCUMENT_POSITION_FOLLOWING), 4, 'NFTs are above flight stats');
+    const thumbnailBox = await gallery.locator('.reward-thumbnail').first().boundingBox();
+    assert.ok(thumbnailBox.width >= 44 && thumbnailBox.height >= 44, 'NFT inspection is a usable touch target');
+    if (width === 390) {
+      await logs.getByRole('button', { name: 'Next NFT', exact: true }).click();
+      await page.waitForFunction(() => document.querySelector('.reward-rolodex').scrollLeft > 0);
+      await logs.getByRole('button', { name: 'Previous NFT', exact: true }).click();
+    }
+    await gallery.locator('.reward-thumbnail').first().click();
+    const row = nftDetail.locator('.reward-card').first();
     await row.getByRole('button', { name: 'Collect to wallet', exact: true }).waitFor();
     await page.waitForFunction(() => !document.querySelector('.reward-card button').disabled);
     assert.equal(await row.getByRole('link', { name: 'Explore project' }).getAttribute('target'), '_blank');
@@ -111,28 +128,32 @@ try {
     assert.equal(await row.locator('img').count(), 1);
     await page.evaluate(() => { window.fixture.reject = false; window.fixture.pending = true; });
     await row.getByRole('button', { name: 'Collect to wallet', exact: true }).click();
-    await logs.getByText('Transfer submitted. Waiting for Base confirmation...', { exact: true }).first().waitFor();
+    await nftDetail.getByText('Transfer submitted. Waiting for Base confirmation...', { exact: true }).first().waitFor();
     assert.equal(await page.evaluate(() => window.fixture.signatures), 0, 'retry a verified voucher without another flight signature');
     assert.equal(await page.evaluate(() => window.fixture.sends), 1);
+    await nftDetail.locator('.panel-close').click();
     await logs.locator('.panel-close').click();
     await page.reload();
     await page.evaluate(() => import('./js/shell/main.mjs'));
     await page.waitForTimeout(1500);
     await setup();
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('voyager:open-vault')));
-    await gallery.getByRole('button', { name: 'Check transfer', exact: true }).click();
-    await logs.getByText(/Your transfer is still pending/).first().waitFor();
+    await gallery.locator('.reward-thumbnail').first().click();
+    await nftDetail.getByRole('button', { name: 'Check transfer', exact: true }).click();
+    await nftDetail.getByText(/Your transfer is still pending/).first().waitFor();
     assert.equal(await page.evaluate(() => window.fixture.sends), 0, 'reload must not duplicate a pending transfer');
     await page.evaluate(() => { window.fixture.claimed = true; });
-    await logs.getByRole('button', { name: 'Refresh captured NFTs' }).click();
-    await gallery.getByRole('button', { name: 'Collected', exact: true }).waitFor();
-    assert.equal(await gallery.getByRole('button', { name: 'Collected', exact: true }).isDisabled(), true);
+    await nftDetail.locator('.panel-close').click();
+    await logs.locator('.panel-close').click();
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('voyager:open-vault')));
+    await gallery.locator('.reward-thumbnail').first().click();
+    await nftDetail.getByRole('button', { name: 'Collected', exact: true }).waitFor();
+    assert.equal(await nftDetail.getByRole('button', { name: 'Collected', exact: true }).isDisabled(), true);
     if (process.env.SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/collected-nft-${width}.png` });
 
     await page.evaluate(other => window.dispatchEvent(new CustomEvent('voyager:pilot', { detail: { address: other, isPilot: true } })), other);
-    await logs.getByRole('button', { name: 'Refresh captured NFTs' }).click();
     await logs.getByText(/No captured NFTs saved for this wallet/).waitFor();
-    assert.equal(await gallery.locator('.reward-card').count(), 0);
+    assert.equal(await gallery.locator('.reward-thumbnail').count(), 0);
     await logs.locator('.panel-close').click();
     verified = false; rejectReferee = true;
     await setup();
@@ -150,6 +171,11 @@ try {
     assert.equal(await page.evaluate(() => window.fixture.sends), 0);
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('decent-voyager-run-outbox/1')).length), 1);
     await briefing.locator('[data-capture-dismiss]').click();
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('voyager:open-vault')));
+    assert.equal(await logs.getByText('Signed evidence awaiting verification').count(), 0);
+    assert.equal(await logs.getByRole('button', { name: 'Verify & collect' }).count(), 0);
+    await logs.locator('.panel-close').click();
+    rejectReferee = false;
     const rotation = await page.evaluate(() => {
       const game = window.asteroidGame;
       game.setPlayers(5);
@@ -172,9 +198,15 @@ try {
       return { guards, captured, replayed, level: game.level.number };
     });
     assert.deepEqual(rotation, { guards: 4, captured: 1, replayed: 1, level: 9 });
+    expectedCaptureFrames = await page.evaluate(() => window.asteroidGame.getRunLog().frames.frames);
     await briefing.getByRole('heading', { name: 'DecentCanopy v0.1.0 Supporter DNFT' }).waitFor();
     assert.match(await briefing.locator('[data-capture-link="support"]').getAttribute('href'), /listingId=17&priceUSDC=10000000/);
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('decent-voyager-recent-offers/1'))['0x0000000000000000000000000000000000000001'].at(-1)), 79);
+    await page.evaluate(() => { window.fixture.reject = false; window.fixture.pending = false; });
+    await page.evaluate(() => { window.asteroidGame.runFrames.push([{}]); });
+    await briefing.getByRole('button', { name: 'Collect to wallet', exact: true }).click();
+    await briefing.getByRole('button', { name: 'Collected', exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => window.fixture.claimed), true, 'presentation collection completes wallet transfer directly');
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ width, result: 'Capture collection, wallet rejection, NFT inspection, wallet scoping and reload-safe pending transfer passed (mocked wallet/Base).' }));
     await page.close();

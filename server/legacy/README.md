@@ -1,5 +1,13 @@
 # Archived replay rulesets
 
+`voyager-1.5-mandelblum-boss/` contains the exact 18-file simulation closure
+from `5b8fb04326767ea85761971bf70bd6fabb44572c`, extracted with `git archive`.
+It retains 2,400/3,000 boss HP, version-1/version-2 signed reward plans and
+recorded Continue actions. New `voyager-1.6-supporter-rolodex` flights use
+10% less boss HP; old signed evidence replays here without modification.
+Archived `game.js` SHA-256:
+`18d5e53bb66a64d548faf88c94bf16500be12501ff8d77624751f3d8127ad1d3`.
+
 `voyager-1.4-open-sector/` contains the exact 17-file simulation closure from
 `a81e722cad2a64f2d535f550f6d16d36bf0b5ef2`, extracted with `git archive`.
 It preserves the open 20-level Pilot/Ace campaign before final bosses were added.

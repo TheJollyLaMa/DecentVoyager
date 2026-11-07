@@ -51,7 +51,7 @@ Only completing **level 20** on Pilot/Ace earns a new achievement NFT.
 Intermediate battle records remain available locally and in IPFS progress saves.
 Guarded Supporter pickups and marathon/Perfect awards are unchanged.
 Previously signed vouchers remain claimable; new referee issuance and admin
-requests enforce level 20. The ruleset is `voyager-1.5-mandelblum-boss`; deploy the
+requests enforce level 20. The ruleset is `voyager-1.6-supporter-rolodex`; deploy the
 referee before the matching frontend and start a new flight after updating.
 Previous `voyager-1.3-mini-emblem` and `voyager-1.4-open-sector` flights are verified
 using their exact archived simulations, not today's campaign rules.
@@ -150,6 +150,14 @@ The footer keeps project links, without rewards buttons, a diagnostics
 block or tagline. The right profile menu contains **Flight Logs** (saved lifetime
 totals, organized telemetry and up to three 480px battle previews) and **Captured
 rewards** only. The manual stays in About. Previews are released when closed;
+captured NFTs appear first in a horizontally browsable rolodex. Clicking a card
+opens its artwork, project/support/metadata links and wallet collection action in
+a larger x/backdrop-dismissable panel. The gallery refreshes on open, wallet
+changes and reward-history updates, without refresh buttons or signed-evidence
+queue rows. Original signed evidence remains stored for verification.
+Gameplay capture presentations freeze the exact checkpoint before any wallet
+await, then verify and transfer through the player's wallet. Atomic vouchers are
+not legacy admin transfers and are excluded from admin release lists/counts.
 totals include failed/abandoned attempts once finalized. All modals close with an
 upper-right x, an outside click or Escape; dismissing launch cancels it, and
 dismissing the capture briefing resumes only the local battle it paused.
@@ -171,8 +179,8 @@ input bridge) to verify selection, multitouch steering/fire and 44px targets.
 
 **Sign & collect rewards** is a large centered action on eligible game-over/victory
 screens, above restart/menu controls. It never covers active gameplay or the
-landing screen, and never signs without a click and wallet approval. Retry and
-status controls retain their separate row below the canvas. The completed run
+landing screen, and never signs without a click and wallet approval.
+Current-action status remains below the canvas. The completed run
 is captured before awaiting the signer so starting another flight cannot change
 the evidence being signed.
 
@@ -223,8 +231,8 @@ Levels 10 and 20 stop scrolling 600 world units before the gate and spawn one
 giant Core/Sovereign. Destroy it to release the gate and earn the normal level
 record. Bosses persist through local respawns, cannot be killed by ramming,
 cannot fragment or be dragged by Singularity, and count in saved boss/kill stats.
-They have 2,400/3,000 HP and a replenishing 20/25 damage-per-second core budget,
-both scaled by player count: even maximum firepower needs about two minutes;
+They have 2,160/2,700 HP (10% less) and a replenishing 20/25 damage-per-second core budget,
+both scaled by player count: even maximum firepower needs about 108 seconds;
 misses and low-tier weapons take longer. Existing weapon damage still applies
 within that budget. Five/seven-way fan shots and gold-to-pink laser lanes
 (1.5 seconds warning, 1.5 seconds live) are deterministic across both views.

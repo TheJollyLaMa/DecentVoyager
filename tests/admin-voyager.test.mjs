@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pendingCounts, waitingTotal } from '../src/js/admin/pending.mjs';
+import { pendingCounts, waitingTotal, isLegacySupporterRelease } from '../src/js/admin/pending.mjs';
+
+test('player claim vouchers are not counted as admin Supporter transfers', () => {
+  const entries = [{ kind: 'supporter-prize', protocol: 'reward-bundle/1' }, { kind: 'supporter-prize', bonus: {} }, { kind: 'supporter-prize' }];
+  assert.deepEqual(entries.filter(isLegacySupporterRelease), [entries[2]]);
+  assert.equal(pendingCounts({ payroll: { pending: entries } }).prizes, 1);
+});
 import { createEnsCache } from '../src/js/admin/ens-cache.mjs';
 const addr = '0x807061DF657A7697c04045dA7d16D941861cAABc';
 test('admin pending badges count stamps, supporter prizes, and arena entries', () => {
