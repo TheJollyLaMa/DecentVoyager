@@ -45,16 +45,17 @@ test('only 10/20 lock the gate and spawn exactly one giant boss', () => {
     assert.equal(ordinary.state, 'levelComplete');
 });
 
-test('even unlimited firepower needs approximately two minutes for either boss, solo or five ships', () => {
+test('both bosses have exactly 10% less HP and need approximately 108 seconds, solo or five ships', () => {
     for (const number of [10, 20]) for (const players of [1, 5]) {
         const boss = new Boss(getLevel(number, 'pilot'), players);
+        assert.equal(boss.hp, (number === 20 ? 3000 : 2400) * 0.9 * players);
         let elapsed = 0;
         while (boss.hp > 0 && elapsed < 130) {
             boss.update(Game.FIXED_STEP);
             boss.takeHit(100000);
             elapsed += Game.FIXED_STEP;
         }
-        assert.ok(elapsed >= 118 && elapsed <= 121, `${number}/${players}: ${elapsed}`);
+        assert.ok(elapsed >= 106 && elapsed <= 109, `${number}/${players}: ${elapsed}`);
         assert.equal(boss.hp, 0);
     }
 });
@@ -71,7 +72,7 @@ test('real upgraded player projectiles defeat both bosses without bypassing the 
             game.drainEvents();
         }
         assert.ok(game.bossDefeated, `level ${number} must be defeatable with normal fire inputs`);
-        assert.ok(elapsed >= 118 && elapsed < 180, `level ${number}: ${elapsed}`);
+        assert.ok(elapsed >= 106 && elapsed < 180, `level ${number}: ${elapsed}`);
         assert.ok(game.levelStats.shotsFired > 0);
         assert.ok(game.levelStats.hits > 0);
         assert.equal(game.levelStats.bossesDestroyed, 1);

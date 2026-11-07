@@ -28,7 +28,7 @@ export function mountCaptureBriefing({
     collect.onclick = async () => {
       collect.disabled = true;
       try {
-        await flightLog.signFlight({ checkpoint: !capture.kind, tokenId, onStatus: text => { if (current === presentation) transferStatus.textContent = text; } });
+        await flightLog.signFlight({ runLog: capture.run, checkpoint: !capture.kind, tokenId, onStatus: text => { if (current === presentation) transferStatus.textContent = text; } });
         if (current === presentation) collect.textContent = 'Collected';
       } catch (error) { if (current === presentation) { transferStatus.textContent = error.message; collect.disabled = false; } }
     };
@@ -83,7 +83,7 @@ export function mountCaptureBriefing({
     if (seen.has(key)) return;
     if (seen.size >= 40) seen.delete(seen.values().next().value);
     seen.add(key);
-    queue.push(capture);
+    queue.push({ ...capture, run: getGame()?.getRunLog?.() });
     if (!dialog.open) show();
     else resume.hidden = false;
   });

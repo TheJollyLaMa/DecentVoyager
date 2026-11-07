@@ -3,7 +3,7 @@ import { PRODUCT_BATCH_ABI, parseQueue, buildProducts, verifyContract, reconcile
 import { validAddress, assertJsonSafe, validateClaim, validateRecord } from '../dnft/validation.mjs';
 import { gatewayUrl } from '../dnft/pin.mjs';
 import { node, button, link, createDialog, openDialog } from '../dnft/ui.mjs';
-import { pendingCounts, waitingTotal } from './pending.mjs';
+import { pendingCounts, waitingTotal, isLegacySupporterRelease } from './pending.mjs';
 import { mainnetEnsCache } from './ens-cache.mjs';
 const RAW = 'https://raw.githubusercontent.com/TheJollyLaMa/DecentVoyager/main/';
 const JOURNAL = 'asteroid-mint-journal/1';
@@ -116,9 +116,10 @@ export function mountAdmin() {
     prizeCards.replaceChildren(); batchPreview.textContent = ''; prizeQueue = [];
     try {
       const payroll = await loadLedger('payroll-queue.json');
-      prizeQueue = (payroll.pending || []).filter(entry => entry.kind === 'supporter-prize' || entry.kind === 'supporterPrize');
-      if (!prizeQueue.length) { prizeCards.append(node('p', 'No pending supporter prizes loaded. An unavailable queue is not proof that no requests exist.')); return; }
+      prizeQueue = (payroll.pending || []).filter(isLegacySupporterRelease);
+      if (!prizeQueue.length) { prizeCards.append(node('p', 'No legacy admin releases waiting. Gameplay captures are collected by the player in the presentation or Flight Logs.')); return; }
       for (const [index, original] of prizeQueue.entries()) {
+        const card = node('article');
         const entry = { ...(SUPPORTER_PRIZES[String(original.tokenId)] || {}), ...original, nftContract: original.nftContract || original.nft || SUPPORTER_NFT };
         let artwork = entry.image || entry.metadata?.image || '';
         if (!artwork && entry.metadataURI) { try { const response = await fetch(gatewayUrl(entry.metadataURI, config.gateway), { signal: AbortSignal.timeout(10000) }); if (response.ok) artwork = (await response.json()).image || ''; } catch { } }

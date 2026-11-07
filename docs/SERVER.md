@@ -33,6 +33,14 @@ New early guards have 9 total HP across four guards; later guards retain 43 HP
 across eight. The plan is replayed from the signed ticket, not client summaries.
 The health readiness flag is `rewardRotation`.
 
+The current ruleset is `voyager-1.6-supporter-rolodex` with 10% less boss HP.
+Previous `voyager-1.5-mandelblum-boss` flights use their immutable archived
+simulation, including signed reward plans and Continue actions. Ticket MACs,
+expiry and replay validation are unchanged. Deploy this referee before the client.
+Pending `reward-bundle/1` queue records are player-claim vouchers, not requests
+for an administrator to transfer NFTs. The admin's legacy release UI excludes
+them; captured NFT presentations and Flight Logs use the wallet claim path.
+
 New Pilot and Ace guarded pickups use tier-scoped bundle claim IDs. Full solo
 level-1-to-20 runs additionally record `record.marathon`: all 20 level-stat summaries,
 run totals, difficulty and ordered award references. A full Ace completion adds

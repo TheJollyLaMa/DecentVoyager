@@ -23,7 +23,7 @@ export function mountClaims() {
   const intro = node('p', 'Every cleared level keeps its battle card below. Level 20 earns an achievement NFT. Captured NFTs and their wallet collection actions are above.');
   const status = node('p', '', { role: 'status', 'aria-live': 'polite', className: 'asteroid-status' });
   const rewards = node('section');
-  const list = node('section', '', { 'aria-label': 'Cleared levels' }); dialog.append(hero, totals, rewards, node('h2', 'Battle archive'), intro, status, list);
+  const list = node('section', '', { 'aria-label': 'Cleared levels' }); dialog.append(rewards, hero, totals, node('h2', 'Battle archive'), intro, status, list);
   const gallery = mountRewardGallery(rewards);
   let renderGeneration = 0;
   let opener = null;
