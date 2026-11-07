@@ -1,5 +1,39 @@
 {
   "schema": "asteroid-payroll/1",
-  "pending": [],
+  "pending": [
+    {
+      "kind": "supporter-prize",
+      "runId": "a343fa00-mw6skauo",
+      "runHash": "0x303f9262e5877331caa2f30c2901038e9211fc15bd9c907dd9448f94727612e8",
+      "player": "0x807061DF657A7697c04045dA7d16D941861cAABc",
+      "tier": 1,
+      "protocol": "reward-bundle/1",
+      "project": "DecentCalendar",
+      "tokenId": "77",
+      "label": "DecentCalendar v0.1.0 #77",
+      "metadataURI": "ipfs://QmPqCy2g53t4BaffprtfjfM4L5imACB1nWZK63HyN9o3Tj",
+      "awardKind": "guarded-pickup",
+      "receiptRecordId": "capture:a343fa00-mw6skauo:tier1:77",
+      "captureIdentity": "c5ebf507-428f-4e6d-89b8-2d077b0098eb:a343fa00-mw6skauo:tier1:77",
+      "voucher": {
+        "gameId": "0x9bd3cd8b09e18e8dfe9804105946a3ee573fd786b3d4de6e665a3a38ac1dd185",
+        "player": "0x807061DF657A7697c04045dA7d16D941861cAABc",
+        "nftContract": "0xe63EC9f8228720bAAC2fD528C0A6d06B3Dc5439B",
+        "tokenId": "77",
+        "nftAmount": "1",
+        "paymentToken": "0x0000000000000000000000000000000000000000",
+        "tokenAmount": "0",
+        "nativeAmount": "0",
+        "awardId": "0x7407f3d764b23a3d80183aa771d0302fb229bb817454d04dbc33cbf3fd5d35ea",
+        "claimId": "0x85b08883893842aad42193fe9b7ccf9aae0c12addc383955bea5ccbb1bc29e7b",
+        "recordId": "0x9c260b4f48e0939875ac261bfd96be951f1009ebad43d85ae2821397d1c1dc0d",
+        "deadline": "1796671938"
+      },
+      "signature": "0x9f184f25c0156d96204c1c9bdf1dff3b10c48852ca306cf7d8a9a65ae3535a78366e8da45156e0c374da135e5fb5b7332c5b10f58139d314b5aab894143c51bf1b",
+      "digest": "0xc98f60f6a978ce04673d4e38108bcd81ed255bcbca5cbce4bbc601fe33fbece8",
+      "queuedAt": "2026-11-07T19:32:18.563Z",
+      "status": "pending"
+    }
+  ],
   "settled": []
 }
