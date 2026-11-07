@@ -12,7 +12,7 @@ const inputLog = require('./inputlog');
 const RULESET = require('./ruleset');
 const { scaleForPlayers, createPlayerStats, awardScore, canEndLevel } = require('./multiplayer');
 const { chooseVaultLevel, createVault, markGuardDestroyed } = require('./vault');
-const { COLLECTION, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS } = require('./prizes');
+const { COLLECTION, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS, validateRewardPlan } = require('./prizes');
 const {
     STORAGE_KEY,
     LEGACY_STORAGE_KEY,
@@ -208,6 +208,11 @@ class Game {
             this.runTicket = null;
         }
         this.runStartedAt = this.now();
+        this.rewardPlan = this.runTicket?.ticket?.rewardPlan || null;
+        if (this.rewardPlan) {
+            validateRewardPlan(this.rewardPlan);
+            if (this.difficulty !== 'cadet' && this.rewardPlan.difficulty !== this.difficulty) throw new Error('Flight difficulty does not match its reward rotation ticket.');
+        }
         this.runElapsed = 0;
         this.idCounter = 0;
         this.runId = `${this.seed.toString(16)}-${this.runStartedAt.toString(36)}`;
@@ -229,8 +234,8 @@ class Game {
         if (this.playerCount > 1) this.setPlayers(this.playerCount, { mode: this.mode });
         if (this.difficulty !== 'cadet' && this.pilot.isPilot) {
             const spawnRng = createRng((this.seed ^ 0xa53c9e17) >>> 0);
-            this.sector2Level = levelNumber <= 10 ? chooseVaultLevel(1, spawnRng) : null;
-            this.sector2VaultLevel = chooseVaultLevel(2, spawnRng);
+            this.sector2Level = this.rewardPlan ? this.rewardPlan.levels[0] : levelNumber <= 10 ? chooseVaultLevel(1, spawnRng) : null;
+            this.sector2VaultLevel = this.rewardPlan ? this.rewardPlan.levels[1] : chooseVaultLevel(2, spawnRng);
         }
         this.cosmeticRng = createRng((this.seed ^ 0x9e3779b9) >>> 0);
         this.startLevel(levelNumber);
@@ -278,7 +283,7 @@ class Game {
             const eligible = tier > 0 && !this.vaultTiersSpawned.includes(tier);
             if (eligible) {
                 const vaultRng = createRng((this.seed ^ (tier === 1 ? 0x7f4a7c15 : 0x94d049bb)) >>> 0);
-                this.vault = createVault(tier, levelNumber, vaultRng);
+                this.vault = createVault(tier, levelNumber, vaultRng, this.rewardPlan);
                 this.vaultTiersSpawned.push(tier);
                 this.asteroids = this.asteroids.filter((rock) => Math.hypot(rock.x - this.vault.x, rock.y - this.vault.y) > 260);
                 this.asteroids.push(...this.vault.guards);
@@ -356,7 +361,7 @@ class Game {
 
     static fromSnapshot(snapshot) { return new Game().applySnapshot(snapshot); }
 
-    static replay({ seed = 0, difficulty = 'cadet', startLevel = 1, players = 1, pilot = null, frames = [], actions = [], runId = null, startedAt = null, mode: replayMode = 'coop' } = {}) {
+    static replay({ seed = 0, difficulty = 'cadet', startLevel = 1, players = 1, pilot = null, frames = [], actions = [], rewardPlan = null, runId = null, startedAt = null, mode: replayMode = 'coop' } = {}) {
         const baseTime = startedAt ? Date.parse(startedAt) : Date.UTC(2020, 0, 1);
         if (!Number.isFinite(baseTime)) throw new TypeError('Replay start time is invalid.');
         const game = new Game({ seed, now: () => baseTime });
@@ -364,7 +369,10 @@ class Game {
         const playerCount = typeof players === 'number' ? players : Array.isArray(players) ? players.length : (players.count || 1);
         const mode = typeof players === 'object' && players.mode ? players.mode : replayMode;
         if (playerCount > 1) game.setPlayers(playerCount, { mode });
-        game.startCampaign(startLevel, difficulty, seed);
+        if (rewardPlan) {
+            game.setNextRunSeed(seed, { ticket: { rewardPlan } });
+            game.startCampaign(startLevel, difficulty);
+        } else game.startCampaign(startLevel, difficulty, seed);
         if (runId) game.runId = runId;
         const expanded = inputLog.decode(frames);
         let actionIndex = 0;

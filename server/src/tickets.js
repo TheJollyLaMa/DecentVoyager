@@ -7,6 +7,7 @@ const RULESET = require('../../src/js/ruleset');
 const { gameForRuleset } = require('./replay-rulesets');
 const inputLog = require('../../src/js/inputlog');
 const { normalizeFrames } = require('./game-adapter');
+const { validateRewardPlan } = require('../../src/js/prizes');
 
 const TICKET_TTL_MS = 6 * 60 * 60 * 1000;
 const UINT32_MAX = 0xffffffff;
@@ -20,7 +21,7 @@ function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TT
     return `0x${createHmac('sha256', key).update(stableJson(ticket), 'utf8').digest('hex')}`;
   }
 
-  function issue(address) {
+  function issue(address, rewardPlan) {
     const issuedAt = now();
     const ticket = {
       id: randomUUID(),
@@ -28,7 +29,8 @@ function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TT
       address: getAddress(address),
       seed: randomBytes(4).readUInt32BE(0),
       issuedAt: new Date(issuedAt).toISOString(),
-      expiresAt: new Date(issuedAt + ttlMs).toISOString()
+      expiresAt: new Date(issuedAt + ttlMs).toISOString(),
+      ...(rewardPlan ? { rewardPlan: validateRewardPlan(rewardPlan) } : {})
     };
     return { ticket, mac: macFor(ticket) };
   }
@@ -39,6 +41,10 @@ function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TT
       throw new Error('A server-issued flight ticket is required.');
     }
     const ticket = claim.ticket;
+    if (ticket.rewardPlan) {
+      validateRewardPlan(ticket.rewardPlan);
+      if (run.difficulty !== ticket.rewardPlan.difficulty && run.difficulty !== 'cadet') throw new Error('Flight difficulty does not match its reward rotation ticket.');
+    }
     gameForRuleset(run.ruleset);
     if (ticket.ruleset !== run.ruleset) throw new Error('Flight ticket ruleset does not match the run ruleset.');
     if (!ticket || typeof ticket !== 'object' || typeof ticket.id !== 'string' || ticket.id.length > 100 || !Number.isInteger(ticket.seed) || ticket.seed < 0 || ticket.seed > UINT32_MAX || typeof ticket.issuedAt !== 'string' || typeof ticket.expiresAt !== 'string') {

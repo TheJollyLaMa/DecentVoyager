@@ -55,6 +55,7 @@ function replayRun(run) {
     runId: run.runId,
     startedAt: run.startedAt,
     actions: run.actions,
+    rewardPlan: run.ticket?.ticket?.rewardPlan,
     frames: normalizeFrames(run.frames)
   });
 }

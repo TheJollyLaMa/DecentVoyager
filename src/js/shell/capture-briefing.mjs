@@ -41,11 +41,12 @@ export function mountCaptureBriefing({
     image.onerror = () => { image.hidden = true; imageStatus.textContent = 'Artwork unavailable. Open NFT metadata below to view its source.'; };
     if (details) { image.alt = details.name; image.src = new URL(details.image, document.baseURI).href; }
     else { image.removeAttribute('src'); imageStatus.textContent = 'Artwork unavailable for this token.'; }
-    for (const [key, property] of [['project', 'projectUrl'], ['canopy', 'canopyUrl'], ['metadata', 'metadataUrl'], ['token', 'tokenUrl']]) {
+    for (const [key, property] of [['project', 'projectUrl'], ['support', 'supportUrl'], ['canopy', 'canopyUrl'], ['metadata', 'metadataUrl'], ['token', 'tokenUrl']]) {
       const link = dialog.querySelector(`[data-capture-link="${key}"]`);
       link.hidden = !details;
       if (details) link.href = details[property];
       else link.removeAttribute('href');
+      if (key === 'support' && details) link.textContent = `Support this project · ${details.supportPriceUSDC} USDC listing ↗`;
     }
     const online = isOnline();
     const game = getGame();

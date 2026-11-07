@@ -17,6 +17,21 @@ The Node 20 service in `server/` verifies signed run logs by replaying them thro
 
 ## Marathon and finite prize reservations
 
+New `POST /tickets` callers can include `difficulty` and up to two numeric
+`recentOffers`. Pilot/Ace requests receive a MAC-bound `rewardPlan` with two
+different affordable token IDs, early level 4/5/6 and late level 17/18/19.
+The per-wallet shuffled bag avoids the previous issued pair; recent actual
+offers from browser storage also constrain choice across server restarts.
+All six ordinary editions have recorded 10-USDC listings and funded custody.
+Busking remains Perfect Ace only, and BigNuten remains Perfect Pilot only.
+Selection never grants stock or bypasses claim history: capture verification still
+checks live custody, reservations and the contract's one-token-per-wallet rule.
+Older ticket callers without difficulty receive the unchanged legacy ticket.
+Legacy tickets and online arenas retain original pools/guard strengths.
+New early guards have 9 total HP across four guards; later guards retain 43 HP
+across eight. The plan is replayed from the signed ticket, not client summaries.
+The health readiness flag is `rewardRotation`.
+
 New Pilot and Ace guarded pickups use tier-scoped bundle claim IDs. Full solo
 level-1-to-20 runs additionally record `record.marathon`: all 20 level-stat summaries,
 run totals, difficulty and ordered award references. A full Ace completion adds

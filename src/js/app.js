@@ -3,10 +3,10 @@ const { createAudio } = require('./audio');
 const { createOverviewRenderer } = require('./render/overview');
 const { createPovRenderer } = require('./render/pov');
 const { createHud } = require('./render/hud');
-const { drawOverlay } = require('./render/screens');
+const { drawOverlay, difficultyCards } = require('./render/screens');
 const { createFx } = require('./render/fx');
 const { drawCrt, getPostResources, clearPostResources } = require('./render/post');
-const { setViewWidth } = require('./render/projection');
+const { VIEW, setViewWidth } = require('./render/projection');
 const { loadAssets, getAssetResources, clearTintResources } = require('./render/assets');
 const { renderBattleCard, previewBattleCard } = require('./render/battleCard');
 const { sampleRecord } = require('./render/cardMath');
@@ -199,9 +199,17 @@ document.addEventListener('keydown', (event) => {
     if (action) game.handleAction(action);
 });
 
-canvas.addEventListener('pointerdown', () => {
+canvas.addEventListener('pointerdown', event => {
     audio.unlock();
     if (document.activeElement !== canvas && typeof canvas.focus === 'function') canvas.focus({ preventScroll: true });
+    if (game.state !== 'title') return;
+    const rect = canvas.getBoundingClientRect();
+    const scale = Math.min(rect.width / VIEW.width, rect.height / VIEW.height);
+    if (!(scale > 0)) return;
+    const x = (event.clientX - rect.left - (rect.width - VIEW.width * scale) / 2) / scale;
+    const y = (event.clientY - rect.top - (rect.height - VIEW.height * scale) / 2) / scale;
+    const card = difficultyCards().find(card => x >= card.x && x <= card.x + card.width && y >= card.y && y <= card.y + card.height);
+    if (card) { game.setDifficulty(card.id); draw(); }
 });
 
 window.addEventListener('blur', () => {

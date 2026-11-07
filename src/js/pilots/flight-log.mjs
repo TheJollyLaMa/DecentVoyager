@@ -35,7 +35,15 @@ export function mountFlightLog({ getGame = () => window.voyager?.game || window.
       statusTimer = setTimeout(() => { if (status?.textContent === text) status.textContent = ''; onStatus(''); }, 5000);
     }
   };
-  const tickets = createRunTicketManager({ fetchImpl, getGame, onStatus: notify });
+  const offerKey = 'decent-voyager-recent-offers/1';
+  const offers = () => {
+    const value = JSON.parse(localStorage.getItem(offerKey) || '{}');
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Saved Supporter offer history is invalid.');
+    return value;
+  };
+  const tickets = createRunTicketManager({ fetchImpl, getGame, onStatus: notify,
+    getRecentOffers: address => offers()[address.toLowerCase()] || []
+  });
   const refreshPrompt = () => {
     if (!prompt) return;
     const state = getGame()?.state;
@@ -50,6 +58,16 @@ export function mountFlightLog({ getGame = () => window.voyager?.game || window.
   refreshOutbox();
   window.addEventListener('asteroid:event', event => {
     const detail = event.detail || {};
+    if (detail.type === 'vaultSpawned') {
+      try {
+        const game = getGame(), tokenId = game?.vault?.prize?.tokenId, address = game?.pilot?.address?.toLowerCase();
+        if (address && Number.isSafeInteger(tokenId)) {
+          const history = offers();
+          history[address] = [...(history[address] || []).filter(token => token !== tokenId), tokenId].slice(-2);
+          localStorage.setItem(offerKey, JSON.stringify(history));
+        }
+      } catch (error) { notify(`Could not save Supporter rotation history: ${error.message}`); }
+    }
     if (detail.type === 'levelStart') {
       const currentId = getGame()?.getRunLog?.()?.runId || null;
       if (currentId && currentId !== runId) { records = []; captures = []; promptedRun = null; if (action) action.hidden = true; tickets.runStarted(currentId); }

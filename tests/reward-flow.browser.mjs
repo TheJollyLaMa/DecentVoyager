@@ -102,6 +102,7 @@ try {
     await page.waitForFunction(() => !document.querySelector('.reward-card button').disabled);
     assert.equal(await row.getByRole('link', { name: 'Explore project' }).getAttribute('target'), '_blank');
     assert.equal(await row.getByRole('link', { name: 'DecentCanopy' }).count(), 1);
+    assert.equal(await row.getByRole('link', { name: 'Support project · 10 USDC listing', exact: true }).getAttribute('target'), '_blank');
     assert.equal(await row.locator('img').count(), 1);
     await page.evaluate(() => { window.fixture.reject = false; window.fixture.pending = true; });
     await row.getByRole('button', { name: 'Collect to wallet', exact: true }).click();
@@ -143,6 +144,32 @@ try {
     await briefing.getByText(/Fixture referee offline/).waitFor();
     assert.equal(await page.evaluate(() => window.fixture.sends), 0);
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('decent-voyager-run-outbox/1')).length), 1);
+    await briefing.locator('[data-capture-dismiss]').click();
+    const rotation = await page.evaluate(() => {
+      const game = window.asteroidGame;
+      game.setPlayers(5);
+      game.setNextRunSeed(1, { ticket: { rewardPlan: { version: 1, difficulty: 'pilot', tokens: [79, 80], levels: [4, 17] } }, mac: 'rotation-fixture' });
+      game.startCampaign(4, 'pilot');
+      const guards = game.vault.guards.length;
+      for (let frame = 0; frame < 4000 && !game.runCaptures.length && game.state !== 'gameOver'; frame++) {
+        game.step(game.ships.map((ship, index) => {
+          const alive = game.vault.guards.filter(guard => guard.hp > 0);
+          const target = alive[index % Math.max(1, alive.length)] || game.vault;
+          return { fire: true, left: target.x - ship.x < -3, right: target.x - ship.x > 3,
+            special: frame % 480 === 0, weaponNext: frame === 0 || frame === 2 };
+        }));
+      }
+      const captured = game.runCaptures.length;
+      const replayed = game.constructor.replay({ ...game.getRunLog(), rewardPlan: game.runTicket.ticket.rewardPlan }).captures.length;
+      for (const event of game.drainEvents()) if (['vaultSpawned', 'levelStart', 'supporterCaptured'].includes(event.type)) {
+        window.dispatchEvent(new CustomEvent('asteroid:event', { detail: event }));
+      }
+      return { guards, captured, replayed, level: game.level.number };
+    });
+    assert.deepEqual(rotation, { guards: 4, captured: 1, replayed: 1, level: 4 });
+    await briefing.getByRole('heading', { name: 'DecentCanopy v0.1.0 Supporter DNFT' }).waitFor();
+    assert.match(await briefing.locator('[data-capture-link="support"]').getAttribute('href'), /listingId=17&priceUSDC=10000000/);
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('decent-voyager-recent-offers/1'))['0x0000000000000000000000000000000000000001'].at(-1)), 79);
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ width, result: 'Capture collection, wallet rejection, NFT inspection, wallet scoping and reload-safe pending transfer passed (mocked wallet/Base).' }));
     await page.close();

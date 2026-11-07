@@ -109,6 +109,11 @@ export function mountMobileControls({
     panel.className = 'mobile-controls';
     panel.setAttribute('aria-label', 'Touch flight controls');
     panel.innerHTML = `
+        <div class="mobile-difficulty" role="group" aria-label="Choose flight difficulty">
+            <button type="button" data-mobile-difficulty="cadet" aria-pressed="false">Cadet<br><small>10 levels</small></button>
+            <button type="button" data-mobile-difficulty="pilot" aria-pressed="false">Pilot<br><small>20 levels</small></button>
+            <button type="button" data-mobile-difficulty="ace" aria-pressed="false">Ace<br><small>Extreme</small></button>
+        </div>
         <div class="mobile-toolbar">
             <button type="button" data-mobile-command="confirm">Launch / continue</button>
             <button type="button" data-mobile-command="pause">Pause / resume</button>
@@ -141,6 +146,21 @@ export function mountMobileControls({
     const screenButton = panel.querySelector('[data-mobile-screen]');
     const disposers = [], pointers = new Map(), sources = new Set();
     let mounted = true;
+    const difficulty = panel.querySelector('.mobile-difficulty');
+    const dpad = panel.querySelector('.mobile-dpad');
+    let lastState;
+    const refresh = () => {
+        const game = getVoyager()?.game;
+        const onTitle = game?.state === 'title';
+        difficulty.hidden = !onTitle;
+        for (const button of difficulty.querySelectorAll('button')) button.setAttribute('aria-pressed', String(game?.selectedDifficulty === button.dataset.mobileDifficulty));
+        dpad.setAttribute('aria-label', onTitle ? 'Choose difficulty with arrows' : 'Hold to steer');
+        if (lastState !== game?.state) {
+            status.textContent = onTitle ? 'Tap Cadet, Pilot or Ace. Arrows also change difficulty; then choose Launch.'
+                : 'Hold arrows to steer. Tap or hold Fire; hold charges compatible weapons. Tilt is optional.';
+            lastState = game?.state;
+        }
+    };
     const listen = (target, type, fn) => {
         target?.addEventListener(type, fn);
         disposers.push(() => target?.removeEventListener(type, fn));
@@ -153,6 +173,14 @@ export function mountMobileControls({
         canvas.focus({ preventScroll: true });
         // Reuse the app's audio-unlock handler within the real user gesture.
         canvas.dispatchEvent(new win.Event('pointerdown'));
+    };
+    const titleArrow = action => {
+        const game = getVoyager()?.game;
+        if (game?.state !== 'title' || !['up', 'down', 'left', 'right'].includes(action)) return false;
+        game.handleAction(['up', 'left'].includes(action) ? 'difficultyPrev' : 'difficultyNext');
+        win.asteroidDraw?.();
+        refresh();
+        return true;
     };
     const tilt = createTiltController({
         windowObject: win,
@@ -177,6 +205,7 @@ export function mountMobileControls({
             if (event.button !== 0 || !getVoyager()?.input?.setVirtualState) return;
             event.preventDefault();
             wakeCanvas();
+            if (titleArrow(action)) return;
             const source = `mobile:pointer:${event.pointerId}`;
             pointers.set(event.pointerId, { source, button });
             setState(source, { [action]: true });
@@ -189,6 +218,7 @@ export function mountMobileControls({
             // Keyboard/assistive activation has no pointerdown; queue one input frame.
             if (event.detail !== 0) return;
             wakeCanvas();
+            if (titleArrow(action)) return;
             const source = `mobile:activate:${action}`;
             setState(source, { [action]: true });
             if (['fire', 'special', 'weaponNext'].includes(action)) setState(source, {});
@@ -206,8 +236,24 @@ export function mountMobileControls({
         listen(button, 'click', () => {
             wakeCanvas();
             getVoyager()?.game?.handleAction(button.dataset.mobileCommand);
+            win.asteroidDraw?.();
+            refresh();
         });
     }
+    for (const button of difficulty.querySelectorAll('button')) {
+        listen(button, 'click', () => {
+            const game = getVoyager()?.game;
+            if (game?.state !== 'title') return;
+            wakeCanvas();
+            game.setDifficulty(button.dataset.mobileDifficulty);
+            win.asteroidDraw?.();
+            refresh();
+        });
+    }
+    listen(win, 'asteroid:event', refresh);
+    const refreshTimer = win.setInterval(refresh, 250);
+    disposers.push(() => win.clearInterval(refreshTimer));
+    refresh();
     listen(tiltButton, 'click', async () => {
         if (tilt.active) { tilt.disable(); return; }
         tiltButton.disabled = true;

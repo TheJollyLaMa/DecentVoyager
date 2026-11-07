@@ -59,7 +59,7 @@ export function mountRewardGallery(root, {
         image.addEventListener('error', () => { image.hidden = true; row.append(node('p', 'Artwork unavailable; project and metadata links remain below.')); }, { once: true });
         row.append(image, node('p', details.description));
         const links = node('nav', '', { 'aria-label': `${details.name} project links` });
-        for (const [label, key] of [['Explore project', 'projectUrl'], ['DecentCanopy', 'canopyUrl'], ['NFT metadata', 'metadataUrl'], ['NFT on Base', 'tokenUrl']]) {
+        for (const [label, key] of [['Explore project', 'projectUrl'], [`Support project · ${details.supportPriceUSDC} USDC listing`, 'supportUrl'], ['DecentCanopy', 'canopyUrl'], ['NFT metadata', 'metadataUrl'], ['NFT on Base', 'tokenUrl']]) {
           if (details[key]) links.append(link(label, details[key]));
         }
         row.append(links);
