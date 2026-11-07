@@ -59,26 +59,41 @@ seed, six-hour expiry, replay and funded-stock checks still apply. New tickets
 and online arenas use the current ruleset. Unknown older versions remain rejected.
 Signed flights already in this browser's outbox retry automatically when an
 eligible wallet connects, or with **Retry signed flight logs**. Keep the browser
-data until verification succeeds. Signing records evidence; claim the verified
-Supporter reward separately on Base. Expired tickets cannot be renewed for an
+data until verification succeeds. Background retries verify evidence only;
+wallet transfers require an explicit collection action. Expired tickets cannot be renewed for an
 old run. Archive provenance is in [server/legacy](server/legacy/README.md).
 
-**Captured rewards** is available through the right profile menu's
-**Captured rewards** entry, not as a landing-screen or footer button.
-This redemption desk loads past verified vouchers for the connected eligible
-wallet, displays metadata-derived Supporter names/art, shows voucher expiry and
-provides **Claim on Base**. Claiming is a separate wallet transaction, not a
-consequence of signing the flight log. Expired vouchers are shown but disabled.
-Signed flights awaiting verification are listed separately with their exact
-referee errors and a **Retry verification** control. **Refresh rewards** reloads
-the referee; outbox changes automatically refresh counts and claimable entries.
-Disconnected, ineligible, unavailable and empty states remain explicit.
+**Collect to wallet** in the captured NFT presentation verifies the signed
+checkpoint and then opens the Base transfer approval, without another menu or
+native confirmation. The wallet still authorizes two operations: an EIP-191
+evidence signature and a gas-paid Base transaction. Merely connecting or
+capturing never signs or spends. The paused local campaign can continue after
+collection; the referee accepts `/captures` input prefixes before the final
+`/runs` submission. Each later checkpoint/final log must preserve the earlier
+signed inputs and campaign identity. Guarded pickups use a replay-derived
+capture receipt when the level is not yet cleared; marathon awards still require
+the full verified victory.
 
-Reuse: the new visible controls dispatch the existing `voyager:open-rewards`
-event and use the existing claim dialog, profile badge, outbox and metadata
-catalog. No new reward storage or service, no changed eligibility or transfers,
-and no vendor/Canopy edits. The existing local outbox is pending evidence;
-persisted referee vouchers are the cross-visit redemption source.
+**Flight Logs** includes captured NFTs with their actual catalog artwork,
+description, project, Canopy, metadata and Base links. Unsigned checkpoints,
+verified vouchers, submitted transaction hashes and confirmed collection history
+are saved wallet-scoped on this device. The **Captured rewards** menu entry opens
+the same Flight Logs, not a separate redemption desk. Past vouchers load from
+`GET /vouchers/:address`; collected state is checked on Base, not inferred from
+a signature or voucher. It records collection, not the current NFT balance.
+Signed retry errors, expiry, unavailable services and wallet changes remain
+explicit. Pending submitted transfers are receipt-checked before another send;
+do not clear browser data to retry an uncertain transfer.
+
+Reuse decision: adapt Voyager's existing `rewards.mjs` claim path into
+`reward-transfer.mjs`, retaining deployed bundle/stamp/legacy-prize contracts,
+wallet chain selection and gas estimation. Reuse `supporter-catalog.js`,
+`run-outbox.mjs`, deterministic replay and queue reservations from commit
+`feb94ce`. The Canopy inventory and current Voyager source/issues/worktree were
+the search scope; no compatible incremental capture verifier was identified
+there. Add a small checkpoint endpoint and local reward history, not a relayer
+or new contract. Client/server and desktop/phone collection tests cover the
+receiving app; wallet transactions in automated tests are mocked, not real funds.
 
 The footer keeps project links, without rewards buttons, a diagnostics
 block or tagline. The right profile menu contains **Flight Logs** (saved lifetime
@@ -95,7 +110,7 @@ progress, connected identity and error messages remain visible.
 The header stacks above the contained game canvas; while an ankh menu is open,
 its tools also stack above the radio. Both ankh targets stay at least 44px on
 mobile. These host styles preserve the bundled DecentHead vendor files.
-**Sign flight log** is a large centered action on eligible game-over/victory
+**Sign & collect rewards** is a large centered action on eligible game-over/victory
 screens, above restart/menu controls. It never covers active gameplay or the
 landing screen, and never signs without a click and wallet approval. Retry and
 status controls retain their separate row below the canvas. The completed run

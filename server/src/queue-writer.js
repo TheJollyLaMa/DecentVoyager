@@ -45,7 +45,8 @@ function createQueueWriter({ repoRoot, token = '', repo = '', ref = 'main', fetc
     }
 
     if (!existing || existing.runId !== item.runId) throw new Error('Queue identity is already assigned to a different run.');
-    if (existing.runHash && item.runHash && existing.runHash !== item.runHash) {
+    if (existing.runHash && item.runHash && existing.runHash !== item.runHash &&
+        !(existing.captureIdentity && existing.captureIdentity === item.captureIdentity)) {
       throw new Error('Queue already contains this runId with a different run hash.');
     }
     return { status: 'already-queued', file, item: existing };

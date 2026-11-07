@@ -1,4 +1,5 @@
 import { bindBackdropClose } from '../dnft/ui.mjs';
+import { flightLog } from '../pilots/flight-log.mjs';
 
 export function mountCaptureBriefing({
   getGame = () => window.asteroidGame,
@@ -12,11 +13,25 @@ export function mountCaptureBriefing({
   const description = dialog.querySelector('[data-capture-description]');
   const next = dialog.querySelector('[data-capture-next]');
   const resume = dialog.querySelector('[data-capture-resume]');
+  const collect = dialog.querySelector('[data-capture-collect]');
+  const transferStatus = dialog.querySelector('[data-capture-transfer-status]');
   const queue = [], seen = new Set();
-  let pausedByUs = false;
+  let pausedByUs = false, presentation = 0;
   const show = () => {
     const capture = queue.shift();
     if (!capture) return;
+    const current = ++presentation;
+    collect.disabled = false;
+    collect.textContent = 'Collect to wallet';
+    transferStatus.textContent = '';
+    const tokenId = capture.prize?.tokenId ?? capture.tokenId;
+    collect.onclick = async () => {
+      collect.disabled = true;
+      try {
+        await flightLog.signFlight({ checkpoint: !capture.kind, tokenId, onStatus: text => { if (current === presentation) transferStatus.textContent = text; } });
+        if (current === presentation) collect.textContent = 'Collected';
+      } catch (error) { if (current === presentation) { transferStatus.textContent = error.message; collect.disabled = false; } }
+    };
     const details = getDetails(capture.prize?.tokenId ?? capture.tokenId);
     title.textContent = details?.name || `Supporter DNFT #${capture.prize?.tokenId ?? capture.tokenId}`;
     description.textContent = details?.description || 'A Supporter capture was recorded. Artwork and project details are unavailable for this token.';
@@ -39,7 +54,7 @@ export function mountCaptureBriefing({
       if (pausedByUs) game.handleAction('pause');
       dialog.showModal();
     }
-    next.textContent = `${capture.kind ? '' : 'Team power refilled. '}${capture.tier === 1 ? 'Pilot and Ace continue into Sector II after level 10, even without capturing a token. ' : ''}This is a recorded capture, not a confirmed NFT transfer. At victory or game over, choose Sign flight log. The referee verifies the run; then claim the funded reward from the rewards panel. If you leave now, the current unsent run may be lost.`;
+    next.textContent = `${capture.kind ? '' : 'Team power refilled. '}Collect now: sign the flight evidence, then approve the Base transfer. You pay Base gas. Or dismiss and collect later from Flight Logs; your captured checkpoint stays on this device.`;
     dialog.querySelector('[data-capture-pause-note]').textContent = online
       ? 'Online battle continues on the referee. Close this briefing promptly to keep flying.'
       : 'Your local battle is paused while you inspect the reward.';
