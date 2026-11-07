@@ -21,4 +21,18 @@ const PERFECT_PRIZES = {
     pilot: { project: 'BigNuten_Vanilla', version: '3.3.0', tokenId: 76, label: 'BigNuten_Vanilla v3.3.0 #76', metadataURI: 'ipfs://QmSrAwCU5p1ga3RzpuDHZxezsNjob76ZSFpRzCuG15yYqU' }
 };
 const PILOT_BONUS = { chainId: 8453, token: '0x25ACb773159Af5a5c672DEfe31C7Fff6a9A93736', symbol: 'BNUT', decimals: 18, amount: '100000000000000000000' };
-module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS };
+const AFFORDABLE_PRIZES = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE];
+function affordablePrizes(difficulty) {
+    return ['pilot', 'ace'].includes(difficulty) ? AFFORDABLE_PRIZES : [];
+}
+function validateRewardPlan(plan) {
+    if (!plan || plan.version !== 1 || !['pilot', 'ace'].includes(plan.difficulty) ||
+        !Array.isArray(plan.tokens) || plan.tokens.length !== 2 || plan.tokens[0] === plan.tokens[1] ||
+        !plan.tokens.every(token => affordablePrizes(plan.difficulty).some(prize => prize.tokenId === token)) ||
+        !Array.isArray(plan.levels) || plan.levels.length !== 2 ||
+        ![4, 5, 6].includes(plan.levels[0]) || ![17, 18, 19].includes(plan.levels[1])) {
+        throw new Error('Referee reward rotation plan is invalid.');
+    }
+    return plan;
+}
+module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS, AFFORDABLE_PRIZES, affordablePrizes, validateRewardPlan };

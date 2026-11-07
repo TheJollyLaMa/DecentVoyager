@@ -1,4 +1,5 @@
-const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, COLLECTION } = require('./prizes');
+const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, COLLECTION, ESCROW } = require('./prizes');
+const LISTINGS = { 70: 11, 71: 12, 75: 13, 76: 14, 77: 15, 78: 16, 79: 17, 80: 18 };
 
 const IMAGE_CIDS = {
     70: 'QmcuhKLo46hwSdUQJm93VoHeB1YrpjhzeySg6Q7D9srabS',
@@ -28,6 +29,8 @@ const catalog = new Map(prizes.map(prize => {
         ...prize, metadataURI,
         name: `${prize.project === 'DecentVoyager' ? 'Decent Voyager' : prize.project} v${prize.version} Supporter DNFT`,
         description: PURPOSES[prize.project],
+        supportPriceUSDC: prize.tokenId === 75 ? 100 : 10,
+        supportUrl: `https://thejollylama.github.io/DecentHead/supporter/buy.html?chainId=8453&escrow=${ESCROW}&listingId=${LISTINGS[prize.tokenId]}&priceUSDC=${prize.tokenId === 75 ? 100000000 : 10000000}`,
         imageURI: `ipfs://${IMAGE_CIDS[prize.tokenId]}`,
         image: `assets/game/supporter-${prize.tokenId}.jpg`,
         repository,

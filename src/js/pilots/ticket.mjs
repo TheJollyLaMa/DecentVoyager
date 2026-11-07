@@ -22,12 +22,14 @@ export function createRunTicketManager({
   getGame = () => globalThis.window?.voyager?.game || globalThis.window?.asteroidGame,
   now = () => Date.now(),
   onStatus = () => {},
+  getRecentOffers = () => [],
   pollInterval = 1000,
   setIntervalImpl = globalThis.setInterval,
   clearIntervalImpl = globalThis.clearInterval,
 } = {}) {
   let pilot = { address: null, isPilot: false };
   let ticket = null, appliedId = null, inFlight = null, generation = 0, lastRunId = null;
+  const desiredDifficulty = () => getGame()?.selectedDifficulty;
   const report = text => onStatus(text);
 
   function ready() {
@@ -51,22 +53,25 @@ export function createRunTicketManager({
 
   async function fetchTicket() {
     const address = pilot.address, url = baseUrl(), token = generation;
+    const difficulty = desiredDifficulty();
     if (!pilot.isPilot || !address) { report('Connect a Decent Pilot wallet to prepare referee flight tickets.'); return null; }
     if (!url) { report('Rewards need a referee flight ticket. The GitHub fallback remains in ☥ profile → Flight Logs → Request mint on GitHub.'); return null; }
     const game = getGame();
     if (typeof game?.setNextRunSeed !== 'function') { report('This game build cannot use referee flight tickets. Rewards need the referee; GitHub fallback remains in ☥ profile → Flight Logs.'); return null; }
     try {
       const response = await fetchImpl(`${url.replace(/\/$/, '')}/tickets`, {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ address }),
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+          address, ...(difficulty ? { difficulty, recentOffers: getRecentOffers(address) } : {})
+        }),
       });
       if (!response.ok) throw new Error(`Referee ticket request failed (${response.status})`);
       const result = await response.json();
       const value = result?.ticket, seed = parseSeed(value?.seed);
-      if (token !== generation || pilot.address?.toLowerCase() !== address.toLowerCase()) return null;
+      if (token !== generation || pilot.address?.toLowerCase() !== address.toLowerCase() || difficulty !== desiredDifficulty()) return null;
       if (!value || typeof value.id !== 'string' || !value.id || !/^0x[\da-f]{40}$/i.test(value.address || '') || value.address.toLowerCase() !== address.toLowerCase() || seed === null || !result.mac || isExpired(value, now())) {
         throw new Error('Referee returned an invalid or expired flight ticket');
       }
-      ticket = { ticket: value, mac: result.mac, seed };
+      ticket = { ticket: value, mac: result.mac, seed, requestedDifficulty: difficulty };
       appliedId = null;
       applyBeforeLaunch();
       return ticket;
@@ -78,6 +83,7 @@ export function createRunTicketManager({
 
   function ensureTicket() {
     if (!ready()) return Promise.resolve(null);
+    if (ticket && ticket.requestedDifficulty !== desiredDifficulty()) { ticket = null; appliedId = null; }
     if (ticket && !isExpired(ticket.ticket, now())) { applyBeforeLaunch(); return Promise.resolve(ticket); }
     if (inFlight) return inFlight;
     const request = fetchTicket().finally(() => { if (inFlight === request) inFlight = null; });

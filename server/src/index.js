@@ -14,6 +14,7 @@ const { makeVoucherService } = require('./vouchers');
 const { createTicketService } = require('./tickets');
 const { createRewardInventory } = require('./reward-inventory');
 const prizeDefinitions = require('../../src/js/prizes.js');
+const { createRewardRotation } = require('./reward-rotation');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const DEFAULT_NFT_ADDRESS = prizeDefinitions.COLLECTION || '0xe63EC9f8228720bAAC2fD528C0A6d06B3Dc5439B';
@@ -68,6 +69,7 @@ function response(res, status, value) {
 function createService(options = {}) {
   const env = options.env || process.env;
   const now = options.now || (() => Date.now());
+  const rewardRotation = createRewardRotation({ now });
   if ((env.NODE_ENV || process.env.NODE_ENV) === 'production' && !env.TICKET_SECRET) {
     throw new Error('TICKET_SECRET is required in production.');
   }
@@ -161,6 +163,7 @@ function createService(options = {}) {
           replayApi: typeof require('./game-adapter').Game.replay === 'function',
           captureApi: true,
           transitionActions: true,
+          rewardRotation: true,
           signerConfigured: Boolean(vouchers.address),
           queueMode: env.GITHUB_TOKEN ? (env.GITHUB_REPO ? 'github' : 'misconfigured') : 'local',
           pinning: env.PINATA_JWT ? 'configured' : 'skipped'
@@ -188,7 +191,11 @@ function createService(options = {}) {
         const address = normalizeAddress(body.address);
         if (!address) return response(res, 400, { error: 'A valid address is required.' });
         if (!await pilotRegistry.isPilot(address)) return response(res, 401, { error: 'Wallet is not a Decent Pilot.' });
-        return response(res, 201, ticketService.issue(address));
+        if (body.difficulty !== undefined && !['cadet', 'pilot', 'ace'].includes(body.difficulty)) throw new Error('Flight difficulty is invalid.');
+        if (body.recentOffers !== undefined && (!Array.isArray(body.recentOffers) || body.recentOffers.length > 2 ||
+            !body.recentOffers.every(Number.isSafeInteger))) throw new Error('Recent reward offers are invalid.');
+        const plan = body.difficulty && body.difficulty !== 'cadet' ? rewardRotation.next(address, body.difficulty, body.recentOffers || []) : null;
+        return response(res, 201, ticketService.issue(address, plan));
       }
       if (req.method === 'POST' && ['/runs', '/captures'].includes(url.pathname)) {
         const checkpoint = url.pathname === '/captures';
@@ -302,7 +309,10 @@ function createService(options = {}) {
         throw new Error('Perfect awards require zero lives lost and both guarded pickups.');
       }
       const prizeList = completion ? [prizeDefinitions.MARATHON_PRIZE] :
-        perfect ? [prizeDefinitions.PERFECT_PRIZES[run.difficulty]] : prizeDefinitions.PRIZES[capture.tier] || [];
+        perfect ? [prizeDefinitions.PERFECT_PRIZES[run.difficulty]] :
+          run.ticket.ticket.rewardPlan ? prizeDefinitions.affordablePrizes(run.difficulty).filter(prize =>
+            prize.tokenId === run.ticket.ticket.rewardPlan.tokens[capture.tier - 1] &&
+            capture.level === run.ticket.ticket.rewardPlan.levels[capture.tier - 1]) : prizeDefinitions.PRIZES[capture.tier] || [];
       const canonicalPrize = prizeList.find((entry) => String(entry.tokenId) === String((capture.prize && capture.prize.tokenId) ?? capture.tokenId ?? ''));
       if (!canonicalPrize) throw new Error('Replay produced an unsupported Supporter award.');
       const prize = canonicalPrize;

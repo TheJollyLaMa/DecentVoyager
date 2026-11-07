@@ -21,7 +21,8 @@ referee flight ticket. Failed connection, eligibility or ticket checks stay
 visible in the popup with retry, practice and back choices; they do not silently
 start a reward flight. Without wallet eligibility, Pilot/Ace still have 20 levels
 but no Supporter encounters or NFT rewards. With eligibility, one guarded encounter
-is scheduled in level 9 or 10 and another in 19 or 20. Missing either token does
+is scheduled in level 4, 5 or 6 and another in 17, 18 or 19 for new rotation
+tickets. Older tickets/online arenas retain levels 9/10 and 19/20. Missing either token does
 not end the voyage early; both captures remain required for Perfect rewards.
 
 Reuse: adapted Voyager's existing `completeLevel`/warp and save-progress paths,
@@ -62,6 +63,42 @@ eligible wallet connects, or with **Retry signed flight logs**. Keep the browser
 data until verification succeeds. Background retries verify evidence only;
 wallet transfers require an explicit collection action. Expired tickets cannot be renewed for an
 old run. Archive provenance is in [server/legacy](server/legacy/README.md).
+
+### Affordable Supporter rotation
+
+New Pilot/Ace tickets rotate **six funded 10-USDC projects**: DecentHead,
+DecentMarket, DecentCalendar, DecentPilgrimages, DecentCanopy and DecentVoyager.
+The referee uses a per-wallet shuffled bag: two different projects per flight,
+no overlap with the previous issued pair, and broad exposure before recycling.
+The browser remembers the last two actually offered projects (wallet-scoped)
+and sends them with the next ticket request to preserve variety across referee
+restarts. Prefetched/unused tickets can consume bag entries; this is not a global
+or permanent no-repeat guarantee. Selection is fixed in the ticket MAC and replay,
+not chosen at redemption or rerolled by refreshing the capture presentation.
+
+The early encounter is in **level 4, 5 or 6** with **four guards, 9 total HP** and
+1.5–2.5-second initial fire delays; the later encounter is in **17, 18 or 19**
+with the original **eight guards, 43 total HP**. Both refill team power on capture.
+The 100-USDC Busking edition remains **Perfect Ace only**: full solo 20-level
+flight, no lives lost, both guarded pickups and both final bosses.
+BigNuten stays **Perfect Pilot only**, preserving the atomic 100-BNut bonus across
+difficulties. Voyager may be captured ordinarily; the one-NFT-per-wallet contract
+still prevents a second Voyager award at Ace completion. Captured cards provide
+project/Canopy links and Supporter purchase links with recorded listing prices;
+the purchase page rechecks the live listing. No new reserves or contract
+transactions are part of this update.
+
+Old tickets without a rotation plan and existing online arenas keep their original
+prize pools, guards and schedules, preserving exact replay. The gameplay ruleset
+is unchanged; new ticket behavior is explicitly MAC-bound. Deploy the referee
+before this frontend; Pages requires `health.rewardRotation`.
+
+Reuse: adapt existing Voyager `createVault`, ticket MAC, catalog and finite-stock
+voucher checks; reuse published listing identities/prices in
+`contracts/deployments/base-reserves.json`. The Canopy map and these actual funded
+sources/current worktrees were the search scope. Tests measure all six projects'
+exposure, repeated-flight exclusion, easier guards and a real early capture replay
+to a voucher; no extra ecosystem funding or public inventory edits are inferred.
 
 **Collect to wallet** in the captured NFT presentation verifies the signed
 checkpoint and then opens the Base transfer approval, without another menu or
@@ -120,6 +157,14 @@ progress, connected identity and error messages remain visible.
 The header stacks above the contained game canvas; while an ankh menu is open,
 its tools also stack above the radio. Both ankh targets stay at least 44px on
 mobile. These host styles preserve the bundled DecentHead vendor files.
+Mobile title controls include real **Cadet / Pilot / Ace** buttons with selected
+state. Tap the rendered difficulty cards directly, or use any touch direction
+arrow to cycle difficulty; arrows steer only after launch. Keyboard up/down
+continues to select difficulty. Canvas card hit testing shares the renderer's
+layout and accounts for object-fit letterboxing and wide/portrait views.
+The mobile browser test uses the actual bundled input and game (not a replacement
+input bridge) to verify selection, multitouch steering/fire and 44px targets.
+
 **Sign & collect rewards** is a large centered action on eligible game-over/victory
 screens, above restart/menu controls. It never covers active gameplay or the
 landing screen, and never signs without a click and wallet approval. Retry and
@@ -403,10 +448,11 @@ stats and win records are saved per difficulty in `localStorage`, and can be bac
   weapon again to upgrade it up to tier 3. The breathing ENS/ETH orb restores power and **◎** grants a temporary shield.
 - **Charge weapons**: the **Nova Charger** (and, in Sector II, the **Prism Lance** and **Singularity**) charge while
   fire is held and release a bigger blast. The HUD shows the charge meter.
-- **Guarded Supporter pickups (whitelisted Pilot or Ace)**: a heavily guarded pickup appears on level 9 or 10. Destroy
-  its guards and fly into it to capture a Supporter DNFT (DecentHead or DecentMarket) and refill power.
+- **Guarded Supporter pickups (whitelisted Pilot or Ace)**: new rotation tickets schedule an easier pickup on level 4, 5 or 6. Destroy
+  its guards and fly into it to capture one of six affordable project Supporter DNFTs and refill power.
   **Sector II** follows level 10 automatically on Pilot/Ace, even if the token is missed.
-  A second pickup on level 19 or 20 holds DecentCalendar, DecentCanopy or DecentPilgrimages.
+  A stronger second pickup on level 17, 18 or 19 offers a different affordable project.
+  Older tickets and online arenas retain their original pools and schedules.
   Captures become independently claimable only after referee verification and a funded-stock reservation.
 - **Solo marathon receipts**: a single uninterrupted level-1-to-20 Pilot or Ace run records every level's stats,
   full-run totals and ordered award references in its level-20 receipt. Starting at a later unlocked level is

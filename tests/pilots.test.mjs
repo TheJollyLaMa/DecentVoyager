@@ -133,6 +133,7 @@ test('tickets reject wrong-wallet and expired responses and refresh for wallet c
       return { ok: true, json: async () => ({ ticket: { id: `ticket-${requests}`, address: wrongWallet ? secondAddress : requested, seed: 1, expiresAt }, mac: 'mac' }) };
     },
   });
+
   manager.setPilot({ address, isPilot: true });
   await manager.ensureTicket();
   assert.equal(manager.current(), null, 'ticket bound to another wallet is rejected');
@@ -144,5 +145,33 @@ test('tickets reject wrong-wallet and expired responses and refresh for wallet c
   manager.runStarted('run-1');
   await manager.ensureTicket();
   assert.equal(manager.current(), null, 'expired ticket is rejected');
+  manager.stop();
+});
+
+test('reward tickets carry recent offers and refresh when launch difficulty changes', async () => {
+  const requests = [], applied = [];
+  const game = { state: 'title', selectedDifficulty: 'pilot', setNextRunSeed: (seed, ticket) => applied.push(ticket) };
+  const { createRunTicketManager } = await import('../src/js/pilots/ticket.mjs');
+  const manager = createRunTicketManager({
+    getGame: () => game, baseUrl: () => 'https://referee.example',
+    getRecentOffers: () => [70, 71], setIntervalImpl: () => 1, clearIntervalImpl: () => {},
+    fetchImpl: async (_url, init) => {
+      const body = JSON.parse(init.body);
+      requests.push(body);
+      return { ok: true, json: async () => ({
+        ticket: { id: `ticket-${requests.length}`, address, seed: requests.length, expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          rewardPlan: { version: 1, difficulty: body.difficulty, tokens: [77, 79], levels: [4, 17] } },
+        mac: 'server-mac'
+      }) };
+    }
+  });
+  manager.setPilot({ address, isPilot: true });
+  await manager.ensureTicket();
+  assert.deepEqual(requests[0], { address, difficulty: 'pilot', recentOffers: [70, 71] });
+  game.selectedDifficulty = 'ace';
+  await manager.ensureTicket();
+  assert.equal(requests.length, 2);
+  assert.equal(applied.at(-1).ticket.rewardPlan.difficulty, 'ace');
+  assert.equal(applied.at(-1).mac, 'server-mac');
   manager.stop();
 });

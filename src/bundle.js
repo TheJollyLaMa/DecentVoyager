@@ -4,10 +4,10 @@ const { createAudio } = require('./audio');
 const { createOverviewRenderer } = require('./render/overview');
 const { createPovRenderer } = require('./render/pov');
 const { createHud } = require('./render/hud');
-const { drawOverlay } = require('./render/screens');
+const { drawOverlay, difficultyCards } = require('./render/screens');
 const { createFx } = require('./render/fx');
 const { drawCrt, getPostResources, clearPostResources } = require('./render/post');
-const { setViewWidth } = require('./render/projection');
+const { VIEW, setViewWidth } = require('./render/projection');
 const { loadAssets, getAssetResources, clearTintResources } = require('./render/assets');
 const { renderBattleCard, previewBattleCard } = require('./render/battleCard');
 const { sampleRecord } = require('./render/cardMath');
@@ -200,9 +200,17 @@ document.addEventListener('keydown', (event) => {
     if (action) game.handleAction(action);
 });
 
-canvas.addEventListener('pointerdown', () => {
+canvas.addEventListener('pointerdown', event => {
     audio.unlock();
     if (document.activeElement !== canvas && typeof canvas.focus === 'function') canvas.focus({ preventScroll: true });
+    if (game.state !== 'title') return;
+    const rect = canvas.getBoundingClientRect();
+    const scale = Math.min(rect.width / VIEW.width, rect.height / VIEW.height);
+    if (!(scale > 0)) return;
+    const x = (event.clientX - rect.left - (rect.width - VIEW.width * scale) / 2) / scale;
+    const y = (event.clientY - rect.top - (rect.height - VIEW.height * scale) / 2) / scale;
+    const card = difficultyCards().find(card => x >= card.x && x <= card.x + card.width && y >= card.y && y <= card.y + card.height);
+    if (card) { game.setDifficulty(card.id); draw(); }
 });
 
 window.addEventListener('blur', () => {
@@ -1248,7 +1256,7 @@ const inputLog = require('./inputlog');
 const RULESET = require('./ruleset');
 const { scaleForPlayers, createPlayerStats, awardScore, canEndLevel } = require('./multiplayer');
 const { chooseVaultLevel, createVault, markGuardDestroyed } = require('./vault');
-const { COLLECTION, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS } = require('./prizes');
+const { COLLECTION, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS, validateRewardPlan } = require('./prizes');
 const {
     STORAGE_KEY,
     LEGACY_STORAGE_KEY,
@@ -1444,6 +1452,11 @@ class Game {
             this.runTicket = null;
         }
         this.runStartedAt = this.now();
+        this.rewardPlan = this.runTicket?.ticket?.rewardPlan || null;
+        if (this.rewardPlan) {
+            validateRewardPlan(this.rewardPlan);
+            if (this.difficulty !== 'cadet' && this.rewardPlan.difficulty !== this.difficulty) throw new Error('Flight difficulty does not match its reward rotation ticket.');
+        }
         this.runElapsed = 0;
         this.idCounter = 0;
         this.runId = `${this.seed.toString(16)}-${this.runStartedAt.toString(36)}`;
@@ -1465,8 +1478,8 @@ class Game {
         if (this.playerCount > 1) this.setPlayers(this.playerCount, { mode: this.mode });
         if (this.difficulty !== 'cadet' && this.pilot.isPilot) {
             const spawnRng = createRng((this.seed ^ 0xa53c9e17) >>> 0);
-            this.sector2Level = levelNumber <= 10 ? chooseVaultLevel(1, spawnRng) : null;
-            this.sector2VaultLevel = chooseVaultLevel(2, spawnRng);
+            this.sector2Level = this.rewardPlan ? this.rewardPlan.levels[0] : levelNumber <= 10 ? chooseVaultLevel(1, spawnRng) : null;
+            this.sector2VaultLevel = this.rewardPlan ? this.rewardPlan.levels[1] : chooseVaultLevel(2, spawnRng);
         }
         this.cosmeticRng = createRng((this.seed ^ 0x9e3779b9) >>> 0);
         this.startLevel(levelNumber);
@@ -1514,7 +1527,7 @@ class Game {
             const eligible = tier > 0 && !this.vaultTiersSpawned.includes(tier);
             if (eligible) {
                 const vaultRng = createRng((this.seed ^ (tier === 1 ? 0x7f4a7c15 : 0x94d049bb)) >>> 0);
-                this.vault = createVault(tier, levelNumber, vaultRng);
+                this.vault = createVault(tier, levelNumber, vaultRng, this.rewardPlan);
                 this.vaultTiersSpawned.push(tier);
                 this.asteroids = this.asteroids.filter((rock) => Math.hypot(rock.x - this.vault.x, rock.y - this.vault.y) > 260);
                 this.asteroids.push(...this.vault.guards);
@@ -1592,7 +1605,7 @@ class Game {
 
     static fromSnapshot(snapshot) { return new Game().applySnapshot(snapshot); }
 
-    static replay({ seed = 0, difficulty = 'cadet', startLevel = 1, players = 1, pilot = null, frames = [], actions = [], runId = null, startedAt = null, mode: replayMode = 'coop' } = {}) {
+    static replay({ seed = 0, difficulty = 'cadet', startLevel = 1, players = 1, pilot = null, frames = [], actions = [], rewardPlan = null, runId = null, startedAt = null, mode: replayMode = 'coop' } = {}) {
         const baseTime = startedAt ? Date.parse(startedAt) : Date.UTC(2020, 0, 1);
         if (!Number.isFinite(baseTime)) throw new TypeError('Replay start time is invalid.');
         const game = new Game({ seed, now: () => baseTime });
@@ -1600,7 +1613,10 @@ class Game {
         const playerCount = typeof players === 'number' ? players : Array.isArray(players) ? players.length : (players.count || 1);
         const mode = typeof players === 'object' && players.mode ? players.mode : replayMode;
         if (playerCount > 1) game.setPlayers(playerCount, { mode });
-        game.startCampaign(startLevel, difficulty, seed);
+        if (rewardPlan) {
+            game.setNextRunSeed(seed, { ticket: { rewardPlan } });
+            game.startCampaign(startLevel, difficulty);
+        } else game.startCampaign(startLevel, difficulty, seed);
         if (runId) game.runId = runId;
         const expanded = inputLog.decode(frames);
         let actionIndex = 0;
@@ -2944,7 +2960,21 @@ const PERFECT_PRIZES = {
     pilot: { project: 'BigNuten_Vanilla', version: '3.3.0', tokenId: 76, label: 'BigNuten_Vanilla v3.3.0 #76', metadataURI: 'ipfs://QmSrAwCU5p1ga3RzpuDHZxezsNjob76ZSFpRzCuG15yYqU' }
 };
 const PILOT_BONUS = { chainId: 8453, token: '0x25ACb773159Af5a5c672DEfe31C7Fff6a9A93736', symbol: 'BNUT', decimals: 18, amount: '100000000000000000000' };
-module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS };
+const AFFORDABLE_PRIZES = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE];
+function affordablePrizes(difficulty) {
+    return ['pilot', 'ace'].includes(difficulty) ? AFFORDABLE_PRIZES : [];
+}
+function validateRewardPlan(plan) {
+    if (!plan || plan.version !== 1 || !['pilot', 'ace'].includes(plan.difficulty) ||
+        !Array.isArray(plan.tokens) || plan.tokens.length !== 2 || plan.tokens[0] === plan.tokens[1] ||
+        !plan.tokens.every(token => affordablePrizes(plan.difficulty).some(prize => prize.tokenId === token)) ||
+        !Array.isArray(plan.levels) || plan.levels.length !== 2 ||
+        ![4, 5, 6].includes(plan.levels[0]) || ![17, 18, 19].includes(plan.levels[1])) {
+        throw new Error('Referee reward rotation plan is invalid.');
+    }
+    return plan;
+}
+module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS, AFFORDABLE_PRIZES, affordablePrizes, validateRewardPlan };
 
 },{}],16:[function(require,module,exports){
 // Image preloader. Renderers ask for images by key and fall back to vector
@@ -5543,6 +5573,12 @@ const DIFFICULTY_OPTIONS = [
 ];
 const RAINBOW = ['#7fd7ff', '#bfeaff', '#e8eef5', '#9ff3ff', '#7dff8c'];
 
+function difficultyCards() {
+    const width = 170, gap = 14;
+    const left = VIEW.width / 2 - (width * 3 + gap * 2) / 2;
+    return DIFFICULTY_OPTIONS.map((option, index) => ({ ...option, x: left + index * (width + gap), y: 172, width, height: 52 }));
+}
+
 function drawCover(ctx, img, alpha = 1, zoom = 1, ox = 0, oy = 0) {
     if (!img) return false;
     const scale = Math.max(VIEW.width / img.naturalWidth, VIEW.height / img.naturalHeight) * zoom;
@@ -5618,12 +5654,8 @@ function drawTitle(ctx, game) {
 
     // Difficulty cards.
     const selected = game.selectedDifficulty || 'cadet';
-    const cardW = 170;
-    const gap = 14;
-    const left = cx - (cardW * 3 + gap * 2) / 2;
-    DIFFICULTY_OPTIONS.forEach((opt, i) => {
-        const x = left + i * (cardW + gap);
-        const y = 172;
+    difficultyCards().forEach((opt, i) => {
+        const { x, y, width: cardW } = opt;
         const active = opt.id === selected;
         const color = difficultyColor(opt.id);
         if (active) drawGlow(ctx, x + cardW / 2, y + 26, 110, color, 0.3 + 0.1 * Math.sin(time * 5));
@@ -5917,7 +5949,7 @@ function drawOverlay(ctx, game, fx, options = {}) {
     }
 }
 
-module.exports = { drawOverlay, drawTitle, drawCover, waveText, formatTime, easeOutBack, DIFFICULTY_OPTIONS };
+module.exports = { drawOverlay, drawTitle, drawCover, waveText, formatTime, easeOutBack, DIFFICULTY_OPTIONS, difficultyCards };
 
 },{"../levels":13,"./assets":16,"./elephant":21,"./font":23,"./hud":25,"./projection":30,"./shapes":32}],32:[function(require,module,exports){
 const { WEAPONS } = require('../weapons');
@@ -7672,7 +7704,8 @@ module.exports = {
 };
 
 },{}],39:[function(require,module,exports){
-const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, COLLECTION } = require('./prizes');
+const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, COLLECTION, ESCROW } = require('./prizes');
+const LISTINGS = { 70: 11, 71: 12, 75: 13, 76: 14, 77: 15, 78: 16, 79: 17, 80: 18 };
 
 const IMAGE_CIDS = {
     70: 'QmcuhKLo46hwSdUQJm93VoHeB1YrpjhzeySg6Q7D9srabS',
@@ -7702,6 +7735,8 @@ const catalog = new Map(prizes.map(prize => {
         ...prize, metadataURI,
         name: `${prize.project === 'DecentVoyager' ? 'Decent Voyager' : prize.project} v${prize.version} Supporter DNFT`,
         description: PURPOSES[prize.project],
+        supportPriceUSDC: prize.tokenId === 75 ? 100 : 10,
+        supportUrl: `https://thejollylama.github.io/DecentHead/supporter/buy.html?chainId=8453&escrow=${ESCROW}&listingId=${LISTINGS[prize.tokenId]}&priceUSDC=${prize.tokenId === 75 ? 100000000 : 10000000}`,
         imageURI: `ipfs://${IMAGE_CIDS[prize.tokenId]}`,
         image: `assets/game/supporter-${prize.tokenId}.jpg`,
         repository,
@@ -7718,20 +7753,23 @@ module.exports = { supporterDetails };
 
 },{"./prizes":15}],40:[function(require,module,exports){
 const { pick, range } = require('./rng');
-const { PRIZES } = require('./prizes');
+const { PRIZES, affordablePrizes, validateRewardPlan } = require('./prizes');
 const Asteroid = require('./asteroid');
 
 function chooseVaultLevel(tier, rng) { return tier === 1 ? pick(rng, [9, 10]) : pick(rng, [19, 20]); }
-function createVault(tier, level, rng) {
+function createVault(tier, level, rng, rewardPlan = null) {
     const x = range(rng, 300, 500);
     const y = range(rng, 1700, 2400);
-    const prize = pick(rng, PRIZES[tier]);
-    const guards = Array.from({ length: 8 }, (_, index) => {
-        const angle = index * Math.PI / 4;
+    if (rewardPlan) validateRewardPlan(rewardPlan);
+    const prize = rewardPlan ? affordablePrizes(rewardPlan.difficulty).find(entry => entry.tokenId === rewardPlan.tokens[tier - 1]) : pick(rng, PRIZES[tier]);
+    const easy = rewardPlan && tier === 1;
+    const count = easy ? 4 : 8;
+    const guards = Array.from({ length: count }, (_, index) => {
+        const angle = index * Math.PI * 2 / count;
         const guard = new Asteroid({
             id: `vault-${tier}-${level}-${index}`, x: x + Math.cos(angle) * 80, y: y + Math.sin(angle) * 80,
-            size: index === 0 ? 26 : 20, hp: index === 0 ? 8 : 5, shooter: true,
-            fireCooldown: range(rng, 0.25, 0.8), rng
+            size: index === 0 ? 26 : 20, hp: easy ? (index === 0 ? 3 : 2) : (index === 0 ? 8 : 5), shooter: true,
+            fireCooldown: range(rng, easy ? 1.5 : 0.25, easy ? 2.5 : 0.8), rng
         });
         guard.kind = index === 0 ? 'generator' : 'guard';
         guard.vaultGuard = true;

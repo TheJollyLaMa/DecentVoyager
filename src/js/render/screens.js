@@ -15,6 +15,12 @@ const DIFFICULTY_OPTIONS = [
 ];
 const RAINBOW = ['#7fd7ff', '#bfeaff', '#e8eef5', '#9ff3ff', '#7dff8c'];
 
+function difficultyCards() {
+    const width = 170, gap = 14;
+    const left = VIEW.width / 2 - (width * 3 + gap * 2) / 2;
+    return DIFFICULTY_OPTIONS.map((option, index) => ({ ...option, x: left + index * (width + gap), y: 172, width, height: 52 }));
+}
+
 function drawCover(ctx, img, alpha = 1, zoom = 1, ox = 0, oy = 0) {
     if (!img) return false;
     const scale = Math.max(VIEW.width / img.naturalWidth, VIEW.height / img.naturalHeight) * zoom;
@@ -90,12 +96,8 @@ function drawTitle(ctx, game) {
 
     // Difficulty cards.
     const selected = game.selectedDifficulty || 'cadet';
-    const cardW = 170;
-    const gap = 14;
-    const left = cx - (cardW * 3 + gap * 2) / 2;
-    DIFFICULTY_OPTIONS.forEach((opt, i) => {
-        const x = left + i * (cardW + gap);
-        const y = 172;
+    difficultyCards().forEach((opt, i) => {
+        const { x, y, width: cardW } = opt;
         const active = opt.id === selected;
         const color = difficultyColor(opt.id);
         if (active) drawGlow(ctx, x + cardW / 2, y + 26, 110, color, 0.3 + 0.1 * Math.sin(time * 5));
@@ -389,4 +391,4 @@ function drawOverlay(ctx, game, fx, options = {}) {
     }
 }
 
-module.exports = { drawOverlay, drawTitle, drawCover, waveText, formatTime, easeOutBack, DIFFICULTY_OPTIONS };
+module.exports = { drawOverlay, drawTitle, drawCover, waveText, formatTime, easeOutBack, DIFFICULTY_OPTIONS, difficultyCards };
