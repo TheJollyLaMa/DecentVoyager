@@ -1,10 +1,8 @@
-// Fills DecentHead's right ankh (profile) menu with the pilot's Victory Vault and queued rewards.
+// Fills DecentHead's right ankh menu with flight history and queued rewards.
 const counts = { vault: 0, rewards: 0 };
 const ENTRIES = [
-  { id: 'vault', label: count => `🏆 Victory Vault${count ? ` · ${count}` : ''}`, event: 'voyager:open-vault' },
+  { id: 'vault', label: count => `✦ Flight Logs${count ? ` · ${count}` : ''}`, event: 'voyager:open-vault' },
   { id: 'rewards', label: count => `✦ Captured rewards${count ? ` · ${count}` : ''}`, event: 'voyager:open-rewards' },
-  { id: 'manual', label: () => 'ⓘ Flight manual', about: true },
-  { id: 'reports', label: () => 'Flight reports', event: 'voyager:open-reports' },
 ];
 
 function menuRoot() { return document.querySelector('decent-header')?.shadowRoot?.querySelector('ankh-menu[side="right"]')?.shadowRoot || null; }

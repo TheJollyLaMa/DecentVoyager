@@ -1,6 +1,6 @@
 import { node, createDialog, openDialog } from '../dnft/ui.mjs';
 
-const dialog = createDialog('Flight reports', 'flight-diagnostics');
+const dialog = createDialog('Battle diagnostics', 'flight-diagnostics');
 dialog.append(
   node('button', 'Download report', { id: 'diagnostic-download', type: 'button' }),
   node('button', 'Resume battle', { id: 'diagnostic-resume', type: 'button' }),
@@ -27,7 +27,7 @@ function refresh() {
   const fault = api()?.activeFault?.();
   alert.hidden = !fault;
   if (fault) {
-    const details = node('button', 'Flight reports', { type: 'button' });
+    const details = node('button', 'Error details', { type: 'button' });
     details.addEventListener('click', () => window.dispatchEvent(new CustomEvent('voyager:open-reports', { detail: { opener: details } })));
     alert.replaceChildren(`${FAULT_LABEL[fault.kind] || 'Flight notice'}: ${fault.message} `, details);
   }

@@ -219,8 +219,9 @@ test('clearing a level emits a JSON-safe LevelRecord and stores it', () => {
     assert.ok(game.getLifetimeStats().levelsCleared === 1);
 });
 
-test('level 10 emits levelRecord before victory', () => {
+test('level 10 after its boss emits levelRecord before victory', () => {
     const game = playingGame(10);
+    game.bossDefeated = true;
     game.scrollY = game.level.length;
     game.update(0.016, {});
     const types = game.drainEvents().map((e) => e.type);

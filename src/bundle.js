@@ -309,7 +309,7 @@ function drawScene() {
         fx.drawScreen(ctx, game);
     }
     hud.drawHud(ctx, game, fx, { muted: audio.muted, crt: display.crt });
-    drawOverlay(ctx, game, fx);
+    drawOverlay(ctx, game, fx, { signPrompt: document.getElementById('flight-sign-prompt')?.hidden === false });
 }
 
 let last = null;
@@ -345,7 +345,7 @@ function frameError(error) {
     freezeBattle();
     setFault('frame-error', 'The battle hit an error and is paused.');
     diagnostics.record('frame-error', error);
-    hud.setToast('Flight error: open Flight reports in the profile menu.', 12000);
+    hud.setToast('Flight error: open Error details in the warning.', 12000);
 }
 function frame(timestamp) {
     try {
@@ -488,7 +488,7 @@ window.asteroidReady = true;
 window.dispatchEvent(new CustomEvent('asteroid:ready', { detail: { game } }));
 requestAnimationFrame(frame);
 
-},{"./audio":3,"./diagnostics":6,"./game":8,"./input":9,"./render/assets":15,"./render/battleCard":17,"./render/cardMath":18,"./render/font":21,"./render/fx":22,"./render/hud":23,"./render/overview":24,"./render/post":26,"./render/pov":27,"./render/projection":28,"./render/screens":29,"./render/shapes":30,"./supporter-catalog":37}],2:[function(require,module,exports){
+},{"./audio":3,"./diagnostics":7,"./game":9,"./input":10,"./render/assets":16,"./render/battleCard":18,"./render/cardMath":20,"./render/font":23,"./render/fx":24,"./render/hud":25,"./render/overview":26,"./render/post":28,"./render/pov":29,"./render/projection":30,"./render/screens":31,"./render/shapes":32,"./supporter-catalog":39}],2:[function(require,module,exports){
 const { range } = require('./rng');
 
 const WORLD_WIDTH = 800;
@@ -570,7 +570,7 @@ Asteroid.WORLD_WIDTH = WORLD_WIDTH;
 
 module.exports = Asteroid;
 
-},{"./rng":32}],3:[function(require,module,exports){
+},{"./rng":34}],3:[function(require,module,exports){
 // Synthesized 8-bit-meets-arcade sound effects (WebAudio only, no files).
 // The AudioContext is created lazily on the first key press (autoplay rules).
 const { normalizeEvent } = require('./render/events');
@@ -747,6 +747,17 @@ function createAudio({ onError = error => console.error('Voyager audio:', error)
     };
 
     const sounds = {
+        bossArrived: () => {
+            tone({ frequency: 70, endFrequency: 180, duration: 0.8, type: 'sawtooth', volume: 0.12 });
+            tone({ frequency: 350, endFrequency: 90, duration: 0.7, type: 'sine', volume: 0.09, delay: 0.15 });
+        },
+        bossLaserWarning: () => {
+            for (let i = 0; i < 3; i++) tone({ frequency: 660 + i * 110, duration: 0.12, type: 'square', volume: 0.06, delay: i * 0.3 });
+        },
+        bossDefeated: () => {
+            explosion(100, true);
+            for (let i = 0; i < 4; i++) tone({ frequency: [392, 523, 659, 784][i], duration: 0.35, type: 'triangle', volume: 0.08, delay: i * 0.15 });
+        },
         shot: (e) => {
             if (throttle('shot', 0.035)) (LASERS[e.weapon] || LASERS.blaster)();
         },
@@ -900,7 +911,53 @@ function createAudio({ onError = error => console.error('Voyager audio:', error)
 
 module.exports = { createAudio };
 
-},{"./render/events":20}],4:[function(require,module,exports){
+},{"./render/events":22}],4:[function(require,module,exports){
+const Asteroid = require('./asteroid');
+
+class Boss extends Asteroid {
+    constructor(level, players = 1) {
+        const final = level.number === 20;
+        super({ id: -level.number, x: 400, y: 0, size: final ? 120 : 100, hp: (final ? 3000 : 2400) * players });
+        this.boss = true;
+        this.name = final ? 'Mandelblum Sovereign' : 'Mandelblum Core';
+        this.active = true;
+        this.shooter = true;
+        this.clock = 0;
+        this.fireCooldown = 3;
+        this.damageRate = (final ? 25 : 20) * players;
+        this.damageBudget = this.damageRate;
+        this.laserLanes = [];
+        this.laserActive = false;
+        this.laserWidth = final ? 34 : 26;
+        this.final = final;
+        this.spin = 0.12;
+    }
+
+    update(dt) {
+        this.clock += dt;
+        this.rotation += this.spin * dt;
+        this.flash = Math.max(0, this.flash - dt);
+        this.x = 400 + Math.sin(this.clock * 0.4) * (this.final ? 170 : 135);
+        this.damageBudget = Math.min(this.damageRate, this.damageBudget + this.damageRate * dt);
+        const phase = this.clock % 12;
+        if (phase < 8 || phase >= 11) this.laserLanes = [];
+        this.laserActive = phase >= 9.5 && phase < 11;
+    }
+
+    takeHit(damage) {
+        const applied = Math.min(Math.max(0, damage), this.damageBudget, this.hp);
+        this.damageBudget -= applied;
+        this.hp -= applied;
+        this.flash = applied > 0 ? 0.06 : 0;
+        return this.hp <= 0;
+    }
+
+    breakApart() { return []; }
+}
+
+module.exports = Boss;
+
+},{"./asteroid":2}],5:[function(require,module,exports){
 // World-space projectile. `y` is forward distance along the level.
 class Bullet {
     constructor({ x, y, vx = 0, vy = 0, size = 3, damage = 1, pierce = false, life = 1.4, owner = 'player', color = '#fff', radius = 0, maxRadius = 0, age = 0, playerIndex = 0, ownerWeapon = null }) {
@@ -937,7 +994,7 @@ class Bullet {
 
 module.exports = Bullet;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 // collision.js
 
 function checkCollision(obj1, obj2) {
@@ -948,7 +1005,7 @@ function checkCollision(obj1, obj2) {
 }
 
 module.exports = checkCollision;
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 const RULESET = require('./ruleset');
 const KEY = 'voyager.diagnostics.v1';
 const LIMIT = 40;
@@ -1011,7 +1068,7 @@ function createDiagnostics({ storage, snapshot = () => ({}), notify = () => {}, 
 
 module.exports = { createDiagnostics, redact, KEY, LIMIT, BUILD };
 
-},{"./ruleset":33}],7:[function(require,module,exports){
+},{"./ruleset":35}],8:[function(require,module,exports){
 // Difficulty presets. Cadet is the original tuning and must stay unchanged;
 // pilot and ace scale the per-level knobs produced by levels.js.
 const DIFFICULTY_IDS = ['cadet', 'pilot', 'ace'];
@@ -1176,10 +1233,11 @@ function applyDifficulty(base, id) {
 
 module.exports = { DIFFICULTY_IDS, DIFFICULTIES, isDifficulty, getDifficulty, difficultyLabel, stepDifficulty, applyDifficulty };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 const checkCollision = require('./collision');
 const Spaceship = require('./spaceship');
 const Bullet = require('./bullet');
+const Boss = require('./boss');
 const { createRng, range } = require('./rng');
 const { getLevel, LEVEL_COUNT, TOTAL_LEVEL_COUNT, getCampaignLevelCount } = require('./levels');
 const { populateLevel } = require('./levelLayout');
@@ -1325,6 +1383,8 @@ class Game {
     }
 
     resetWorld() {
+        this.bossSpawned = false;
+        this.bossDefeated = false;
         this.scrollY = 0;
         this.asteroids = [];
         this.pickups = [];
@@ -1502,7 +1562,7 @@ class Game {
 
     serialize() {
         const plain = (value) => JSON.parse(JSON.stringify(value));
-        return plain({ version: 1, seed: this.seed, state: this.state, difficulty: this.difficulty, level: this.level, scrollY: this.scrollY, time: this.time, score: this.score, view: this.view, ship: this.ship, ships: this.ships, stateTimer: this.stateTimer, levelTime: this.levelTime, asteroids: this.asteroids, pickups: this.pickups, playerBullets: this.playerBullets.map((b) => ({ ...b, hits: b.hits ? [...b.hits] : null })), enemyBullets: this.enemyBullets, vault: this.vault ?? null, runCaptures: this.runCaptures, playerStats: this.playerStats, mode: this.mode });
+        return plain({ version: 1, seed: this.seed, state: this.state, difficulty: this.difficulty, level: this.level, scrollY: this.scrollY, time: this.time, score: this.score, view: this.view, ship: this.ship, ships: this.ships, stateTimer: this.stateTimer, levelTime: this.levelTime, asteroids: this.asteroids, pickups: this.pickups, playerBullets: this.playerBullets.map((b) => ({ ...b, hits: b.hits ? [...b.hits] : null })), enemyBullets: this.enemyBullets, vault: this.vault ?? null, runCaptures: this.runCaptures, playerStats: this.playerStats, mode: this.mode, bossSpawned: this.bossSpawned, bossDefeated: this.bossDefeated });
     }
 
     applySnapshot(snapshot) {
@@ -1512,6 +1572,8 @@ class Game {
             if (snapshot[key] !== undefined && snapshot[key] !== null) this[key] = clone(snapshot[key]);
         }
         this.vault = snapshot.vault == null ? null : clone(snapshot.vault);
+        this.bossSpawned = Boolean(snapshot.bossSpawned);
+        this.bossDefeated = Boolean(snapshot.bossDefeated);
         this.asteroids = this.asteroids || [];
         this.pickups = this.pickups || [];
         this.enemyBullets = this.enemyBullets || [];
@@ -1649,6 +1711,17 @@ class Game {
 
         this.levelTime += dt;
         this.scrollY += this.level.scrollSpeed * dt;
+        if (this.isBossLevel && !this.bossDefeated && this.scrollY >= this.level.length - 600) {
+            this.scrollY = this.level.length - 600;
+            if (!this.bossSpawned) {
+                const boss = new Boss(this.level, this.playerCount);
+                boss.y = this.scrollY + 400;
+                this.asteroids.push(boss);
+                this.tracker.spawned(1);
+                this.bossSpawned = true;
+                this.emit('bossArrived', { name: boss.name, x: boss.x, y: boss.y });
+            }
+        }
         const ship = this.ship;
         this.tracker.tick(dt, ship, this.view);
 
@@ -1769,6 +1842,11 @@ class Game {
         for (const asteroid of this.asteroids) {
             if (!asteroid.active && asteroid.y - ship.y < ACTIVATION_DISTANCE) asteroid.active = true;
             asteroid.update(dt);
+            if (asteroid.boss) {
+                asteroid.y = this.scrollY + 400;
+                this.updateBossAttacks(asteroid, dt);
+                continue;
+            }
             if (!asteroid.shooter || !asteroid.active || !shipCanBeTargeted) continue;
             asteroid.fireCooldown -= dt;
             const ahead = asteroid.y - ship.y;
@@ -1776,7 +1854,38 @@ class Game {
                 this.fireEnemyBullet(asteroid);
                 asteroid.fireCooldown = this.level.fireInterval * range(this.rng, asteroid.vaultGuard ? 3.1 : 0.7, asteroid.vaultGuard ? 4.2 : 1.3);
             }
+
         }
+    }
+
+    get isBossLevel() { return this.level.number === 10 || this.level.number === 20; }
+
+    updateBossAttacks(boss, dt) {
+        if (this.state !== 'playing') return;
+        const phase = boss.clock % 12;
+        if (phase >= 8 && phase < 9.5 && !boss.laserLanes.length) {
+            const target = this.ships.find(ship => ship.lives > 0) || this.ship;
+            const lane = Math.max(70, Math.min(730, target.x));
+            boss.laserLanes = boss.final ? [Math.max(50, lane - 85), Math.min(750, lane + 85)] : [lane];
+            this.emit('bossLaserWarning', { x: boss.x, y: boss.y });
+        }
+        boss.fireCooldown -= dt;
+        if (boss.fireCooldown > 0 || this.enemyBullets.length > 120) return;
+        boss.fireCooldown = (boss.final ? 1.8 : 2.8) * (this.difficulty === 'ace' ? 0.7 : 1);
+        const target = this.ships.find(ship => ship.lives > 0) || this.ship;
+        const aim = Math.atan2(target.x - boss.x, target.y - boss.y);
+        const shots = boss.final ? 7 : 5;
+        for (let index = 0; index < shots; index++) {
+            const angle = aim + (index - (shots - 1) / 2) * 0.18;
+            const speed = Math.min(360, this.level.enemyBulletSpeed);
+            this.enemyBullets.push(new Bullet({
+                x: boss.x, y: boss.y - boss.size,
+                vx: Math.sin(angle) * speed, vy: Math.cos(angle) * speed,
+                size: 5, damage: this.level.bulletDamage, life: 5, owner: 'enemy', color: '#ff7ae6'
+            }));
+            this.tracker.enemyShot();
+        }
+        this.emit('enemyShot', { x: boss.x, y: boss.y });
     }
 
     fireEnemyBullet(asteroid) {
@@ -1826,7 +1935,7 @@ class Game {
             if (bullet.ownerWeapon === 'singularity') {
                 for (const index of candidates(bullet, 220)) {
                     const rock = this.asteroids[index];
-                    if (rock.hp <= 0) continue;
+                    if (rock.hp <= 0 || rock.boss) continue;
                     const dx = bullet.x - rock.x; const dy = bullet.y - rock.y; const distance = Math.hypot(dx, dy);
                     if (distance > 220 || distance === 0) continue;
                     const pull = (220 - distance) * 0.18; rock.vx += dx / distance * pull * FIXED_STEP; rock.vy += dy / distance * pull * FIXED_STEP;
@@ -1858,6 +1967,11 @@ class Game {
 
     destroyAsteroid(asteroid, awardPoints = true, byPlayerShot = false) {
         asteroid.hp = 0;
+        if (asteroid.boss) {
+            this.bossDefeated = true;
+            this.tracker.stats.bossesDestroyed += 1;
+            this.emit('bossDefeated', { name: asteroid.name, x: asteroid.x, y: asteroid.y });
+        }
         if (asteroid.vaultGuard) {
             const wasShielded = this.vault?.shielded;
             if (markGuardDestroyed(this.vault, asteroid)) this.emit('guardDestroyed', { tier: asteroid.vaultTier, kind: asteroid.kind, x: asteroid.x, y: asteroid.y });
@@ -1866,7 +1980,7 @@ class Game {
             }
         }
         if (awardPoints) {
-            const base = asteroid.shooter ? 150 : 50 + asteroid.maxHp * 25;
+            const base = asteroid.boss ? 5000 : asteroid.shooter ? 150 : 50 + asteroid.maxHp * 25;
             const points = Math.round(base * (1 + (this.level.number - 1) * 0.1) * this.scoreMultiplier);
             const scorerIndex = asteroid.lastPlayerIndex || 0;
             const scorer = this.playerStats[scorerIndex];
@@ -1890,7 +2004,12 @@ class Game {
         const ships = this.ships;
         for (let index = 0; index < ships.length; index++) {
             const ship = ships[index];
-            if (ship.lives <= 0) continue;
+            if (ship.lives <= 0 || ship.respawnTimer > 0) continue;
+            const boss = this.asteroids.find(rock => rock.boss && rock.hp > 0);
+            if (boss?.laserActive && ship.y <= boss.y && boss.laserLanes.some(x => Math.abs(ship.x - x) <= boss.laserWidth / 2 + ship.size)) {
+                this.damageShip(this.level.bulletDamage * 1.5, ship.x, ship.y, ship, index);
+                if (this.playerCount === 1 && this.state !== 'playing') return;
+            }
             for (const bullet of this.enemyBullets) {
                 if (!bullet.alive || !checkCollision(bullet, ship)) continue;
                 bullet.life = 0;
@@ -1901,6 +2020,11 @@ class Game {
             for (const asteroid of this.asteroids) {
                 if (asteroid.hp <= 0 || asteroid.phaseActive || !checkCollision(asteroid, ship)) continue;
                 this.tracker.collision();
+                if (asteroid.boss) {
+                    this.damageShip(60, asteroid.x, asteroid.y, ship, index);
+                    if (this.playerCount === 1 && this.state !== 'playing') return;
+                    continue;
+                }
                 const fragments = this.destroyAsteroid(asteroid, ship.shield > 0);
                 this.asteroids.push(...fragments);
                 this.damageShip((30 + asteroid.size) * (this.level.ramDamageMultiplier ?? 1), asteroid.x, asteroid.y, ship, index);
@@ -2235,7 +2359,7 @@ Game.groupPlayers = require('./multiplayer').groupPlayers;
 
 module.exports = Game;
 
-},{"./bullet":4,"./collision":5,"./difficulty":7,"./inputlog":10,"./levelLayout":11,"./levels":12,"./multiplayer":13,"./prizes":14,"./rng":32,"./ruleset":33,"./save":34,"./spaceship":35,"./stats":36,"./vault":38,"./weapons":39}],9:[function(require,module,exports){
+},{"./boss":4,"./bullet":5,"./collision":6,"./difficulty":8,"./inputlog":11,"./levelLayout":12,"./levels":13,"./multiplayer":14,"./prizes":15,"./rng":34,"./ruleset":35,"./save":36,"./spaceship":37,"./stats":38,"./vault":40,"./weapons":41}],10:[function(require,module,exports){
 const ACTIONS = Object.freeze({
     start: 9,
     view: 3,
@@ -2497,7 +2621,7 @@ function createInput({
 
 module.exports = { createInput, axis, MAX_PLAYERS, DEADZONE, ACTIONS };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 const ACTIONS = ['left', 'right', 'up', 'down', 'fire', 'special', 'weaponNext', 'view'];
 const MAX_RUN = 65535;
 
@@ -2544,7 +2668,7 @@ function decode(log) {
 
 module.exports = { ACTIONS, encode, decode, encodeInput, decodeInput };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 const Asteroid = require('./asteroid');
 const { range, pick } = require('./rng');
 
@@ -2684,7 +2808,7 @@ function populateLevel(level, rng) {
 
 module.exports = { populateLevel, PICKUP_TYPES, FUTURE_PICKUPS, EXTRA_LIFE_LEVELS, MINI_EMBLEM_LEVELS, SAFE_START };
 
-},{"./asteroid":2,"./rng":32}],12:[function(require,module,exports){
+},{"./asteroid":2,"./rng":34}],13:[function(require,module,exports){
 const { applyDifficulty, getDifficulty } = require('./difficulty');
 
 const LEVEL_COUNT = 10;
@@ -2755,7 +2879,7 @@ function getLevel(number, difficulty = 'cadet') {
 
 module.exports = { LEVEL_COUNT, TOTAL_LEVEL_COUNT, LEVEL_NAMES, getLevel, getBaseLevel, getCampaignLevelCount };
 
-},{"./difficulty":7}],13:[function(require,module,exports){
+},{"./difficulty":8}],14:[function(require,module,exports){
 const MAX_PLAYERS = 5;
 function scaleForPlayers(count) {
     if (!Number.isInteger(count) || count < 1 || count > MAX_PLAYERS) throw new RangeError('Player count must be between 1 and 5.');
@@ -2782,7 +2906,7 @@ function canEndLevel(players, mode) {
 }
 module.exports = { MAX_PLAYERS, scaleForPlayers, groupPlayers, createPlayerStats, awardScore, canEndLevel };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 const COLLECTION = '0xe63EC9f8228720bAAC2fD528C0A6d06B3Dc5439B';
 const ESCROW = '0x31b07b83e99A9bdF379bf40225b8A80d3804C89d';
 const PRIZES = {
@@ -2808,7 +2932,7 @@ const PERFECT_PRIZES = {
 const PILOT_BONUS = { chainId: 8453, token: '0x25ACb773159Af5a5c672DEfe31C7Fff6a9A93736', symbol: 'BNUT', decimals: 18, amount: '100000000000000000000' };
 module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // Image preloader. Renderers ask for images by key and fall back to vector
 // drawing while an image is missing, still loading or failed to load.
 const BASE_URL = 'assets/game/';
@@ -3001,7 +3125,7 @@ module.exports = {
     getTinted
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // Per-level space backdrops: tinted gradient, a big Mandelblum "nebula"
 // (screen-blended so its black matte vanishes) and pixel starfield parallax.
 const { VIEW, MAX_VIEW_WIDTH } = require('./projection');
@@ -3097,7 +3221,7 @@ function createOverviewBackground() {
 
 module.exports = { LEVEL_TINTS, SECTOR2_TINTS, levelTint, createStarfield, drawNebula, createOverviewBackground };
 
-},{"./assets":15,"./projection":28}],17:[function(require,module,exports){
+},{"./assets":16,"./projection":30}],18:[function(require,module,exports){
 // Collectible "battle card" renderer: a deterministic image of one cleared level.
 const { getImage, loadAssets, makeCanvas, ROCK_KEYS, FUTURE_ROCK_KEYS, backdropKeyFor, rockKeyFor } = require('./assets');
 const { pixelText } = require('./font');
@@ -3566,7 +3690,61 @@ async function previewBattleCard(record) {
 
 module.exports = { renderBattleCard, previewBattleCard, latestRecord };
 
-},{"./assets":15,"./cardMath":18,"./font":21,"./hud":23,"./shapes":30}],18:[function(require,module,exports){
+},{"./assets":16,"./cardMath":20,"./font":23,"./hud":25,"./shapes":32}],19:[function(require,module,exports){
+const { VIEW } = require('./projection');
+const { pixelText } = require('./font');
+
+function drawBossLasers(ctx, game, project) {
+    const boss = (game.asteroids || []).find(rock => rock.boss && rock.hp > 0);
+    if (!boss || !boss.laserLanes.length) return;
+    ctx.save();
+    ctx.strokeStyle = boss.laserActive ? '#ff7ae6' : '#ffe65c';
+    ctx.globalAlpha = boss.laserActive ? 0.8 : 0.55;
+    if (!boss.laserActive) ctx.setLineDash([8, 10]);
+    for (const x of boss.laserLanes) {
+        const start = project({ x, y: boss.y });
+        const end = project({ x, y: game.scrollY - 80 });
+        if (!start || !end) continue;
+        ctx.lineWidth = boss.laserActive ? Math.min(60, boss.laserWidth * (start.scale || 1)) : 2;
+        if (boss.laserActive) {
+            const corners = [
+                project({ x: x - boss.laserWidth / 2, y: boss.y }),
+                project({ x: x + boss.laserWidth / 2, y: boss.y }),
+                project({ x: x + boss.laserWidth / 2, y: game.scrollY - 80 }),
+                project({ x: x - boss.laserWidth / 2, y: game.scrollY - 80 })
+            ];
+            if (corners.every(Boolean)) {
+                ctx.fillStyle = '#ff7ae666'; ctx.beginPath();
+                ctx.moveTo(corners[0].x, corners[0].y);
+                for (const corner of corners.slice(1)) ctx.lineTo(corner.x, corner.y);
+                ctx.closePath(); ctx.fill();
+            }
+        }
+        ctx.beginPath(); ctx.moveTo(start.x, start.y); ctx.lineTo(end.x, end.y); ctx.stroke();
+        if (boss.laserActive) {
+            ctx.strokeStyle = '#fff0ff'; ctx.lineWidth = 3; ctx.stroke();
+            ctx.strokeStyle = '#ff7ae6';
+        }
+    }
+    ctx.restore();
+}
+
+function drawBossStatus(ctx, game) {
+    const boss = (game.asteroids || []).find(rock => rock.boss && rock.hp > 0);
+    if (!boss) return;
+    const width = Math.min(380, VIEW.width - 300), x = (VIEW.width - width) / 2, y = 58;
+    ctx.save();
+    ctx.fillStyle = '#080d20e6'; ctx.fillRect(x - 12, y - 22, width + 24, 60);
+    pixelText(ctx, boss.name.toUpperCase(), VIEW.width / 2, y, { size: 13, align: 'center', color: '#ffb8ee' });
+    ctx.fillStyle = '#ffffff22'; ctx.fillRect(x, y + 8, width, 8);
+    ctx.fillStyle = '#ff7ae6'; ctx.fillRect(x, y + 8, width * Math.max(0, boss.hp / boss.maxHp), 8);
+    pixelText(ctx, boss.laserActive ? 'LASER LIVE - EVADE' : boss.laserLanes.length ? 'LASER LOCK - MOVE OUT OF GOLD LANES' : 'DESTROY THE CORE TO OPEN THE GATE', VIEW.width / 2, y + 30, { size: 10, align: 'center', color: '#ffe65c' });
+    ctx.restore();
+}
+
+module.exports = { drawBossLasers, drawBossStatus };
+
+},{"./font":23,"./projection":30}],20:[function(require,module,exports){
 // Pure helpers for the battle card (testable in Node).
 const WORLD_WIDTH = 800;
 
@@ -3706,7 +3884,7 @@ module.exports = {
     sampleRecord
 };
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 // Framed 8-bit "transmission" viewscreen playing the Mandelblum flying
 // elephant. Shared by the Sector I / Sector II win screens and the warp.
 const { getImage, ELEPHANT_FRAMES, ELEPHANT_COLUMNS } = require('./assets');
@@ -3776,7 +3954,7 @@ function drawElephantVision(ctx, x, y, width, time, { label = 'ELEPHANT ESCORT',
 
 module.exports = { drawElephantVision, elephantFrame, ELEPHANT_FPS, ELEPHANT_ASPECT };
 
-},{"./assets":15,"./font":21,"./shapes":30}],20:[function(require,module,exports){
+},{"./assets":16,"./font":23,"./shapes":32}],22:[function(require,module,exports){
 // Normalises game events for presentation. Older game builds emitted pickups
 // as `{ type: 'power' }` (the pickup kind overwrote the event name); newer
 // builds emit `{ type: 'pickup', pickupType: 'power' }`.
@@ -3795,7 +3973,7 @@ function normalizeEvent(event) {
 
 module.exports = { PICKUP_TYPES, PICKUP_KINDS, normalizeEvent };
 
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 // 8-bit text from a built-in 5x7 bitmap font. Each glyph pixel becomes a
 // rectangle snapped to whole device pixels, so text stays sharp and readable at
 // any canvas scale without offscreen canvases or pixel readback. Strings with
@@ -3989,7 +4167,7 @@ function measurePixelText(value, { size = 14, scale = 1 } = {}, ctx = null) {
 
 module.exports = { FONT_STACK, fontFor, pixelText, measurePixelText, pixelTextMetrics, CACHE_LIMIT, GLYPHS, getFontResources, clearFontResources };
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 // Client-side juice: explosions, debris, shockwaves, thruster trails, shield
 // ripples, floating text, fireworks, screen shake, hit-stop and slow-mo.
 // Driven purely by drained game events so game.js stays deterministic.
@@ -4540,7 +4718,7 @@ function createFx() {
 
 module.exports = { createFx, MAX_WORLD_PARTICLES, MAX_SCREEN_PARTICLES };
 
-},{"./assets":15,"./elephant":19,"./events":20,"./font":21,"./projection":28,"./shapes":30,"./vault":31}],23:[function(require,module,exports){
+},{"./assets":16,"./elephant":21,"./events":22,"./font":23,"./projection":30,"./shapes":32,"./vault":33}],25:[function(require,module,exports){
 const { VIEW } = require('./projection');
 const { WEAPONS, MAX_TIER } = require('../weapons');
 const { getCampaignLevelCount } = require('../levels');
@@ -4860,7 +5038,7 @@ function createHud() {
 
 module.exports = { createHud, rollUp, litSegments, difficultyColor, difficultyName, panelBox, POWER_SEGMENTS, DIFFICULTY_COLORS };
 
-},{"../levels":12,"../weapons":39,"./font":21,"./players":25,"./projection":28,"./shapes":30}],24:[function(require,module,exports){
+},{"../levels":13,"../weapons":41,"./font":23,"./players":27,"./projection":30,"./shapes":32}],26:[function(require,module,exports){
 const { VIEW, projectOverview } = require('./projection');
 const { drawAsteroid, drawPickup, drawShipTop, drawMiniAura, drawPlayerBullet, drawEnemyBullet, drawGlow } = require('./shapes');
 const { createOverviewBackground } = require('./background');
@@ -4868,6 +5046,7 @@ const { getImage } = require('./assets');
 const { pixelText } = require('./font');
 const { getPlayers, playerScale } = require('./players');
 const { drawVault } = require('./vault');
+const { drawBossLasers, drawBossStatus } = require('./boss');
 
 function drawJumpGate(ctx, y, time, sector2 = false) {
     const gate = getImage(sector2 ? 'gate-sector2' : 'gate') || getImage('gate');
@@ -4941,6 +5120,7 @@ function createOverviewRenderer() {
             if (onScreen(p, 80)) drawAsteroid(ctx, asteroid, p.x, p.y, asteroid.size, 1, time, game.level.number >= 11);
         }
         drawVault(ctx, game, scrollY, time, projectOverview, onScreen);
+        drawBossLasers(ctx, game, point => projectOverview(point, scrollY));
 
         for (const bullet of game.playerBullets) {
             const p = projectOverview(bullet, scrollY);
@@ -4978,12 +5158,13 @@ function createOverviewRenderer() {
                 ctx.restore();
             });
         }
+        drawBossStatus(ctx, game);
     };
 }
 
 module.exports = { createOverviewRenderer };
 
-},{"./assets":15,"./background":16,"./font":21,"./players":25,"./projection":28,"./shapes":30,"./vault":31}],25:[function(require,module,exports){
+},{"./assets":16,"./background":17,"./boss":19,"./font":23,"./players":27,"./projection":30,"./shapes":32,"./vault":33}],27:[function(require,module,exports){
 const PLAYER_COLORS = ['#7fd7ff', '#d8e4ef', '#7dff8c', '#ffe65c', '#ff8a5c'];
 
 function getPlayers(game) {
@@ -5017,7 +5198,7 @@ function versusMode(game) {
 
 module.exports = { PLAYER_COLORS, getPlayers, playerScale, versusMode, MINI_DRAW_SCALE };
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 // Optional CRT post layer: scanlines + vignette, pre-rendered once.
 const { VIEW } = require('./projection');
 const { makeCanvas } = require('./assets');
@@ -5063,13 +5244,14 @@ function drawCrt(ctx, time = 0) {
 
 module.exports = { drawCrt, getPostResources, clearPostResources };
 
-},{"./assets":15,"./projection":28}],27:[function(require,module,exports){
+},{"./assets":16,"./projection":30}],29:[function(require,module,exports){
 const { VIEW, MAX_VIEW_WIDTH, POV, povCamera, projectPov, povFade } = require('./projection');
 const { drawAsteroid, drawPickup, drawShipChase, drawMiniAura, drawPlayerBullet, drawEnemyBullet, drawGlow } = require('./shapes');
 const { levelTint, createStarfield, drawNebula } = require('./background');
 const { getImage } = require('./assets');
 const { getPlayers, playerScale } = require('./players');
 const { drawVaultPov } = require('./vault');
+const { drawBossLasers, drawBossStatus } = require('./boss');
 
 const FLOOR_HEIGHT = -40;
 const GRID_STEP = 100;
@@ -5251,6 +5433,7 @@ function createPovRenderer() {
             });
         }
         drawVaultPov(ctx, game, camera, projectPov, time);
+        drawBossLasers(ctx, game, point => projectPov({ ...point, y: Math.max(point.y, camera.y + POV.near + 8) }, camera));
         if (game.state === 'playing' || game.state === 'paused' || game.state === 'levelComplete') {
             const players = getPlayers(game);
             players.forEach(({ ship, index, color }) => {
@@ -5266,12 +5449,13 @@ function createPovRenderer() {
                 ctx.restore();
             });
         }
+        drawBossStatus(ctx, game);
     };
 }
 
 module.exports = { createPovRenderer };
 
-},{"./assets":15,"./background":16,"./players":25,"./projection":28,"./shapes":30,"./vault":31}],28:[function(require,module,exports){
+},{"./assets":16,"./background":17,"./boss":19,"./players":27,"./projection":30,"./shapes":32,"./vault":33}],30:[function(require,module,exports){
 // The world is always 800 wide; the view can be wider and centres the world with offsetX.
 const WORLD_VIEW_WIDTH = 800;
 const MAX_VIEW_WIDTH = 1600;
@@ -5327,7 +5511,7 @@ function povFade(depth) {
 
 module.exports = { VIEW, setViewWidth, WORLD_VIEW_WIDTH, MAX_VIEW_WIDTH, OVERVIEW_SHIP_LINE, POV, projectOverview, povCamera, projectPov, povFade };
 
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 // Full-screen overlays: title, intro, pause, level clear celebration,
 // victory finale and game over.
 const { VIEW } = require('./projection');
@@ -5566,7 +5750,7 @@ function isSectorFinale(game) {
     return number === LEVEL_COUNT || number === TOTAL_LEVEL_COUNT;
 }
 
-function drawVictory(ctx, game, fx) {
+function drawVictory(ctx, game, fx, { signPrompt = false } = {}) {
     const time = game.time || 0;
     const t = fx && fx.state.celebrateTime >= 0 ? fx.state.celebrateTime : 3;
     const cx = VIEW.width / 2;
@@ -5648,8 +5832,10 @@ function drawVictory(ctx, game, fx) {
         });
     }
     const pulse = 0.6 + 0.4 * Math.sin(time * 5);
-    pixelText(ctx, `ALL ${finalSector ? TOTAL_LEVEL_COUNT : LEVEL_COUNT} LEVELS CLEARED`, cx, 497, { size: 16, align: 'center', color: '#7dff8c', alpha: 0.75 + 0.25 * pulse });
-    pixelText(ctx, finalSector ? 'CLAIM YOUR LEVEL 20 ACHIEVEMENT IN THE VAULT' : 'SECTOR I CLEARED - LEVEL 20 EARNS THE ACHIEVEMENT', cx, 519, { size: 13, align: 'center', color: '#e8eef5' });
+    if (!signPrompt) {
+        pixelText(ctx, `ALL ${finalSector ? TOTAL_LEVEL_COUNT : LEVEL_COUNT} LEVELS CLEARED`, cx, 497, { size: 16, align: 'center', color: '#7dff8c', alpha: 0.75 + 0.25 * pulse });
+        pixelText(ctx, finalSector ? 'OPEN FLIGHT LOGS FOR YOUR LEVEL 20 ACHIEVEMENT' : 'SECTOR I CLEARED - LEVEL 20 EARNS THE ACHIEVEMENT', cx, 519, { size: 13, align: 'center', color: '#e8eef5' });
+    }
     pixelText(ctx, 'ENTER  MENU', cx, VIEW.height - 24, { size: 13, align: 'center', color: '#c9d6e3' });
 }
 
@@ -5661,7 +5847,7 @@ function safe(fn) {
     }
 }
 
-function drawGameOver(ctx, game) {
+function drawGameOver(ctx, game, { signPrompt = false } = {}) {
     const time = game.time || 0;
     const cx = VIEW.width / 2;
     const cy = VIEW.height / 2;
@@ -5679,7 +5865,7 @@ function drawGameOver(ctx, game) {
     pixelText(ctx, `SCORE ${game.score}`, cx, cy + 14, { size: 20, align: 'center' });
     pixelText(ctx, `LEVEL ${game.level.number}  ${game.level.name.toUpperCase()}`, cx, cy + 40, { size: 12, align: 'center', color: '#ffb347' });
     if (Math.floor(time * 2) % 2 === 0) {
-        pixelText(ctx, 'ENTER RESTART FROM LEVEL 1    Q MENU', cx, cy + 80, { size: 14, align: 'center', color: '#e8f6ff' });
+        pixelText(ctx, 'ENTER RESTART FROM LEVEL 1    Q MENU', cx, signPrompt ? VIEW.height - 30 : cy + 80, { size: 14, align: 'center', color: '#e8f6ff' });
     }
 }
 
@@ -5692,7 +5878,7 @@ function drawPaused(ctx) {
     pixelText(ctx, 'P/ENTER RESUME  Q MENU  V VIEW', cx, cy + 24, { size: 12, align: 'center', color: '#9fb4c8' });
 }
 
-function drawOverlay(ctx, game, fx) {
+function drawOverlay(ctx, game, fx, options = {}) {
     switch (game.state) {
         case 'title':
             drawTitle(ctx, game);
@@ -5704,10 +5890,10 @@ function drawOverlay(ctx, game, fx) {
             drawLevelClear(ctx, game, fx);
             break;
         case 'gameOver':
-            drawGameOver(ctx, game);
+            drawGameOver(ctx, game, options);
             break;
         case 'victory':
-            drawVictory(ctx, game, fx);
+            drawVictory(ctx, game, fx, options);
             break;
         case 'playing':
             if (game.showLevelIntro) drawIntro(ctx, game);
@@ -5719,7 +5905,7 @@ function drawOverlay(ctx, game, fx) {
 
 module.exports = { drawOverlay, drawTitle, drawCover, waveText, formatTime, easeOutBack, DIFFICULTY_OPTIONS };
 
-},{"../levels":12,"./assets":15,"./elephant":19,"./font":21,"./hud":23,"./projection":28,"./shapes":30}],30:[function(require,module,exports){
+},{"../levels":13,"./assets":16,"./elephant":21,"./font":23,"./hud":25,"./projection":30,"./shapes":32}],32:[function(require,module,exports){
 const { WEAPONS } = require('../weapons');
 const { getImage, getTinted, rockKeyFor, futureRockKeyFor, makeCanvas, BREATHE_FRAMES, MINI_EMBLEM_FRAMES } = require('./assets');
 const { pixelText } = require('./font');
@@ -5942,6 +6128,16 @@ function drawAsteroid(ctx, asteroid, x, y, radius, alpha = 1, time = 0, sector2 
         ctx.stroke();
     }
     ctx.restore();
+    if (asteroid.boss) {
+        ctx.save();
+        ctx.globalAlpha *= alpha;
+        ctx.strokeStyle = '#ff7ae6';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([12, 8]);
+        ctx.lineDashOffset = -time * 20;
+        ctx.beginPath(); ctx.arc(x, y, radius * 1.3, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+    }
     if (asteroid.shooter) {
         // Menacing reactor eye: hot core plus a rotating split ring.
         drawGlow(ctx, x, y, radius * 0.9, '#ff5a1c', alpha * 0.9 * pulse);
@@ -6420,7 +6616,7 @@ module.exports = {
     drawEnemyBullet
 };
 
-},{"../weapons":39,"./assets":15,"./font":21}],31:[function(require,module,exports){
+},{"../weapons":41,"./assets":16,"./font":23}],33:[function(require,module,exports){
 const { drawGlow, drawAsteroid } = require('./shapes');
 const { getImage, supporterImageKey } = require('./assets');
 const { pixelText } = require('./font');
@@ -6562,7 +6758,7 @@ function drawSupporterToken(ctx, tokenId, x, y, size) {
 
 module.exports = { drawVault, drawVaultPov, drawVaultGlyph, drawSupporterToken, guardList, shielded };
 
-},{"../supporter-catalog":37,"./assets":15,"./font":21,"./projection":28,"./shapes":30}],32:[function(require,module,exports){
+},{"../supporter-catalog":39,"./assets":16,"./font":23,"./projection":30,"./shapes":32}],34:[function(require,module,exports){
 // Small seeded RNG so each level's map is the same every time it is played.
 function createRng(seed) {
     let state = seed >>> 0;
@@ -6585,10 +6781,10 @@ function pick(rng, items) {
 
 module.exports = { createRng, range, pick };
 
-},{}],33:[function(require,module,exports){
-module.exports = 'voyager-1.4-open-sector';
+},{}],35:[function(require,module,exports){
+module.exports = 'voyager-1.5-mandelblum-boss';
 
-},{}],34:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 // Save format, validation, legacy migration and quota-tolerant persistence.
 const { LEVEL_COUNT, TOTAL_LEVEL_COUNT } = require('./levels');
 const { DIFFICULTY_IDS, isDifficulty, difficultyLabel } = require('./difficulty');
@@ -6791,7 +6987,7 @@ function validateLevelRecord(record, where = 'Level record') {
     };
     const shotsByWeapon = extendNewCounters(stats.shotsByWeapon, ['nova', 'prism', 'singularity']);
     const pickupsCollected = extendNewCounters(stats.pickupsCollected, ['nova', 'prism', 'singularity', 'life', 'mini']);
-    const count = (key) => num(['volleys', 'miniHitsAbsorbed'].includes(key) ? (stats[key] ?? 0) : stats[key], `${s}.${key}`, {
+    const count = (key) => num(['volleys', 'miniHitsAbsorbed', 'bossesDestroyed'].includes(key) ? (stats[key] ?? 0) : stats[key], `${s}.${key}`, {
         max: 1e9, integer: !['damageTaken', 'timeInPov', 'timeInOverview'].includes(key)
     });
     return {
@@ -6832,6 +7028,7 @@ function validateLevelRecord(record, where = 'Level record') {
             accuracy: num(stats.accuracy, `${s}.accuracy`, { max: 1 }),
             asteroidsSpawned: count('asteroidsSpawned'),
             asteroidsDestroyed: count('asteroidsDestroyed'),
+            bossesDestroyed: count('bossesDestroyed'),
             asteroidsMissed: count('asteroidsMissed'),
             shootersDestroyed: count('shootersDestroyed'),
             fragmentsDestroyed: count('fragmentsDestroyed'),
@@ -7087,7 +7284,7 @@ module.exports = {
     persistSave
 };
 
-},{"./difficulty":7,"./levels":12,"./prizes":14,"./stats":36}],35:[function(require,module,exports){
+},{"./difficulty":8,"./levels":13,"./prizes":15,"./stats":38}],37:[function(require,module,exports){
 const { createWeapon } = require('./weapons');
 
 const MIN_X = 20;
@@ -7153,7 +7350,7 @@ class Spaceship {
 
 module.exports = Spaceship;
 
-},{"./weapons":39}],36:[function(require,module,exports){
+},{"./weapons":41}],38:[function(require,module,exports){
 // Per-level stats, combo tracking, battle log sampling and LevelRecord building.
 //
 // Definitions:
@@ -7185,7 +7382,7 @@ const PATH_INTERVAL = 0.25;
 const COUNTER_FIELDS = [
     'shotsFired', 'volleys', 'hits', 'asteroidsSpawned', 'asteroidsDestroyed', 'asteroidsMissed',
     'shootersDestroyed', 'fragmentsDestroyed', 'enemyShotsFired', 'enemyShotsDodged', 'hitsTaken',
-    'collisions', 'shieldBlocks', 'damageTaken', 'pickupsMissed', 'miniHitsAbsorbed', 'timeInPov', 'timeInOverview'
+    'collisions', 'shieldBlocks', 'damageTaken', 'pickupsMissed', 'miniHitsAbsorbed', 'bossesDestroyed', 'timeInPov', 'timeInOverview'
 ];
 
 // Lifetime / run totals: counters are summed, maxCombo is a max, closestCall a min.
@@ -7370,6 +7567,7 @@ class LevelTracker {
             accuracy: ratio(s.hits, s.shotsFired),
             asteroidsSpawned: s.asteroidsSpawned,
             asteroidsDestroyed: s.asteroidsDestroyed,
+            bossesDestroyed: s.bossesDestroyed,
             asteroidsMissed: s.asteroidsMissed,
             shootersDestroyed: s.shootersDestroyed,
             fragmentsDestroyed: s.fragmentsDestroyed,
@@ -7459,7 +7657,7 @@ module.exports = {
     buildLevelRecord
 };
 
-},{}],37:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, COLLECTION } = require('./prizes');
 
 const IMAGE_CIDS = {
@@ -7504,7 +7702,7 @@ function supporterDetails(tokenId) { return catalog.get(String(tokenId)) || null
 
 module.exports = { supporterDetails };
 
-},{"./prizes":14}],38:[function(require,module,exports){
+},{"./prizes":15}],40:[function(require,module,exports){
 const { pick, range } = require('./rng');
 const { PRIZES } = require('./prizes');
 const Asteroid = require('./asteroid');
@@ -7536,7 +7734,7 @@ function markGuardDestroyed(vault, guard) {
 }
 module.exports = { chooseVaultLevel, createVault, markGuardDestroyed };
 
-},{"./asteroid":2,"./prizes":14,"./rng":32}],39:[function(require,module,exports){
+},{"./asteroid":2,"./prizes":15,"./rng":34}],41:[function(require,module,exports){
 const Bullet = require('./bullet');
 
 const MAX_TIER = 3;
@@ -7633,4 +7831,4 @@ function fireWeapon(weapon, ship, scrollSpeed, charge = 0) {
 
 module.exports = { WEAPONS, MAX_TIER, createWeapon, applyWeaponPickup, downgradeWeapon, fireWeapon };
 
-},{"./bullet":4}]},{},[1]);
+},{"./bullet":5}]},{},[1]);

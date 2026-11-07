@@ -81,6 +81,7 @@ test('receiving game actual levelRecord passes vault, metadata, claim and queue 
   game.setPilot({ address: wallet, isPilot: true });
   game.save.progress.byDifficulty.ace.sector2Unlocked = true;
   game.selectedDifficulty = 'ace'; game.startCampaign(20); game.asteroids = []; game.pickups = [];
+  game.bossDefeated = true;
   game.update(.016, { fire: true }); game.scrollY = game.level.length; game.update(.016, {});
   const emitted = game.drainEvents().find(event => event.type === 'levelRecord'); assert.ok(emitted);
   const vault = new VictoryVault({ getItem: () => null, setItem() {} }); vault.merge(game.getWinRecords());

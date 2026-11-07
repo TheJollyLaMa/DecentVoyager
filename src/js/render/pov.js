@@ -4,6 +4,7 @@ const { levelTint, createStarfield, drawNebula } = require('./background');
 const { getImage } = require('./assets');
 const { getPlayers, playerScale } = require('./players');
 const { drawVaultPov } = require('./vault');
+const { drawBossLasers, drawBossStatus } = require('./boss');
 
 const FLOOR_HEIGHT = -40;
 const GRID_STEP = 100;
@@ -185,6 +186,7 @@ function createPovRenderer() {
             });
         }
         drawVaultPov(ctx, game, camera, projectPov, time);
+        drawBossLasers(ctx, game, point => projectPov({ ...point, y: Math.max(point.y, camera.y + POV.near + 8) }, camera));
         if (game.state === 'playing' || game.state === 'paused' || game.state === 'levelComplete') {
             const players = getPlayers(game);
             players.forEach(({ ship, index, color }) => {
@@ -200,6 +202,7 @@ function createPovRenderer() {
                 ctx.restore();
             });
         }
+        drawBossStatus(ctx, game);
     };
 }
 

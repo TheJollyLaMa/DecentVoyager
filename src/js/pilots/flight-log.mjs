@@ -18,20 +18,30 @@ export function logHash(runLog, ethers = globalThis.ethers) {
 
 export function mountFlightLog({ getGame = () => window.voyager?.game || window.asteroidGame, getWallet = () => window.DecentHead?.getWallet?.(), onStatus = () => {}, fetchImpl = globalThis.fetch } = {}) {
   const action = document.getElementById('flight-sign');
+  const prompt = document.getElementById('flight-sign-prompt');
+  const promptNote = document.getElementById('flight-sign-note');
   const retryAction = document.getElementById('flight-retry');
   const status = document.getElementById('flight-status');
   let statusTimer = null;
   const notify = text => {
     clearTimeout(statusTimer);
     if (status) status.textContent = text;
+    if (promptNote && prompt && !prompt.hidden && text && text !== 'Referee flight ticket ready for your next launch.') promptNote.textContent = text;
     onStatus(text);
     if (text === 'Referee flight ticket ready for your next launch.') {
       statusTimer = setTimeout(() => { if (status?.textContent === text) status.textContent = ''; onStatus(''); }, 5000);
     }
   };
   const tickets = createRunTicketManager({ fetchImpl, getGame, onStatus: notify });
+  const refreshPrompt = () => {
+    if (!prompt) return;
+    const state = getGame()?.state;
+    prompt.hidden = !action || action.hidden || !['gameOver', 'victory'].includes(state);
+    prompt.toggleAttribute('data-victory', state === 'victory');
+  };
+  window.setInterval(refreshPrompt, 250);
   const refreshOutbox = () => { if (retryAction) retryAction.hidden = !pilot.isPilot || !outbox.read().length; }
-  retryAction?.addEventListener('click', async () => { try { if (!pilot.isPilot) throw new Error('Retry is for Decent Pilots.'); const result = await outbox.retry(); const remaining = outbox.read(); notify(result.pending ? `${result.pending} signed run(s) remain queued for retry. ${remaining[0]?.lastError || ''}` : 'Signed flight-log outbox is clear. Check ☥ → Rewards waiting; verified rewards need a separate Base claim transaction.'); refreshOutbox(); } catch (error) { notify(error.message); } });
+  retryAction?.addEventListener('click', async () => { try { if (!pilot.isPilot) throw new Error('Retry is for Decent Pilots.'); const result = await outbox.retry(); const remaining = outbox.read(); notify(result.pending ? `${result.pending} signed run(s) remain queued for retry. ${remaining[0]?.lastError || ''}` : 'Signed flight-log outbox is clear. Check ☥ → Captured rewards; verified rewards need a separate Base claim transaction.'); refreshOutbox(); } catch (error) { notify(error.message); } });
   window.addEventListener('voyager:pilot', event => { pilot.address = event.detail?.address || null; pilot.isPilot = !!event.detail?.isPilot; tickets.setPilot(pilot); if (!pilot.isPilot && action) action.hidden = true; if (pilot.isPilot) { void outbox.retry().finally(refreshOutbox); } else refreshOutbox(); });
   window.setInterval(() => { if (pilot.isPilot && outbox.read().length) void outbox.retry().finally(refreshOutbox); }, 60000);
   refreshOutbox();
@@ -51,25 +61,35 @@ export function mountFlightLog({ getGame = () => window.voyager?.game || window.
       if (pilot.isPilot && promptedRun !== runId && (records.some(record => record.level === 20) || captures.length)) {
         promptedRun = runId;
         const hasTicket = !!game?.getRunLog?.()?.ticket;
-        if (!hasTicket) notify('Rewards need a referee flight ticket. No ticket was attached; GitHub fallback: ☥ profile → Victory Vault → Request mint on GitHub.');
-        if (action) { action.hidden = !hasTicket; action.disabled = false; action.textContent = 'Sign flight log'; action.onclick = async () => { action.disabled = true; try { await signFlight(); action.hidden = true; } catch (error) { notify(error.message); action.disabled = false; } }; }
+        if (!hasTicket) notify('Rewards need a referee flight ticket. No ticket was attached; GitHub fallback: ☥ profile → Flight Logs → Request mint on GitHub.');
+        if (action) {
+          action.hidden = !hasTicket; action.disabled = false; action.textContent = 'Sign flight log';
+          if (promptNote) promptNote.textContent = 'Sign to verify. Claim separately on Base.';
+          action.onclick = async () => {
+            action.disabled = true; action.textContent = 'Confirm in your wallet';
+            try { await signFlight(); action.hidden = true; }
+            catch (error) { notify(error.message); action.disabled = false; action.textContent = 'Sign flight log'; }
+            finally { refreshPrompt(); }
+          };
+        }
       }
     }
+    refreshPrompt();
   });
   async function signFlight() {
     if (!pilot.isPilot || !pilot.address) throw new Error('Decent Pilot wallet required');
     const session = getWallet(), game = getGame();
     if (!session?.browserProvider || !game?.getRunLog) throw new Error('Wallet or flight log is unavailable');
-    const signer = await session.browserProvider.getSigner();
-    if ((await signer.getAddress()).toLowerCase() !== pilot.address.toLowerCase()) throw new Error('Wallet changed; reconnect and retry');
     const runLog = game.getRunLog();
     if (!runLog || typeof runLog !== 'object') throw new Error('Run log is unavailable');
-    if (!runLog.ticket) throw new Error('Rewards need a referee flight ticket. GitHub fallback: ☥ profile → Victory Vault → Request mint on GitHub.');
+    if (!runLog.ticket) throw new Error('Rewards need a referee flight ticket. GitHub fallback: ☥ profile → Flight Logs → Request mint on GitHub.');
+    const signer = await session.browserProvider.getSigner();
+    if ((await signer.getAddress()).toLowerCase() !== pilot.address.toLowerCase()) throw new Error('Wallet changed; reconnect and retry');
     const ethers = window.ethers || await (await import('../../vendor/decent-head/2.0.0/js/wallet.js')).loadEthers();
     const runHash = logHash(runLog, ethers);
     const signature = await signer.signMessage(runHash);
     const result = await outbox.enqueue({ address: pilot.address, run: runLog, runHash, signature });
-    notify(result.length ? `Flight log saved locally; referee retry is queued. ${result[0].lastError || ''}` : 'Flight log verified by the referee. Check ☥ → Rewards waiting and submit the separate Base claim transaction; signing alone does not transfer an NFT.');
+    notify(result.length ? `Flight log saved locally; referee retry is queued. ${result[0].lastError || ''}` : 'Flight log verified by the referee. Check ☥ → Captured rewards and submit the separate Base claim transaction; signing alone does not transfer an NFT.');
     refreshOutbox();
     return result;
   }

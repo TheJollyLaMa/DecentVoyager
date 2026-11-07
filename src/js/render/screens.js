@@ -236,7 +236,7 @@ function isSectorFinale(game) {
     return number === LEVEL_COUNT || number === TOTAL_LEVEL_COUNT;
 }
 
-function drawVictory(ctx, game, fx) {
+function drawVictory(ctx, game, fx, { signPrompt = false } = {}) {
     const time = game.time || 0;
     const t = fx && fx.state.celebrateTime >= 0 ? fx.state.celebrateTime : 3;
     const cx = VIEW.width / 2;
@@ -318,8 +318,10 @@ function drawVictory(ctx, game, fx) {
         });
     }
     const pulse = 0.6 + 0.4 * Math.sin(time * 5);
-    pixelText(ctx, `ALL ${finalSector ? TOTAL_LEVEL_COUNT : LEVEL_COUNT} LEVELS CLEARED`, cx, 497, { size: 16, align: 'center', color: '#7dff8c', alpha: 0.75 + 0.25 * pulse });
-    pixelText(ctx, finalSector ? 'CLAIM YOUR LEVEL 20 ACHIEVEMENT IN THE VAULT' : 'SECTOR I CLEARED - LEVEL 20 EARNS THE ACHIEVEMENT', cx, 519, { size: 13, align: 'center', color: '#e8eef5' });
+    if (!signPrompt) {
+        pixelText(ctx, `ALL ${finalSector ? TOTAL_LEVEL_COUNT : LEVEL_COUNT} LEVELS CLEARED`, cx, 497, { size: 16, align: 'center', color: '#7dff8c', alpha: 0.75 + 0.25 * pulse });
+        pixelText(ctx, finalSector ? 'OPEN FLIGHT LOGS FOR YOUR LEVEL 20 ACHIEVEMENT' : 'SECTOR I CLEARED - LEVEL 20 EARNS THE ACHIEVEMENT', cx, 519, { size: 13, align: 'center', color: '#e8eef5' });
+    }
     pixelText(ctx, 'ENTER  MENU', cx, VIEW.height - 24, { size: 13, align: 'center', color: '#c9d6e3' });
 }
 
@@ -331,7 +333,7 @@ function safe(fn) {
     }
 }
 
-function drawGameOver(ctx, game) {
+function drawGameOver(ctx, game, { signPrompt = false } = {}) {
     const time = game.time || 0;
     const cx = VIEW.width / 2;
     const cy = VIEW.height / 2;
@@ -349,7 +351,7 @@ function drawGameOver(ctx, game) {
     pixelText(ctx, `SCORE ${game.score}`, cx, cy + 14, { size: 20, align: 'center' });
     pixelText(ctx, `LEVEL ${game.level.number}  ${game.level.name.toUpperCase()}`, cx, cy + 40, { size: 12, align: 'center', color: '#ffb347' });
     if (Math.floor(time * 2) % 2 === 0) {
-        pixelText(ctx, 'ENTER RESTART FROM LEVEL 1    Q MENU', cx, cy + 80, { size: 14, align: 'center', color: '#e8f6ff' });
+        pixelText(ctx, 'ENTER RESTART FROM LEVEL 1    Q MENU', cx, signPrompt ? VIEW.height - 30 : cy + 80, { size: 14, align: 'center', color: '#e8f6ff' });
     }
 }
 
@@ -362,7 +364,7 @@ function drawPaused(ctx) {
     pixelText(ctx, 'P/ENTER RESUME  Q MENU  V VIEW', cx, cy + 24, { size: 12, align: 'center', color: '#9fb4c8' });
 }
 
-function drawOverlay(ctx, game, fx) {
+function drawOverlay(ctx, game, fx, options = {}) {
     switch (game.state) {
         case 'title':
             drawTitle(ctx, game);
@@ -374,10 +376,10 @@ function drawOverlay(ctx, game, fx) {
             drawLevelClear(ctx, game, fx);
             break;
         case 'gameOver':
-            drawGameOver(ctx, game);
+            drawGameOver(ctx, game, options);
             break;
         case 'victory':
-            drawVictory(ctx, game, fx);
+            drawVictory(ctx, game, fx, options);
             break;
         case 'playing':
             if (game.showLevelIntro) drawIntro(ctx, game);

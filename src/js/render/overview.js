@@ -5,6 +5,7 @@ const { getImage } = require('./assets');
 const { pixelText } = require('./font');
 const { getPlayers, playerScale } = require('./players');
 const { drawVault } = require('./vault');
+const { drawBossLasers, drawBossStatus } = require('./boss');
 
 function drawJumpGate(ctx, y, time, sector2 = false) {
     const gate = getImage(sector2 ? 'gate-sector2' : 'gate') || getImage('gate');
@@ -78,6 +79,7 @@ function createOverviewRenderer() {
             if (onScreen(p, 80)) drawAsteroid(ctx, asteroid, p.x, p.y, asteroid.size, 1, time, game.level.number >= 11);
         }
         drawVault(ctx, game, scrollY, time, projectOverview, onScreen);
+        drawBossLasers(ctx, game, point => projectOverview(point, scrollY));
 
         for (const bullet of game.playerBullets) {
             const p = projectOverview(bullet, scrollY);
@@ -115,6 +117,7 @@ function createOverviewRenderer() {
                 ctx.restore();
             });
         }
+        drawBossStatus(ctx, game);
     };
 }
 

@@ -1,3 +1,5 @@
+import { bindBackdropClose } from '../dnft/ui.mjs';
+
 export function mountCaptureBriefing({
   getGame = () => window.asteroidGame,
   getDetails = tokenId => window.AsteroidRender.supporterDetails(tokenId),
@@ -41,11 +43,12 @@ export function mountCaptureBriefing({
     dialog.querySelector('[data-capture-pause-note]').textContent = online
       ? 'Online battle continues on the referee. Close this briefing promptly to keep flying.'
       : 'Your local battle is paused while you inspect the reward.';
-    resume.textContent = queue.length ? 'View next reward' : online ? 'Back to online battle' : 'Continue voyage';
+    resume.hidden = !queue.length;
+    resume.textContent = 'View next reward';
     window.asteroidDraw?.();
   };
   const continueFlight = () => {
-    if (queue.length) { show(); return; }
+    queue.length = 0;
     dialog.close();
     const game = getGame();
     if (pausedByUs && game?.state === 'paused' && !isOnline()) game.handleAction('pause');
@@ -53,9 +56,10 @@ export function mountCaptureBriefing({
     document.getElementById('gameCanvas')?.focus({ preventScroll: true });
     window.asteroidDraw?.();
   };
-  resume.addEventListener('click', continueFlight);
+  resume.addEventListener('click', show);
   dialog.querySelector('[data-capture-dismiss]').addEventListener('click', continueFlight);
   dialog.addEventListener('cancel', event => { event.preventDefault(); continueFlight(); });
+  bindBackdropClose(dialog, continueFlight);
   window.addEventListener('asteroid:event', event => {
     if (event.detail?.type !== 'supporterCaptured') return;
     const capture = event.detail;
@@ -65,7 +69,7 @@ export function mountCaptureBriefing({
     seen.add(key);
     queue.push(capture);
     if (!dialog.open) show();
-    else resume.textContent = 'View next reward';
+    else resume.hidden = false;
   });
   return { continueFlight };
 }

@@ -50,6 +50,25 @@ test('legacy archive is pinned and keeps old capture and campaign rules', () => 
   assert.equal(missed.state, 'victory');
 });
 
+test('pre-boss open-sector flights use their exact archive and authenticated ruleset', () => {
+  const OpenSectorGame = require('../legacy/voyager-1.4-open-sector/game');
+  const ruleset = require('../legacy/voyager-1.4-open-sector/ruleset');
+  assert.equal(createHash('sha256').update(readFileSync(require.resolve('../legacy/voyager-1.4-open-sector/game'))).digest('hex'), 'b7d048c7035632ed9025933f0c1fb15a4a229e36241795c1b7ba43c9a150ea69');
+  assert.equal(gameForRuleset(ruleset), OpenSectorGame);
+  const game = new OpenSectorGame({ seed: 44, now: () => NOW });
+  game.startCampaign(10, 'pilot');
+  const ticket = oldTicket();
+  ticket.ticket.ruleset = ruleset;
+  ticket.mac = `0x${createHmac('sha256', SECRET).update(stableJson(ticket.ticket)).digest('hex')}`;
+  const service = createTicketService({ secret: SECRET, now: () => NOW });
+  const run = { ruleset, seed: ticket.ticket.seed, ticket, runId: 'pre-boss-flight' };
+  assert.equal(service.verify({ address: ADDRESS, run }).ticket.ruleset, ruleset);
+  for (let i = 0; i < 180; i++) game.step([{ fire: true }]);
+  assert.deepEqual(replayRun({ ...game.getRunLog(), runId: game.runId }), game.summary());
+  game.completeLevel();
+  assert.equal(game.state, 'warping');
+});
+
 test('legacy tickets retain exact ruleset, MAC, seed, wallet, expiry and single-use checks', () => {
   let now = NOW;
   const service = createTicketService({ secret: SECRET, now: () => now });

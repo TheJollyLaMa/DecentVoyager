@@ -220,6 +220,16 @@ function drawAsteroid(ctx, asteroid, x, y, radius, alpha = 1, time = 0, sector2 
         ctx.stroke();
     }
     ctx.restore();
+    if (asteroid.boss) {
+        ctx.save();
+        ctx.globalAlpha *= alpha;
+        ctx.strokeStyle = '#ff7ae6';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([12, 8]);
+        ctx.lineDashOffset = -time * 20;
+        ctx.beginPath(); ctx.arc(x, y, radius * 1.3, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+    }
     if (asteroid.shooter) {
         // Menacing reactor eye: hot core plus a rotating split ring.
         drawGlow(ctx, x, y, radius * 0.9, '#ff5a1c', alpha * 0.9 * pulse);

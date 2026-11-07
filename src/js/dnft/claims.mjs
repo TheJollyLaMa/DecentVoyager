@@ -4,6 +4,7 @@ import { pinFile, canvasBlob, gatewayUrl } from './pin.mjs';
 import { validAddress, parseQueue } from './validation.mjs';
 import { node, button, link, createDialog, openDialog } from './ui.mjs';
 import { requirePilot } from '../pilots/gate.mjs';
+import { flightStatGroups } from './flight-stats.mjs';
 export function issueUrl(claim) {
   const json = JSON.stringify(claim, null, 2);
   const params = new URLSearchParams({ template: 'victory-stamp.yml', labels: 'victory-stamp', title: `Victory stamp: L${claim.level} ${claim.difficulty} · ${claim.recordId}`, claim: json, body: `### Claim JSON\n\n\`\`\`json\n${json}\n\`\`\`` });
@@ -14,13 +15,17 @@ function requireDecentPilot(action) { requirePilot(window.__voyagerPilot, action
 export function mountClaims() {
   if (document.getElementById('asteroid-victory-vault')) return;
   const vault = new VictoryVault(), busy = new Set();
-  const dialog = createDialog('🏆 Victory Vault', 'asteroid-victory-vault');
-  const intro = node('p', 'Every cleared level stays here as flight history with full stats. Only completing level 20 earns an achievement NFT. Decent Pilots can sign the final flight log for the referee, or pin the level 20 battle card and request the mint on GitHub. A request is not yet an on-chain NFT. Previously issued vouchers remain valid.');
+  const dialog = createDialog('✦ Flight Logs', 'asteroid-victory-vault');
+  const hero = node('div', '', { className: 'flight-log-hero' });
+  hero.append(node('img', '', { src: new URL('../../assets/brand/voyager-disc.png', import.meta.url).href, alt: 'Mandelblum flight insignia' }), node('p', 'Your voyages, firepower and survival record. Saved totals include failed and abandoned attempts, not just victories. The current attempt joins these totals when it ends.'));
+  const totals = node('section', '', { 'aria-label': 'Total flight stats' });
+  const intro = node('p', 'Every cleared level keeps its battle card below. Only level 20 earns an achievement NFT; signing a flight log or requesting a mint is not an NFT transfer. Open Captured rewards for verified Base claims.');
   const status = node('p', '', { role: 'status', 'aria-live': 'polite', className: 'asteroid-status' });
-  const list = node('section', '', { 'aria-label': 'Cleared levels' }); dialog.append(intro, status, list);
+  const list = node('section', '', { 'aria-label': 'Cleared levels' }); dialog.append(hero, totals, node('h2', 'Battle archive'), intro, status, list);
+  let renderGeneration = 0;
   let opener = null;
   const announce = () => window.dispatchEvent(new CustomEvent('voyager:vault-count', { detail: { count: vault.entries.length } }));
-  window.addEventListener('voyager:open-vault', event => { opener = event.detail?.opener || null; sync(); render(); openDialog(dialog); });
+  window.addEventListener('voyager:open-vault', event => { opener = event.detail?.opener || null; sync(); openDialog(dialog); render(); });
   function sync() { vault.merge(window.asteroidGame?.getWinRecords?.() || []); announce(); }
   async function action(entry, task) {
     if (busy.has(entry.record.id)) return;
@@ -29,13 +34,54 @@ export function mountClaims() {
     finally { busy.delete(entry.record.id); render(); }
   }
   function render() {
+    const generation = ++renderGeneration;
     const retainFocus = dialog.contains(document.activeElement);
+    totals.replaceChildren();
+    const lifetime = window.asteroidGame?.getLifetimeStats?.();
+    if (!lifetime) totals.append(node('p', 'Flight stats are unavailable while the game loads. Reopen Flight Logs to retry.'));
+    for (const [title, metrics] of lifetime ? flightStatGroups(lifetime) : []) {
+      const grid = node('div', '', { className: 'flight-log-grid' });
+      for (const [label, value] of metrics) {
+        const metric = node('div');
+        metric.append(node('strong', value), node('span', label));
+        grid.append(metric);
+      }
+      totals.append(node('h3', title), grid);
+    }
+    for (const canvas of list.querySelectorAll('canvas')) { canvas.width = 0; canvas.height = 0; }
     list.replaceChildren(); announce();
     if (vault.error) status.textContent = vault.error;
-    if (!vault.entries.length) list.append(node('p', 'No victories yet. Clear a level to collect your first battle stamp.'));
-    for (const entry of [...vault.entries].reverse()) {
+    if (!vault.entries.length) list.append(node('p', 'No cleared levels yet. Failed flights still count in your totals above.'));
+    const entries = [...vault.entries].reverse();
+    for (const [index, entry] of entries.entries()) {
       const record = entry.record, card = node('article');
       card.append(node('h3', `L${record.level} ${record.levelName} · ${record.difficultyLabel || record.difficulty}`), node('p', `${new Date(record.completedAt).toLocaleString()} · Score ${record.score.total} · Accuracy ${(record.stats.accuracy * 100).toFixed(1)}%`), node('p', `Status: ${entry.status}`));
+      if (dialog.open && index < 3) {
+        const preview = node('div');
+        card.append(preview);
+        void (async () => {
+          let canvas;
+          try {
+            if (!window.AsteroidRender?.renderBattleCard) throw new Error('Battle renderer is still loading. Reopen Flight Logs to retry.');
+            canvas = await window.AsteroidRender.renderBattleCard(record, { width: 480, height: 480 });
+            if (generation !== renderGeneration || !dialog.open) { canvas.width = 0; canvas.height = 0; return; }
+            canvas.className = 'battle-preview'; canvas.setAttribute('role', 'img');
+            canvas.setAttribute('aria-label', `Battle map and stats for level ${record.level}`);
+            preview.append(canvas);
+          } catch (error) {
+            if (generation === renderGeneration) preview.textContent = `Battle preview unavailable: ${error.message}`;
+          }
+        })();
+      }
+      const details = node('details'), summary = node('summary', 'Full level telemetry');
+      details.append(summary);
+      for (const [title, metrics] of flightStatGroups(record.stats)) {
+        if (title === 'Voyages') continue;
+        const grid = node('div', '', { className: 'flight-log-grid' });
+        for (const [label, value] of metrics) { const metric = node('div'); metric.append(node('strong', value), node('span', label)); grid.append(metric); }
+        details.append(node('h4', title), grid);
+      }
+      card.append(details);
       const gateway = window.DecentHead?.getIpfs?.()?.options?.gateway;
       for (const [label, uri] of [['Battle PNG', entry.image], ['Metadata', entry.tokenURI]]) if (uri) { card.append(node('p', `${label} CID: ${uri.slice(7)}`), link(`Open ${label}`, gatewayUrl(uri, gateway))); }
       if (entry.txHash && /^0x[\da-f]{64}$/i.test(entry.txHash)) card.append(link('Mint transaction on BaseScan', `https://basescan.org/tx/${entry.txHash}`));
@@ -101,7 +147,12 @@ export function mountClaims() {
   window.addEventListener('asteroid:save-imported', () => { sync(); render(); });
   window.addEventListener('decenthead:wallet', render);
   window.addEventListener('voyager:pilot', event => { window.__voyagerPilot = event.detail; render(); });
-  dialog.addEventListener('close', () => opener?.focus?.());
+  dialog.addEventListener('close', () => {
+    if (dialog.open) return;
+    renderGeneration++;
+    for (const canvas of list.querySelectorAll('canvas')) { canvas.width = 0; canvas.height = 0; }
+    opener?.focus?.();
+  });
   sync(); render(); void reconcile();
   return { vault, dialog, refresh: sync };
 }
