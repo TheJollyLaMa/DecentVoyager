@@ -26,11 +26,11 @@ function affordablePrizes(difficulty) {
     return ['pilot', 'ace'].includes(difficulty) ? AFFORDABLE_PRIZES : [];
 }
 function validateRewardPlan(plan) {
-    if (!plan || plan.version !== 1 || !['pilot', 'ace'].includes(plan.difficulty) ||
+    if (!plan || ![1, 2].includes(plan.version) || !['pilot', 'ace'].includes(plan.difficulty) ||
         !Array.isArray(plan.tokens) || plan.tokens.length !== 2 || plan.tokens[0] === plan.tokens[1] ||
         !plan.tokens.every(token => affordablePrizes(plan.difficulty).some(prize => prize.tokenId === token)) ||
         !Array.isArray(plan.levels) || plan.levels.length !== 2 ||
-        ![4, 5, 6].includes(plan.levels[0]) || ![17, 18, 19].includes(plan.levels[1])) {
+        !(plan.version === 1 ? [4, 5, 6] : [9, 10]).includes(plan.levels[0]) || ![17, 18, 19].includes(plan.levels[1])) {
         throw new Error('Referee reward rotation plan is invalid.');
     }
     return plan;

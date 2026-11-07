@@ -35,7 +35,7 @@ function createRewardRotation({ choose = randomInt, now = () => Date.now() } = {
     state.last = tokens;
     state.at = now();
     wallets.set(key, state);
-    return { version: 1, difficulty, tokens, levels: [[4, 5, 6][choose(3)], [17, 18, 19][choose(3)]] };
+    return { version: 2, difficulty, tokens, levels: [[9, 10][choose(2)], [17, 18, 19][choose(3)]] };
   }
   return { next };
 }
