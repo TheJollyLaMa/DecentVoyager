@@ -59,8 +59,10 @@ Ticket and run rulesets must match, and the original ticket MAC, signing wallet,
 seed, six-hour expiry, replay and funded-stock checks still apply. New tickets
 and online arenas use the current ruleset. Unknown older versions remain rejected.
 Signed flights already in this browser's outbox retry automatically when an
-eligible wallet connects, or with **Retry signed flight logs**. Keep the browser
-data until verification succeeds. Background retries verify evidence only;
+eligible wallet connects. Manual verification and collection remain inside
+**Flight Logs**, not in a main-screen retry button. Old status messages clear
+when a new flight starts. Keep the browser data until verification succeeds.
+Background retries verify evidence only;
 wallet transfers require an explicit collection action. Expired tickets cannot be renewed for an
 old run. Archive provenance is in [server/legacy](server/legacy/README.md).
 
