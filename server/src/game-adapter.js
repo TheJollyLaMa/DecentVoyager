@@ -54,6 +54,7 @@ function replayRun(run) {
     pilot: run.pilot,
     runId: run.runId,
     startedAt: run.startedAt,
+    actions: run.actions,
     frames: normalizeFrames(run.frames)
   });
 }

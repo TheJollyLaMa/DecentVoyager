@@ -1303,6 +1303,7 @@ class Game {
         this.runElapsed = 0;
         this.runStartedAt = null;
         this.runFrames = [];
+        this.runActions = [];
         this.runCaptures = [];
         this.runRecords = [];
         this.vaultTiersSpawned = [];
@@ -1448,6 +1449,7 @@ class Game {
         this.runId = `${this.seed.toString(16)}-${this.runStartedAt.toString(36)}`;
         this.runStartLevel = levelNumber;
         this.runFrames = [];
+        this.runActions = [];
         this.runCaptures = [];
         this.runRecords = [];
         this.vaultTiersSpawned = [];
@@ -1557,7 +1559,7 @@ class Game {
     }
 
     getRunLog() {
-        return { runId: this.runId || `${this.seed.toString(16)}-unstarted`, ruleset: RULESET, seed: this.seed, difficulty: this.difficulty, startLevel: this.runStartLevel || 1, players: this.playerCount, mode: this.mode, pilot: { ...this.pilot }, ticket: this.runTicket == null ? null : clone(this.runTicket), frames: inputLog.encode(this.runFrames), startedAt: this.runStartedAt == null ? null : new Date(this.runStartedAt).toISOString(), version: 1 };
+        return { runId: this.runId || `${this.seed.toString(16)}-unstarted`, ruleset: RULESET, seed: this.seed, difficulty: this.difficulty, startLevel: this.runStartLevel || 1, players: this.playerCount, mode: this.mode, pilot: { ...this.pilot }, ticket: this.runTicket == null ? null : clone(this.runTicket), frames: inputLog.encode(this.runFrames), ...(this.runActions.length ? { actions: clone(this.runActions) } : {}), startedAt: this.runStartedAt == null ? null : new Date(this.runStartedAt).toISOString(), version: 1 };
     }
 
     serialize() {
@@ -1590,7 +1592,7 @@ class Game {
 
     static fromSnapshot(snapshot) { return new Game().applySnapshot(snapshot); }
 
-    static replay({ seed = 0, difficulty = 'cadet', startLevel = 1, players = 1, pilot = null, frames = [], runId = null, startedAt = null, mode: replayMode = 'coop' } = {}) {
+    static replay({ seed = 0, difficulty = 'cadet', startLevel = 1, players = 1, pilot = null, frames = [], actions = [], runId = null, startedAt = null, mode: replayMode = 'coop' } = {}) {
         const baseTime = startedAt ? Date.parse(startedAt) : Date.UTC(2020, 0, 1);
         if (!Number.isFinite(baseTime)) throw new TypeError('Replay start time is invalid.');
         const game = new Game({ seed, now: () => baseTime });
@@ -1601,7 +1603,16 @@ class Game {
         game.startCampaign(startLevel, difficulty, seed);
         if (runId) game.runId = runId;
         const expanded = inputLog.decode(frames);
-        for (const inputs of expanded) game.step(inputs);
+        let actionIndex = 0;
+        for (let frame = 0; frame <= expanded.length; frame++) {
+            while (actionIndex < actions.length && actions[actionIndex].frame === frame) {
+                const action = actions[actionIndex++];
+                if (action.type !== 'continue' || game.state !== 'levelComplete') throw new Error('Recorded Continue action is not at a cleared-level transition.');
+                game.handleAction('confirm');
+            }
+            if (frame < expanded.length) game.step(expanded[frame]);
+        }
+        if (actionIndex !== actions.length) throw new Error('Recorded flight action is outside the input history.');
         return game.summary();
     }
 
@@ -1630,7 +1641,10 @@ class Game {
             case 'confirm':
                 if (this.state === 'title') this.startCampaign(1);
                 else if (this.state === 'gameOver') this.retryLevel();
-                else if (this.state === 'levelComplete') this.advanceLevel();
+                else if (this.state === 'levelComplete') {
+                    this.runActions.push({ frame: this.runFrames.length, type: 'continue' });
+                    this.advanceLevel();
+                }
                 else if (this.state === 'paused') this.state = 'playing';
                 else if (this.state === 'victory') this.goToTitle();
                 break;

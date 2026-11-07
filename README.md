@@ -74,6 +74,16 @@ signed inputs and campaign identity. Guarded pickups use a replay-derived
 capture receipt when the level is not yet cleared; marathon awards still require
 the full verified victory.
 
+Continue/Enter skips at cleared-level celebrations are signed as ordered
+`actions: [{ frame, type: 'continue' }]` alongside the input frames. Replay applies
+each action only at a cleared-level transition, before that frame, and later
+checkpoints preserve the recorded action prefix. Logs without actions retain
+the original automatic transition timing. Before this fix, manual Continue
+clicks were omitted: those older logs can diverge and fail capture verification.
+Retrying cannot reconstruct missing clicks; do not alter already signed evidence.
+Start a new flight after updating. The readiness gate requires
+`health.transitionActions` before publishing this frontend.
+
 **Flight Logs** includes captured NFTs with their actual catalog artwork,
 description, project, Canopy, metadata and Base links. Unsigned checkpoints,
 verified vouchers, submitted transaction hashes and confirmed collection history

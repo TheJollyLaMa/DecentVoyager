@@ -76,8 +76,14 @@ function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TT
       const identity = value => stableJson(Object.fromEntries(
         ['runId', 'ruleset', 'seed', 'difficulty', 'startLevel', 'players', 'mode', 'startedAt', 'version'].map(key => [key, value[key] ?? null])));
       const previous = inputLog.decode(normalizeFrames(existing.evidence.frames)), next = inputLog.decode(normalizeFrames(run.frames));
+      const sharedFrame = Math.min(previous.length, next.length);
+      const shorter = previous.length <= next.length ? existing.evidence : run;
+      const boundaryRecorded = previous.length === next.length ||
+        (shorter.actions || []).some(action => action.frame === sharedFrame);
+      const actionPrefix = value => (value.actions || []).filter(action => action.frame < sharedFrame || (boundaryRecorded && action.frame === sharedFrame));
       if (identity(existing.evidence) !== identity(run) ||
           stableJson(previous.slice(0, Math.min(previous.length, next.length))) !== stableJson(next.slice(0, Math.min(previous.length, next.length))) ||
+          stableJson(actionPrefix(existing.evidence)) !== stableJson(actionPrefix(run)) ||
           (!checkpoint && next.length < previous.length)) {
         throw new Error('Flight checkpoint does not match the signed input history.');
       }
