@@ -33,6 +33,39 @@
       "digest": "0xc98f60f6a978ce04673d4e38108bcd81ed255bcbca5cbce4bbc601fe33fbece8",
       "queuedAt": "2026-11-07T19:32:18.563Z",
       "status": "pending"
+    },
+    {
+      "kind": "supporter-prize",
+      "runId": "7795f59a-mw7ozyba",
+      "runHash": "0x3bb8ce3ce03fcf55ba556a39c5891e8f355ea1eb8bbb107b64a0a2f96e033fea",
+      "player": "0x807061DF657A7697c04045dA7d16D941861cAABc",
+      "tier": 1,
+      "protocol": "reward-bundle/1",
+      "project": "DecentCanopy",
+      "tokenId": "79",
+      "label": "DecentCanopy v0.1.0 #79",
+      "metadataURI": "ipfs://QmQqQtuSeab78F3pdBcMbvSopYZLa51zJ4JxcodQ2ugy9d",
+      "awardKind": "guarded-pickup",
+      "receiptRecordId": "capture:7795f59a-mw7ozyba:tier1:79",
+      "captureIdentity": "095ed09a-9d7a-4c47-b1b6-7b2ceeb29fcf:7795f59a-mw7ozyba:tier1:79",
+      "voucher": {
+        "gameId": "0x9bd3cd8b09e18e8dfe9804105946a3ee573fd786b3d4de6e665a3a38ac1dd185",
+        "player": "0x807061DF657A7697c04045dA7d16D941861cAABc",
+        "nftContract": "0xe63EC9f8228720bAAC2fD528C0A6d06B3Dc5439B",
+        "tokenId": "79",
+        "nftAmount": "1",
+        "paymentToken": "0x0000000000000000000000000000000000000000",
+        "tokenAmount": "0",
+        "nativeAmount": "0",
+        "awardId": "0x2a12db7b05e04eef67081d06e447de6a33b075ad0d28e4d4aee54dac7e683ea9",
+        "claimId": "0xbf1856bf50b3ab2ad73f273235f1263a3d689eb924e85d197a7375f9411920f7",
+        "recordId": "0x4b171220bc18854d0f47bb78e5d7508b915c000e70e0f5c02d030b69bb094a59",
+        "deadline": "1796726456"
+      },
+      "signature": "0xbd3129b9d9f2ffcd57d751ba3649c97f8f5175c2280ae43c4ea52d8e0302b35a00e9f816fc5240588a4eada1cc77e6f93929b69603247eebfa3fea9db384044d1c",
+      "digest": "0xd0d5fc54d738525348936c49780695c34175a77886049cc95aa5fa06929eb5bf",
+      "queuedAt": "2026-11-08T10:40:56.389Z",
+      "status": "pending"
     }
   ],
   "settled": []
