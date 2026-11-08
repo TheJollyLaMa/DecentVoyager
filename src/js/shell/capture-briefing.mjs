@@ -1,4 +1,3 @@
-import { bindBackdropClose } from '../dnft/ui.mjs';
 import { flightLog } from '../pilots/flight-log.mjs';
 
 export function mountCaptureBriefing({
@@ -55,7 +54,8 @@ export function mountCaptureBriefing({
       if (pausedByUs) game.handleAction('pause');
       dialog.showModal();
     }
-    next.textContent = `${capture.kind ? '' : 'Team power refilled. '}Collect now: sign the flight evidence, then approve the Base transfer. You pay Base gas. Or dismiss and collect later from Flight Logs; your captured checkpoint stays on this device.`;
+    title.focus({ preventScroll: true });
+    next.textContent = `${capture.kind ? '' : 'Team power refilled. '}Collect now: sign the flight evidence, then approve the Base transfer. You pay Base gas. Close with the X or Escape to collect later from Flight Logs; your captured checkpoint stays on this device.`;
     dialog.querySelector('[data-capture-pause-note]').textContent = online
       ? 'Online battle continues on the referee. Close this briefing promptly to keep flying.'
       : 'Your local battle is paused while you inspect the reward.';
@@ -75,7 +75,12 @@ export function mountCaptureBriefing({
   resume.addEventListener('click', show);
   dialog.querySelector('[data-capture-dismiss]').addEventListener('click', continueFlight);
   dialog.addEventListener('cancel', event => { event.preventDefault(); continueFlight(); });
-  bindBackdropClose(dialog, continueFlight);
+  for (const type of ['keydown', 'keyup']) {
+    dialog.addEventListener(type, event => {
+      event.stopPropagation();
+      if (event.key === ' ' || event.repeat) event.preventDefault();
+    });
+  }
   window.addEventListener('asteroid:event', event => {
     if (event.detail?.type !== 'supporterCaptured') return;
     const capture = event.detail;
