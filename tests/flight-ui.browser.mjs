@@ -116,13 +116,38 @@ try {
       const game = window.asteroidGame;
       game.startCampaign(1, 'pilot', 44);
       game.drainEvents();
+      document.getElementById('gameCanvas').focus();
+    });
+    await page.keyboard.down('Space');
+    await page.evaluate(() => {
       window.dispatchEvent(new CustomEvent('asteroid:event', { detail: { type: 'supporterCaptured', tier: 1, prize: { tokenId: 70 } } }));
     });
     const briefing = page.locator('#supporter-briefing');
     await briefing.waitFor({ state: 'visible' });
     assert.equal(await page.evaluate(() => window.asteroidGame.state), 'paused');
     assert.equal(await briefing.locator('[data-capture-resume]').isVisible(), false);
+    assert.equal(await page.locator('#capture-title').evaluate(title => title === document.activeElement), true);
+    await page.keyboard.down('Space');
+    await page.keyboard.up('Space');
+    await briefing.locator('[data-capture-dismiss]').focus();
+    await page.keyboard.press('Space');
+    assert.equal(await briefing.isVisible(), true, 'fire must not activate the focused X');
+    await briefing.locator('[data-capture-collect]').focus();
+    await page.keyboard.press('Space');
+    assert.equal(await briefing.locator('[data-capture-transfer-status]').textContent(), '', 'fire must not start wallet collection');
+    for (const key of ['p', 'q', 'v', 'ArrowLeft']) await page.keyboard.press(key);
     await page.mouse.click(2, 2);
+    assert.equal(await briefing.isVisible(), true, 'outside tap must not dismiss the capture');
+    assert.equal(await page.evaluate(() => window.asteroidGame.state), 'paused');
+    await briefing.locator('[data-capture-dismiss]').click();
+    assert.equal(await briefing.isVisible(), false);
+    assert.equal(await page.evaluate(() => window.asteroidGame.state), 'playing');
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('asteroid:event', { detail: { type: 'supporterCaptured', tier: 1, prize: { tokenId: 79 } } }));
+    });
+    await briefing.waitFor({ state: 'visible' });
+    await page.keyboard.press('Escape');
+    assert.equal(await briefing.isVisible(), false);
     assert.equal(await page.evaluate(() => window.asteroidGame.state), 'playing');
 
     await page.evaluate(address => {

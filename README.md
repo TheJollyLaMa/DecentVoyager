@@ -158,9 +158,12 @@ queue rows. Original signed evidence remains stored for verification.
 Gameplay capture presentations freeze the exact checkpoint before any wallet
 await, then verify and transfer through the player's wallet. Atomic vouchers are
 not legacy admin transfers and are excluded from admin release lists/counts.
-totals include failed/abandoned attempts once finalized. All modals close with an
-upper-right x, an outside click or Escape; dismissing launch cancels it, and
-dismissing the capture briefing resumes only the local battle it paused.
+totals include failed/abandoned attempts once finalized. Modals close with an
+upper-right x, an outside click or Escape, except gameplay capture presentations:
+only their x or Escape dismisses them. Fire/Space, held-key repeats and outside
+clicks cannot dismiss or activate their buttons; focus starts on the reward title.
+Tab and Enter still operate the buttons and project links. Dismissing launch
+cancels it, and dismissing the capture briefing resumes only the local battle it paused.
 Active fault warnings alone offer **Error details** for local diagnostic
 download/recovery; this is separate from gameplay history.
 The **Decent ecosystem** Pages link opens in a separate tab to preserve the game.
