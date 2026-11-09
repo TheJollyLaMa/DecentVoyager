@@ -1,5 +1,5 @@
 const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, COLLECTION, ESCROW } = require('./prizes');
-const LISTINGS = { 70: 11, 71: 12, 75: 13, 76: 14, 77: 15, 78: 16, 79: 17, 80: 18 };
+const LISTINGS = { 70: 11, 71: 12, 75: 13, 76: 14, 77: 20, 78: 16, 79: 17, 80: 18 };
 
 const IMAGE_CIDS = {
     70: 'QmcuhKLo46hwSdUQJm93VoHeB1YrpjhzeySg6Q7D9srabS',

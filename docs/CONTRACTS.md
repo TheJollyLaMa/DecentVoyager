@@ -87,3 +87,13 @@ The local demo deploys fixtures only and demonstrates registration, pilot setup,
 Patterns were adapted from DecentMarket's public committed source at commit `2942cf84692bc6752039b68fb425711703fe4927`: [`contracts/DecentEscrow_v001.sol`](https://github.com/TheJollyLaMa/DecentMarket/blob/2942cf84692bc6752039b68fb425711703fe4927/contracts/DecentEscrow_v001.sol) for `SafeERC20`, `ERC1155Holder`, pause/reentrancy protections and escrowed ERC-1155 transfers; [`contracts/DecentNFT_v0.3.sol`](https://github.com/TheJollyLaMa/DecentMarket/blob/2942cf84692bc6752039b68fb425711703fe4927/contracts/DecentNFT_v0.3.sol) for role-gated batch minting patterns; and [`hardhat.config.js`](https://github.com/TheJollyLaMa/DecentMarket/blob/2942cf84692bc6752039b68fb425711703fe4927/hardhat.config.js) for optimizer/Cancun configuration and Hardhat project conventions. The escrow implementation itself is not copied or integrated; these contracts implement distinct game/voucher state machines.
 
 Contracts cannot verify the truth of a referee's game result. The referee is trusted to sign valid settlement and voucher results, its key must be secured/rotated carefully, and a compromised signer can award payouts/prizes/stamps incorrectly. Pilot gating depends on registry administration. ERC-1155 inventory can be depleted or misfunded; monitor balances and emitted events. Paid contests may be regulated as gambling, prize competitions, or financial promotions depending on jurisdiction; obtain legal advice and geo/eligibility controls before enabling paid rounds. This is engineering documentation, not legal advice.
+# DCal sale allocation update (November 8, 2026)
+
+DCal token 77 remains a Voyager prize. VoyagerRewards custody was not changed
+by the Calendar first-booking promotion. Independently checked Base block
+54969585: Voyager 99, sale escrow 890, Calendar gift vault 10.
+Market listing 15 was delisted and replaced with listing 20 at the same
+10-USDC sale price; the catalog purchase link now selects 20. Calendar's ten
+copies came directly from sale escrow, not Voyager stock. The relisting receipt:
+`0x9ad44ecc749440ded05ea39f369c1e0ee55a6514bf227d36a7ebacb10c9f5723`.
+This source correction needs the normal bundle build and site publication.
