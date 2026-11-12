@@ -24,6 +24,11 @@ The generic bounty bot records **Base** repository-development accruals for owne
 
 Read-only GitHub inspection on 2026-11-05 found no repository Actions secret names, only the standard nine issue labels, no open PRs, and issue #1 about supporter-release workflows. Consequently the two issue-template labels and write/protection settings still need owner setup. No remote settings, labels, issues or secrets were created by this implementation.
 
+The ledger validator accepts both legacy prize vouchers and the referee's
+`reward-bundle/1` queue shape. It checks structure, matching player/token,
+duplicates and numeric bounds; it does not verify signatures, authorize claims
+or prove a reward has been paid. Rewards remain separate from payroll totals.
+
 ## Settlement intentionally excluded
 
 `payroll-assets.json` records the donor Base ART/USDC identities as configuration, **not verified treasury integration**. It deliberately has `routerAddress: null` and `settlementEnabled: false`; `asteroid-repo-dev` is a legacy proposed ledger scope, not a deployed/funded fund or current product name. Do not reuse Busking's artist funds or shared router as if Voyager were funded. Settlements require separate owner-reviewed contract/asset/fund verification, funding, authorization and receipt reconciliation. No signing key, spending workflow or automatic transfer is installed.

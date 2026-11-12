@@ -1,5 +1,15 @@
 # Victory stamps and payroll reuse decision
 
+## Reward queue validation
+
+Need: the existing CI ledger check must accept genuine atomic rewards without
+treating them as payroll. Reused Voyager's own
+`server/src/vouchers.js` (`bundle`) and `server/src/index.js` queue shape at
+`04fec8c` rather than importing another ledger; the older prize schema remains
+supported. `tests/payroll.test.js` and `scripts/validatePayrollQueue.js` pass
+against the real queue and reject malformed synthetic bundle fixtures. This
+schema check is not signature verification or proof of a winning-flight claim.
+
 Receiving need: every cleared level should retain all telemetry and a battle PNG, generate a public IPFS mint request, support owner batches on Base, and show repo contributors without initiating payroll transfers. Acceptance: metadata retains every stat and record; validated requests dedupe; one-of-one products target claimants; non-admin/preview cannot mint; Base roles and receipts fail closed; integer payroll totals reconcile; browser dialogs render and pause flight.
 
 Inspected the curated DecentCanopy `data/agency-map.json` leads, actual source/tests, local statuses/worktrees and current Voyager GitHub activity. This is a scoped inspection of Busking, Canopy, DecentHead and DecentMarket, not whole-library coverage. Relevant donor working trees contained unrelated unfinished edits; committed content was read via `git show HEAD:path` where it mattered. No donor files were changed.
