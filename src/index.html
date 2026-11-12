@@ -36,10 +36,12 @@
   <div class="space-gate" aria-hidden="true"></div>
   <div class="cockpit">
     <div class="site-header">
+      <p id="shell-status" class="shell-status" role="status">Flight tools are loading or unavailable. <a href="">Retry</a> or <a href="https://thejollylama.github.io/DecentVoyager/">open the full app on GitHub Pages</a>.</p>
       <decent-header aria-label="Decent Voyager tools"></decent-header>
       <section class="radio-dock" aria-label="DBusk radio">
         <a href="https://github.com/A-Decent-Agency/DBuskRadio" target="_blank" rel="noopener noreferrer" class="radio-label">♫ DBusk</a>
         <div id="dbusk-radio"></div>
+        <span id="radio-status" role="status">Radio loading or unavailable.</span>
       </section>
     </div>
     <main id="flight-deck" tabindex="-1">
@@ -132,7 +134,7 @@
   </dialog>
   <script type="module" src="./js/shell/capture-briefing.mjs"></script>
   <script type="module" src="./js/shell/flight-reports.mjs"></script>
-  <script type="module" src="./js/shell/main.mjs"></script>
+  <script type="module" src="./js/shell/startup.mjs"></script>
   <script type="module" src="./js/pilots/whitelist.mjs"></script>
   <script type="module" src="./js/pilots/flight-log.mjs"></script>
   <script type="module" src="./js/pilots/rewards.mjs"></script>

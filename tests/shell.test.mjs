@@ -98,7 +98,7 @@ test('header config is public Base-only with HTTPS project links and small local
 test('static shell preserves bundle/canvas and host-module ordering for relative deployment', () => {
   const html=readFileSync(new URL('../src/index.html',import.meta.url),'utf8');
   assert.match(html,/<canvas id="gameCanvas" width="800" height="600"/);
-  assert.ok(html.indexOf('decent-head.config.js')<html.indexOf('js/shell/main.mjs'));
+  assert.ok(html.indexOf('decent-head.config.js')<html.indexOf('js/shell/startup.mjs'));
   for (const path of ['js/dnft/claims.mjs','js/admin/admin-panel.mjs']) assert.ok(html.indexOf('bundle.js')<html.indexOf(path));
   assert.match(html, /Decent Voyager/);
   assert.match(html, /href="https:\/\/thejollylama.github.io\/DecentCanopy\/" target="_blank" rel="noopener noreferrer">Decent ecosystem/);
@@ -135,7 +135,7 @@ test('about content covers rewards, tutorials and the multiplayer walkthrough wi
   assert.match(ABOUT.mission, /elephant escort/);
   assert.match(ABOUT.diagnostics, /not measurements of actual GPU memory/);
   const html=readFileSync(new URL('../src/index.html',import.meta.url),'utf8');
-  assert.ok(html.indexOf('about-modal.mjs')<html.indexOf('js/shell/main.mjs'));
+  assert.ok(html.indexOf('about-modal.mjs')<html.indexOf('js/shell/startup.mjs'));
   assert.doesNotMatch(html,/flight-note|pilot-rewards|No wallet needed to fly/);
   assert.match(html,/class="site-header"[\s\S]*id="dbusk-radio"[\s\S]*<main/);
 });

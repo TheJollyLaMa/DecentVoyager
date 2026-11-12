@@ -1,5 +1,18 @@
 # Victory stamps and payroll reuse decision
 
+## IPFS shell failure isolation
+
+Need: an optional radio failure must not block wallet/header initialization and
+a failed core must not leave a silent empty header. Adapted Voyager's existing
+`src/js/shell/main.mjs` and HTML shell at `04fec8c`; retained the vendored
+DecentHead and DBuskRadio code, configuration ordering and their licenses.
+The existing Playwright harness pattern in `tests/mobile-controls.browser.mjs`
+is reused for `tests/shell-startup.browser.mjs`, including failed radio, core
+module and loader requests and About/IPFS dialog interactions. Bundling is
+not yet adopted: vendor `import.meta.url` asset bases and shared module identity
+need explicit preservation and full receiving-app verification. Gateway/ENS
+deployment is not established by this local test.
+
 ## Reward queue validation
 
 Need: the existing CI ledger check must accept genuine atomic rewards without

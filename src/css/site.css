@@ -7,6 +7,8 @@ a:hover { color:var(--gold); }
 .space-gate { position:fixed; z-index:-1; pointer-events:none; top:-160px; left:calc(50% - 260px); width:520px; height:520px; opacity:.08; background:url('../assets/brand/voyager-disc.png') center/contain no-repeat; animation:gate-orbit 120s linear infinite; }
 .cockpit { height:100dvh; min-height:520px; display:flex; flex-direction:column; }
 .site-header { flex:none; position:relative; z-index:10; width:100%; margin:0 auto; }
+.shell-status { margin: 8px; padding: 8px; color: #fff; background: #522b0d; text-align: center; }
+.shell-status a { color: #fff; text-decoration: underline; }
 decent-header { display:block; --dh-orbit-size:104px; --dh-orbit-size-mobile:88px; }
 .site-header.menu-open decent-header { position:relative; z-index:5; }
 .radio-dock { position:absolute; left:50%; bottom:5px; transform:translateX(-50%); z-index:4; width:min(560px,calc(100% - 220px)); display:flex; align-items:center; gap:10px; padding:2px 12px; border:1px solid #56edff2e; border-radius:99px; background:#070c1ccc; backdrop-filter:blur(6px); }
