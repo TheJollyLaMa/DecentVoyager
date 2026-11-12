@@ -1,5 +1,15 @@
 # Victory stamps and payroll reuse decision
 
+## Recurring Supporter release adoption
+
+Need: archive and prepare future tagged releases consistently without reminting
+v1.0.0. Adapted Apache-2.0 DecentHead `templates/supporter/supporter-release.yml`
+and `supporter-announce.yml` at `8523309e99126f5df84400317e6401c583525124`;
+Voyager requires `site_root: src`, unlike the template's default repository
+root. The `tests/supporter-workflows.test.mjs` receiving-app check validates the
+pin, site root and gated credentials. Real release preparation, steward signing
+and Discord delivery remain dependent on credentials and external acceptance.
+
 ## Reward queue validation
 
 Need: the existing CI ledger check must accept genuine atomic rewards without
