@@ -1,5 +1,4 @@
 import { installProgressPanel } from './ipfs-save.mjs';
-import { mount } from '../../vendor/dbusk-radio/0.2.0/widget.js';
 
 window.DECENT_CONFIG.ipfsAdapter = installProgressPanel();
 // Configuration and host controls must exist before DecentHead snapshots them.
@@ -61,7 +60,7 @@ button{font-size:clamp(18px,5.2cqi,34px)}
 @keyframes voyager-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.voyager-disc{animation:none}}`);
 
-let radio;
+let radio, radioMount;
 const slimRadio = () => {
   const root = document.getElementById('dbusk-radio')?.shadowRoot;
   if (!root || root.querySelector('style[data-voyager]')) return;
@@ -71,16 +70,24 @@ button,select{padding:1px 6px}.now{flex:1;min-width:0;padding:0;font-size:11px;o
 .status:empty{display:none}.status{flex:1 0 100%;font-size:10px;white-space:normal;overflow-wrap:anywhere;min-width:0}`;
   root.append(style);
 };
-const mountRadio = () => {
-  radio = mount(document.getElementById('dbusk-radio'), {
+const mountRadio = async () => {
+  radioMount ||= (await import('../../vendor/dbusk-radio/0.2.0/widget.js')).mount;
+  radio = radioMount(document.getElementById('dbusk-radio'), {
     workerUrl: 'https://decentbusking.onrender.com', compact: true, theme: 'dark', volume: 0.08,
     stations: [{ id: 'wqxr', label: 'WQXR', url: 'https://stream.wqxr.org/wqxr-web' }]
   });
   slimRadio();
+  document.getElementById('radio-status').hidden = true;
 };
-mountRadio();
+const startRadio = () => mountRadio().catch(error => {
+  console.error('Radio unavailable:', error);
+  const status = document.getElementById('radio-status');
+  status.textContent = 'Radio unavailable. Reload to retry.';
+  status.hidden = false;
+});
+startRadio();
 window.addEventListener('pagehide', () => radio?.destroy());
-window.addEventListener('pageshow', event => { if (event.persisted) mountRadio(); });
+window.addEventListener('pageshow', event => { if (event.persisted) startRadio(); });
 
 const pause = () => {
   if (!window.voyager?.isNetworkMode?.() && window.asteroidGame?.state === 'playing') {
