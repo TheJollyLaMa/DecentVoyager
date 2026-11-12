@@ -11,6 +11,12 @@ test('live repository payroll and supporter-prize ledgers validate without treat
   const prize = { kind: 'supporter-prize', runId: 'run-1', runHash: `0x${'1'.repeat(64)}`, player: '0x405Bb3Cdf23833bb27BAD6629b7cd4f01688235f', tier: 1, project: 'DecentHead', tokenId: '70', label: 'DecentHead v2.0.0 #70', voucher: { player: '0x405Bb3Cdf23833bb27BAD6629b7cd4f01688235f', nftContract: '0xe63EC9f8228720bAAC2fD528C0A6d06B3Dc5439B', tokenId: '70', tier: 1, runId: `0x${'2'.repeat(64)}`, deadline: '1794000000' }, signature: `0x${'3'.repeat(130)}`, digest: `0x${'4'.repeat(64)}`, queuedAt: '2026-11-05T18:00:00.000Z', status: 'pending' };
   assert.equal(validatePayroll({ ...seedQueue, pending: [prize] }, seedAccounts), true);
   assert.throws(() => validatePayroll({ ...seedQueue, pending: [prize, prize] }, seedAccounts), /supporter prize/);
+  const bundle = { ...prize, protocol: 'reward-bundle/1', receiptRecordId: 'capture:fixture', awardKind: 'guarded-pickup', voucher: { player: prize.player, nftContract: prize.voucher.nftContract, tokenId: prize.tokenId, nftAmount: '1', paymentToken: '0x0000000000000000000000000000000000000000', tokenAmount: '0', nativeAmount: '0', deadline: '1794000000', gameId: `0x${'a'.repeat(64)}`, awardId: `0x${'b'.repeat(64)}`, claimId: `0x${'c'.repeat(64)}`, recordId: `0x${'d'.repeat(64)}` } };
+  assert.equal(validatePayroll({ ...seedQueue, pending: [bundle] }, seedAccounts), true);
+  for (const voucher of [{ ...bundle.voucher, claimId: 'bad' }, { ...bundle.voucher, nftAmount: '0' }, { ...bundle.voucher, tokenAmount: '-1' }, { ...bundle.voucher, player: '0x' + '9'.repeat(40) }, { ...bundle.voucher, tokenId: '71' }]) {
+    assert.throws(() => validatePayroll({ ...seedQueue, pending: [{ ...bundle, voucher }] }, seedAccounts), /supporter prize/);
+  }
+  assert.throws(() => validatePayroll({ ...seedQueue, pending: [{ ...bundle, protocol: 'unknown' }] }, seedAccounts), /supporter prize/);
 });
 test('fixed decimal units preserve exact amounts without floating-point rounding', () => {
   assert.equal(amountToUnits('1.234567', 'USDC'), 1234567n); assert.equal(unitsToAmount(1234567n, 'USDC'), '1.234567');
