@@ -1,5 +1,15 @@
 # Victory stamps and payroll reuse decision
 
+## Recurring Supporter release adoption
+
+Need: archive and prepare future tagged releases consistently without reminting
+v1.0.0. Adapted Apache-2.0 DecentHead `templates/supporter/supporter-release.yml`
+and `supporter-announce.yml` at `8523309e99126f5df84400317e6401c583525124`;
+Voyager requires `site_root: src`, unlike the template's default repository
+root. The `tests/supporter-workflows.test.mjs` receiving-app check validates the
+pin, site root and gated credentials. Real release preparation, steward signing
+and Discord delivery remain dependent on credentials and external acceptance.
+
 Receiving need: every cleared level should retain all telemetry and a battle PNG, generate a public IPFS mint request, support owner batches on Base, and show repo contributors without initiating payroll transfers. Acceptance: metadata retains every stat and record; validated requests dedupe; one-of-one products target claimants; non-admin/preview cannot mint; Base roles and receipts fail closed; integer payroll totals reconcile; browser dialogs render and pause flight.
 
 Inspected the curated DecentCanopy `data/agency-map.json` leads, actual source/tests, local statuses/worktrees and current Voyager GitHub activity. This is a scoped inspection of Busking, Canopy, DecentHead and DecentMarket, not whole-library coverage. Relevant donor working trees contained unrelated unfinished edits; committed content was read via `git show HEAD:path` where it mattered. No donor files were changed.

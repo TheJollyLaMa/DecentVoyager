@@ -1,0 +1,33 @@
+name: Announce Supporter DNFT
+# DecentHead product kit: keep both refs matched to supporter-release.yml.
+# Runs only when SUPPORTER_DISCORD_ENABLED is 'true'.
+on:
+  schedule:
+    - cron: '29,59 * * * *'
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Prepared release tag (blank scans releases awaiting delivery)
+        required: false
+      mint_evidence:
+        description: Public Studio evidence JSON to register once (requires tag)
+        required: false
+permissions:
+  contents: write
+  issues: write
+concurrency:
+  group: supporter-${{ github.repository }}
+  cancel-in-progress: false
+jobs:
+  announce:
+    if: ${{ vars.SUPPORTER_DISCORD_ENABLED == 'true' }}
+    uses: TheJollyLaMa/DecentHead/.github/workflows/product-supporter-announce.yml@8523309e99126f5df84400317e6401c583525124
+    with:
+      tag: ${{ inputs.tag || github.event.release.tag_name || '' }}
+      mint_evidence: ${{ inputs.mint_evidence || '' }}
+      head_ref: 8523309e99126f5df84400317e6401c583525124
+      ens_rpc_url: ${{ vars.SUPPORTER_ENS_RPC_URL || 'https://ethereum-rpc.publicnode.com' }}
+    secrets:
+      DISCORD_SUPPORTER_WEBHOOK: ${{ secrets.DISCORD_SUPPORTER_WEBHOOK }}
