@@ -78,7 +78,21 @@ function validatePayroll(queue, accounts) {
     if (entry.kind === 'supporter-prize') {
       const player = typeof entry.player === 'string' && entry.player.toLowerCase();
       const key = `${player}:${entry.tokenId}`;
-      if (!walletOK(entry.player) || supporterIds.has(key) || !/^\d+$/.test(String(entry.tokenId)) || ![1, 2].includes(Number(entry.tier)) || typeof entry.runId !== 'string' || !/^0x[\da-f]{64}$/i.test(entry.runHash || '') || !Number.isFinite(Date.parse(entry.queuedAt)) || typeof entry.label !== 'string' || typeof entry.project !== 'string' || !entry.voucher || !walletOK(entry.voucher.player) || entry.voucher.player.toLowerCase() !== player || !walletOK(entry.voucher.nftContract) || !/^0x[\da-f]{64}$/i.test(entry.voucher.runId || '') || String(entry.voucher.tokenId) !== String(entry.tokenId) || Number(entry.voucher.tier) !== Number(entry.tier) || !/^0x[\da-f]{130}$/i.test(entry.signature || '') || !/^0x[\da-f]{64}$/i.test(entry.digest || '')) throw new Error('Invalid or duplicate supporter prize queue entry');
+      const voucher = entry.voucher || {};
+      const bytes32 = value => /^0x[\da-f]{64}$/i.test(value || '');
+      const uint256 = value => /^\d{1,78}$/.test(String(value ?? '')) && BigInt(value) < (1n << 256n);
+      const bundle = entry.protocol === 'reward-bundle/1';
+      const voucherValid = bundle
+        ? [voucher.gameId, voucher.awardId, voucher.claimId, voucher.recordId].every(bytes32)
+          && /^0x[\da-f]{40}$/i.test(voucher.paymentToken || '')
+          && [voucher.tokenId, voucher.nftAmount, voucher.tokenAmount, voucher.nativeAmount, voucher.deadline].every(uint256)
+          && BigInt(voucher.nftAmount) > 0n && BigInt(voucher.deadline) > 0n
+          && (BigInt(voucher.tokenAmount) === 0n || walletOK(voucher.paymentToken))
+          && typeof entry.receiptRecordId === 'string' && entry.receiptRecordId.length > 0
+          && typeof entry.awardKind === 'string' && entry.awardKind.length > 0
+        : (entry.protocol == null || entry.protocol === 'prize/1')
+          && bytes32(voucher.runId) && Number(voucher.tier) === Number(entry.tier);
+      if (!walletOK(entry.player) || supporterIds.has(key) || !uint256(entry.tokenId) || ![1, 2].includes(Number(entry.tier)) || typeof entry.runId !== 'string' || !bytes32(entry.runHash) || !Number.isFinite(Date.parse(entry.queuedAt)) || typeof entry.label !== 'string' || typeof entry.project !== 'string' || !walletOK(voucher.player) || voucher.player.toLowerCase() !== player || !walletOK(voucher.nftContract) || !voucherValid || String(voucher.tokenId) !== String(entry.tokenId) || !/^0x[\da-f]{130}$/i.test(entry.signature || '') || !bytes32(entry.digest)) throw new Error('Invalid or duplicate supporter prize queue entry');
       supporterIds.add(key);
       continue;
     }
