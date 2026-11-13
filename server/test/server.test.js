@@ -117,7 +117,7 @@ test('twenty cleared levels issue exactly one new level 20 achievement', async (
   assert.equal(response.status, 201);
   const result = await response.json();
   assert.deepEqual(pinned, [20]);
-  assert.equal(queued.length, 1);
+  assert.deepEqual(queued.map(entry => entry.kind), ['wins', 'stamps']);
   assert.equal(result.vouchers.length, 1);
   assert.equal(result.vouchers[0].voucher.level, 20);
 });
@@ -286,6 +286,10 @@ test('GitHub contents queue preserves duplicate vouchers and rejects conflicting
   assert.equal(duplicate.status, 'already-queued');
   assert.deepEqual(duplicate.item.voucher, item.voucher);
   await assert.rejects(queue.append('stamps', { ...item, runHash: '0xffff' }), /different run hash/);
+  const win = { id: 'a'.repeat(64), type: 'verified-level-20', difficulty: 'pilot', verifiedAt: '2026-11-12T00:00:00Z' };
+  assert.equal((await queue.append('wins', win)).status, 'queued');
+  assert.equal((await queue.append('wins', win)).status, 'already-queued');
+  assert.deepEqual((await queue.read('wins')).pending, [win]);
 });
 
 test('lobby creates a new group when the sixth player joins and applies disconnect grace', () => {
