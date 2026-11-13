@@ -7,7 +7,8 @@ function createQueueWriter({ repoRoot, token = '', repo = '', ref = 'main', fetc
   let localWrite = Promise.resolve();
   const files = {
     stamps: localFiles.stamps || 'victory-stamps.json',
-    prizes: localFiles.prizes || 'payroll-queue.json'
+    prizes: localFiles.prizes || 'payroll-queue.json',
+    wins: localFiles.wins || 'verified-wins.json'
   };
   const headers = {
     authorization: `Bearer ${token}`,
@@ -27,12 +28,13 @@ function createQueueWriter({ repoRoot, token = '', repo = '', ref = 'main', fetc
 
   function allEntries(doc, kind) {
     if (Array.isArray(doc)) return doc;
-    const completed = kind === 'stamps' ? doc.minted : doc.settled;
+    const completed = kind === 'stamps' ? doc.minted : kind === 'wins' ? [] : doc.settled;
     return [...(Array.isArray(doc.pending) ? doc.pending : []), ...(Array.isArray(completed) ? completed : [])];
   }
 
   function findEntry(list, item, kind) {
     return list.find((existing) => {
+      if (kind === 'wins') return existing.id === item.id;
       if (kind === 'stamps') return (existing.recordId || existing.record && existing.record.id) === (item.recordId || item.record && item.record.id);
       const sameToken = String(existing.tokenId ?? (existing.prize && existing.prize.tokenId) ?? '') === String(item.tokenId ?? (item.prize && item.prize.tokenId) ?? '');
       return sameToken && existing.player && item.player && existing.player.toLowerCase() === item.player.toLowerCase();
@@ -40,6 +42,7 @@ function createQueueWriter({ repoRoot, token = '', repo = '', ref = 'main', fetc
   }
 
   function existingResult(existing, item, file) {
+    if (existing && item.type === 'verified-level-20') return { status: 'already-queued', file, item: existing };
     if (existing && existing.player && item.player && existing.player.toLowerCase() !== item.player.toLowerCase()) {
       throw new Error('Queue identity is already assigned to a different player.');
     }
@@ -94,7 +97,7 @@ function createQueueWriter({ repoRoot, token = '', repo = '', ref = 'main', fetc
     const file = files[kind];
     for (let attempt = 0; attempt < 3; attempt++) {
       const { data: current, sha } = await readRemote(file);
-      const doc = current || (kind === 'stamps' ? { pending: [], minted: [] } : { schema: 'asteroid-payroll/1', pending: [], settled: [] });
+      const doc = current || (kind === 'stamps' ? { pending: [], minted: [] } : kind === 'wins' ? { schema: 'voyager-verified-wins/1', pending: [] } : { schema: 'asteroid-payroll/1', pending: [], settled: [] });
       const pending = Array.isArray(doc) ? doc : doc.pending;
       if (!Array.isArray(pending)) throw new Error(`${file} does not contain a pending queue array.`);
       const existing = findEntry(allEntries(doc, kind), item, kind);
@@ -116,7 +119,7 @@ function createQueueWriter({ repoRoot, token = '', repo = '', ref = 'main', fetc
     try { doc = JSON.parse(await fs.readFile(file, 'utf8')); }
     catch (error) {
       if (error.code !== 'ENOENT') throw error;
-      doc = kind === 'stamps' ? { pending: [], minted: [] } : { schema: 'asteroid-payroll/1', pending: [], settled: [] };
+      doc = kind === 'stamps' ? { pending: [], minted: [] } : kind === 'wins' ? { schema: 'voyager-verified-wins/1', pending: [] } : { schema: 'asteroid-payroll/1', pending: [], settled: [] };
     }
     const pending = Array.isArray(doc) ? doc : doc.pending;
     if (!Array.isArray(pending)) throw new Error(`${files[kind]} does not contain a pending queue array.`);
@@ -149,7 +152,7 @@ function createQueueWriter({ repoRoot, token = '', repo = '', ref = 'main', fetc
         try { doc = JSON.parse(await fs.readFile(path.join(repoRoot, files[kind]), 'utf8')); }
         catch (error) { if (error.code !== 'ENOENT') throw error; }
       }
-      return doc || (kind === 'stamps' ? { pending: [], minted: [] } : { schema: 'asteroid-payroll/1', pending: [], settled: [] });
+      return doc || (kind === 'stamps' ? { pending: [], minted: [] } : kind === 'wins' ? { schema: 'voyager-verified-wins/1', pending: [] } : { schema: 'asteroid-payroll/1', pending: [], settled: [] });
     }
   };
 }

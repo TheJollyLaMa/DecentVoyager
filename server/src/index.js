@@ -1,7 +1,7 @@
 'use strict';
 
 const http = require('node:http');
-const { randomBytes } = require('node:crypto');
+const { randomBytes, createHmac } = require('node:crypto');
 const path = require('node:path');
 const { verifyMessage, getAddress } = require('ethers');
 const { WebSocketServer } = require('ws');
@@ -73,8 +73,9 @@ function createService(options = {}) {
   if ((env.NODE_ENV || process.env.NODE_ENV) === 'production' && !env.TICKET_SECRET) {
     throw new Error('TICKET_SECRET is required in production.');
   }
+  const ticketSecret = env.TICKET_SECRET || randomBytes(32).toString('hex');
   const ticketService = options.ticketService || createTicketService({
-    secret: env.TICKET_SECRET || randomBytes(32).toString('hex'),
+    secret: ticketSecret,
     now
   });
   const config = {
@@ -164,6 +165,7 @@ function createService(options = {}) {
           captureApi: true,
           transitionActions: true,
           rewardRotation: true,
+          verifiedWinNotices: true,
           signerConfigured: Boolean(vouchers.address),
           queueMode: env.GITHUB_TOKEN ? (env.GITHUB_REPO ? 'github' : 'misconfigured') : 'local',
           pinning: env.PINATA_JWT ? 'configured' : 'skipped'
@@ -268,6 +270,10 @@ function createService(options = {}) {
     catch (error) { error.statusCode = 422; throw error; }
     const records = (verified.result.records || []).map((value) => value.record || value);
     const captures = verified.result.captures || [];
+    if (!checkpoint && run.difficulty !== 'cadet' && verified.result.state === 'victory' && records.some(record => record?.level === 20)) {
+      const id = createHmac('sha256', ticketSecret).update(`verified-level-20:${verified.runHash}`).digest('hex');
+      await queues.append('wins', { id, type: 'verified-level-20', difficulty: run.difficulty, verifiedAt: new Date(Math.floor(now() / 3600000) * 3600000).toISOString() });
+    }
     const deadline = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
     const voucherEntries = [];
     const queued = [];

@@ -74,6 +74,20 @@ The 10,000-BNut budget and 710-NFT custody are funded and independently verified
 at Base block 53644409; see `contracts/deployments/base-reserves.json`.
 Finite stock and outstanding-voucher reservations still gate every new offer.
 
+For a replay-verified Pilot/Ace level-20 victory, the referee first persists a
+privacy-minimized `verified-wins.json` event, keyed by an HMAC of the run hash.
+No wallet, signature, raw run or voucher is included. The issue workflow opens
+one notice per event and retries hourly; it does not assert that a reward was
+queued, minted or claimed. Notices link to the authorized admin queue for
+inspection. If persistence fails, verification returns an error so the player
+can retry the same signed evidence. Closed issue markers also prevent duplicates.
+The event time is rounded to an hour. This mechanism only reports future
+verified submissions and does not manufacture a production victory.
+Reuse decision: adapted this repository's `createQueueWriter` Contents API
+and `scripts/githubApi.js` at `fcd58b8`; unlike the existing public stamp
+queue, the notice ledger does not contain wallet or signed evidence. Server
+replay, duplicate/retry and issue-body tests cover the receiving path.
+
 Deploy frontend/referee as one rule-version change. Tickets and run logs carry
 `voyager-1.1-handling-rewards`; older flights receive an explicit reload/new-flight
 error instead of replaying under changed physics or prize selection. Existing
