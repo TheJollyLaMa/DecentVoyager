@@ -1,0 +1,21 @@
+name: Validate shell build
+on:
+  pull_request:
+    paths: ['src/**', 'scripts/build-shell.mjs', 'package*.json', 'tests/**', '.github/workflows/shell-build.yml']
+permissions:
+  contents: read
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:shell
+      - run: git diff --exit-code -- src/build && test -z "$(git ls-files --others --exclude-standard src/build)"
+      - run: npm test
