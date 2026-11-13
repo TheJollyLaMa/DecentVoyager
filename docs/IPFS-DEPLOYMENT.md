@@ -14,6 +14,9 @@ bundle. The Playwright shell test limits startup to six script requests with
 an injected mock wallet, verifies
 the About/IPFS dialogs, and injects core, loader and radio failures. A fallback
 links to retry and Pages. This alone does not establish a gateway rollout.
+Game artwork starts after a short grace period and loads at most three images
+at a time; missing images still use the existing vector fallback. This keeps
+the game preloader from issuing the entire asset manifest ahead of the header.
 
 On 2026-11-12, the existing `voyager.decentagency.eth.limo` site returned
 `frame-ancestors 'self'` CSP, HTML and JavaScript MIME types, and CORS `*`.

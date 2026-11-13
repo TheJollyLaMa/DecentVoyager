@@ -14,6 +14,9 @@ shared module identity; esbuild consolidates core code while retaining a
 separate optional radio bundle. Browser tests cover the receiving app, including
 failure injection, dialogs, mobile emulation and mocked reward collection.
 Gateway/ENS deployment is not established by local tests.
+The game's existing `src/js/render/assets.js` preloader is retained and bounded
+to three concurrent image loads, with its vector fallback and memoized completion
+unchanged. `tests/asset-preload.test.js` checks concurrency, failure and dedupe.
 
 ## Recurring Supporter release adoption
 
