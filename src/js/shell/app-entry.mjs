@@ -1,0 +1,13 @@
+import './about-modal.mjs';
+import './main.mjs';
+import './capture-briefing.mjs';
+import './flight-reports.mjs';
+import '../pilots/whitelist.mjs';
+import '../pilots/flight-log.mjs';
+import '../pilots/rewards.mjs';
+import '../arena/lobby.mjs';
+import '../dnft/claims.mjs';
+import './profile-menu.mjs';
+import './launch-pad.mjs';
+import '../input/mobile-controls.mjs';
+import '../admin/admin-panel.mjs';

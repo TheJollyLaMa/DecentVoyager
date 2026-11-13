@@ -76,7 +76,7 @@ try {
       }, { address });
     }
     await page.goto(origin);
-    await page.evaluate(() => import('./js/shell/main.mjs'));
+    await page.locator('#shell-status').waitFor({ state: 'hidden' });
     await page.waitForTimeout(1500);
     await setup();
     assert.equal(await page.locator('#flight-retry').count(), 0, 'no main-screen retry button');
@@ -102,7 +102,7 @@ try {
     assert.equal(await page.evaluate(() => window.asteroidGame.state), 'playing');
 
     await page.reload();
-    await page.evaluate(() => import('./js/shell/main.mjs'));
+    await page.locator('#shell-status').waitFor({ state: 'hidden' });
     await page.waitForTimeout(1500);
     await setup();
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('voyager:open-vault')));
@@ -134,7 +134,7 @@ try {
     await nftDetail.locator('.panel-close').click();
     await logs.locator('.panel-close').click();
     await page.reload();
-    await page.evaluate(() => import('./js/shell/main.mjs'));
+    await page.locator('#shell-status').waitFor({ state: 'hidden' });
     await page.waitForTimeout(1500);
     await setup();
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('voyager:open-vault')));

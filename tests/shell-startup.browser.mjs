@@ -22,16 +22,29 @@ const origin = `http://127.0.0.1:${server.address().port}/`;
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const failedPath of ['', '/vendor/dbusk-radio/0.2.0/widget.js', '/js/shell/main.mjs', '/vendor/decent-head/2.0.0/js/components/Header.js', '/js/shell/startup.mjs']) {
+  for (const failedPath of ['', '/build/chunks/widget-', '/build/app.js', '/build/chunks/main-', '/js/shell/startup.mjs']) {
     const context = await browser.newContext();
     await context.route('**/*', route => {
       const url = new URL(route.request().url());
-      if (!route.request().url().startsWith(origin) || url.pathname === failedPath) return route.abort();
+      if (!route.request().url().startsWith(origin) || (failedPath && url.pathname.includes(failedPath))) return route.abort();
       return route.continue();
     });
     const page = await context.newPage();
+    await page.addInitScript(() => {
+      window.walletRequests = [];
+      window.ethereum = { isMetaMask: true, request: async ({ method }) => {
+        window.walletRequests.push(method);
+        if (method === 'eth_accounts') return [];
+        if (method === 'eth_chainId') return '0x2105';
+        throw new Error('Test provider rejects wallet requests');
+      }, on() {}, removeListener() {} };
+    });
+    const scripts = new Set();
+    page.on('request', request => {
+      if (request.url().startsWith(origin) && /\.(?:mjs|js)(?:\?|$)/.test(request.url())) scripts.add(new URL(request.url()).pathname);
+    });
     await page.goto(origin, { waitUntil: 'load' });
-    if (failedPath.includes('main.mjs') || failedPath.includes('startup.mjs') || failedPath.includes('/Header.js')) {
+    if (failedPath.includes('/app.js') || failedPath.includes('startup.mjs') || failedPath.includes('/main-')) {
       await page.locator('#shell-status').waitFor({ state: 'visible' });
       assert.match(await page.locator('#shell-status').innerText(), /loading or unavailable|could not start/);
       assert.equal(await page.locator('#shell-status a').count(), 2);
@@ -39,10 +52,18 @@ try {
       await page.locator('#shell-status').waitFor({ state: 'hidden' });
       assert.equal(await page.evaluate(() => !!document.querySelector('decent-header')?.shadowRoot?.querySelector('wallet-connect')?.shadowRoot), true);
       assert.equal(await page.getByRole('button', { name: 'Connect wallet' }).count(), 1);
+      assert.equal(await page.evaluate(() => window.walletRequests.includes('eth_requestAccounts')), false);
       if (!failedPath) {
+        for (const side of ['left', 'right']) {
+          const menu = page.locator(`decent-header ankh-menu[side="${side}"]`);
+          await menu.locator('summary').click();
+          assert.equal(await menu.locator('details').evaluate(element => element.open), true);
+          await menu.locator('summary').click();
+        }
         await page.locator('decent-header app-title button').click();
         await page.locator('decent-header about-modal dialog[open]').waitFor();
         await page.keyboard.press('Escape');
+        assert.ok(scripts.size <= 12, `startup requested ${scripts.size} scripts: ${[...scripts].join(', ')}`);
         await page.getByRole('button', { name: 'Open IPFS controls' }).click();
         await page.locator('decent-header ipfs-controls dialog[open]').waitFor();
         await page.keyboard.press('Escape');

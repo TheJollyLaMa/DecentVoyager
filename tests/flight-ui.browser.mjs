@@ -29,7 +29,7 @@ try {
       return route.fulfill({ json: { contributors: [], vouchers: [], invites: [] } });
     });
     await page.goto(origin);
-    await page.evaluate(() => import('./js/shell/main.mjs'));
+    await page.locator('#shell-status').waitFor({ state: 'hidden' });
     await page.waitForTimeout(1500);
     const profile = page.locator('decent-header ankh-menu[side="right"]');
     await profile.locator('summary').click();
