@@ -21,6 +21,31 @@ an unauthenticated Pinata upload was rejected with HTTP 401 as expected.
 This tests gateway/service compatibility on the old ENS content, not a new pin
 or a successful authenticated backup.
 
+## Candidate pin and remaining gate
+
+The bundled frontend at commit `7fc92dcf2328cd3fae344843eb1fe41511d140c9`
+was pinned as
+`bafybeic22j6kj4g4qgqia456mjztjxvxj2r5t5ax2sf6mjg3hofswoanca` (182 files).
+The index, configuration, game bundle, shell entry, core/radio chunks and CSS
+were retrieved from Filebase and matched the commit's SHA-256 bytes. This is a
+**candidate**, not an accepted IPFS rollout. A fresh Chromium load on Filebase
+hit HTTP 429 for the launch-reminder chunk and displayed the intended retry
+fallback; its self-only CSP also blocked the Base RPC, referee and Pinata
+requests. Do not select Filebase as the app-serving gateway.
+
+The current Ethereum resolver readback still serves the previous CID
+`bafybeib2gcanocvsn672opkxewptwrv37gfxfhtdu2g7nbpkddlwqe6amu`.
+The existing ENS `.eth.limo` origin passed the service probes above, but has
+not served the new candidate and cannot establish its full-app acceptance.
+The [prepared steward signing page](https://thejollylama.github.io/DecentHead/supporter/ens.html?name=voyager.decentagency.eth&cid=bafybeic22j6kj4g4qgqia456mjztjxvxj2r5t5ax2sf6mjg3hofswoanca&repo=TheJollyLaMa%2FDecentVoyager&version=7fc92dcf)
+is **not authorization to sign before the gateway acceptance below**.
+No ENS transaction has been submitted.
+
+`tests/gateway-app.browser.mjs` accepts `VOYAGER_GATEWAY` for a fresh-context
+app and dialog check with a mock injected wallet;
+`tests/gateway-services.browser.mjs` probes external services without wallet
+interaction. Neither sends a wallet transaction.
+
 Before any IPFS rollout, use a fresh-cache browser on a selected gateway:
 
 1. Verify HTML and JavaScript MIME, gateway CSP and CORS, and every required

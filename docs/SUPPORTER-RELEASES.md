@@ -11,8 +11,9 @@ Do not re-prepare, remint, re-list, or replace its manifest. The kit refuses to
 prepare an already-frozen release. Review its release scan and delivery markers
 before enabling announcements; legacy evidence must not be blindly registered.
 
-Owner setup is still required: repository secrets `PINATA_JWT` and
-`DISCORD_SUPPORTER_WEBHOOK`; after verifying them and the delivery state, set
+The repository `PINATA_JWT` secret is configured; the same credential
+successfully pinned the candidate frontend. Owner setup is still required for
+`DISCORD_SUPPORTER_WEBHOOK`; after verifying it and the delivery state, set
 `SUPPORTER_DISCORD_ENABLED=true`. `SUPPORTER_ENS_NAME` is
 `voyager.decentagency.eth`, already listed in DecentCanopy's public inventory.
 ENS and mint/list transactions require the respective authorized stewards.
