@@ -85,7 +85,8 @@ try {
 } catch (error) {
     // Storage may be blocked; keep the default.
 }
-loadAssets();
+if (typeof setTimeout === 'function') setTimeout(() => loadAssets(), 1500);
+else loadAssets();
 
 const HELD_KEYS = {
     ArrowLeft: 'left', a: 'left', A: 'left',
@@ -3061,8 +3062,15 @@ function loadAssets({ baseUrl = BASE_URL } = {}) {
         return loadPromise;
     }
     const keys = Object.keys(MANIFEST);
-    loadPromise = Promise.all(keys.map((key) => loadOne(key, baseUrl))).then((results) => ({
-        loaded: results.filter(Boolean).length,
+    let next = 0, loaded = 0;
+    const worker = async () => {
+        while (next < keys.length) {
+            const key = keys[next++];
+            if (await loadOne(key, baseUrl)) loaded++;
+        }
+    };
+    loadPromise = Promise.all(Array.from({ length: Math.min(3, keys.length) }, worker)).then(() => ({
+        loaded,
         total: keys.length
     }));
     return loadPromise;

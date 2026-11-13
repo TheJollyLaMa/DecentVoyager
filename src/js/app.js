@@ -84,7 +84,8 @@ try {
 } catch (error) {
     // Storage may be blocked; keep the default.
 }
-loadAssets();
+if (typeof setTimeout === 'function') setTimeout(() => loadAssets(), 1500);
+else loadAssets();
 
 const HELD_KEYS = {
     ArrowLeft: 'left', a: 'left', A: 'left',

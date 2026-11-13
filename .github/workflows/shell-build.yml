@@ -16,6 +16,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - run: npm run build && git diff --exit-code -- src/bundle.js
       - run: npm run build:shell
       - run: git diff --exit-code -- src/build && test -z "$(git ls-files --others --exclude-standard src/build)"
       - run: npm test
