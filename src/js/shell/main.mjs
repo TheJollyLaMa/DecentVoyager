@@ -71,7 +71,7 @@ button,select{padding:1px 6px}.now{flex:1;min-width:0;padding:0;font-size:11px;o
   root.append(style);
 };
 const mountRadio = async () => {
-  radioMount ||= (await import('../../vendor/dbusk-radio/0.2.0/widget.js')).mount;
+  radioMount ||= (await import(new URL('./build/radio.js', document.baseURI).href)).mount;
   radio = radioMount(document.getElementById('dbusk-radio'), {
     workerUrl: 'https://decentbusking.onrender.com', compact: true, theme: 'dark', volume: 0.08,
     stations: [{ id: 'wqxr', label: 'WQXR', url: 'https://stream.wqxr.org/wqxr-web' }]

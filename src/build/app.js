@@ -1,18 +1,2245 @@
-import {
-  OUTBOX_KEY,
-  REWARD_KEY,
-  bindBackdropClose,
-  button,
-  createDialog,
-  flightLog,
-  link,
-  node,
-  openDialog,
-  rewardContract,
-  rewardState
-} from "./chunks/chunk-LZ47OUS6.js";
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// src/js/dnft/ui.mjs
+function node(tag, text2 = "", attrs = {}) {
+  const element = document.createElement(tag);
+  element.textContent = text2;
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === "className") element.className = value;
+    else element.setAttribute(key, value);
+  }
+  return element;
+}
+function button(text2, action) {
+  const element = node("button", text2, { type: "button" });
+  element.addEventListener("click", action);
+  return element;
+}
+function link(text2, href) {
+  return node("a", text2, { href, target: "_blank", rel: "noopener noreferrer" });
+}
+function installStyle() {
+  if (document.getElementById("asteroid-stamp-style")) return;
+  const style = node("style", `
+    .asteroid-panel { color:#eefaff; background:#091320; border:2px solid #68e7cf; border-radius:16px; padding:22px; width:min(900px,calc(100vw - 52px)); max-height:80dvh; overflow:auto; font:15px/1.6 system-ui; box-shadow:0 0 50px #39eec633; }
+    .asteroid-panel::backdrop { background:#020712d9; }
+    .asteroid-panel h2,.asteroid-panel h3 { color:#88ffee; margin:8px 0 14px; }
+    .asteroid-panel .panel-heading { position:sticky; top:-22px; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:12px 0; background:#091320; }
+    .asteroid-panel .panel-close { flex:none; width:44px; height:44px; padding:0; border-radius:50%; font-size:26px; }
+    .flight-log-hero { display:flex; align-items:center; gap:24px; margin:22px 0; }
+    .flight-log-hero img { width:100px; height:100px; object-fit:contain; }
+    .flight-log-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:14px; margin:18px 0 30px; }
+    .flight-log-grid > div { background:#102132; border:1px solid #36586a; border-radius:12px; padding:18px; }
+    .flight-log-grid strong { display:block; color:#88ffee; font-size:24px; line-height:1.4; }
+    .flight-log-grid span { color:#bdd0e4; }
+    .asteroid-panel .battle-preview { width:100%; max-width:480px; height:auto; display:block; margin:18px 0; }
+    .asteroid-panel button { cursor:pointer; padding:10px 15px; color:#ebffff; background:#183347; border:1px solid #77efd4; border-radius:9px; font:600 14px system-ui; margin:5px; }
+    .asteroid-panel button:disabled { opacity:.45; cursor:not-allowed; }
+    .asteroid-panel button:focus-visible,.asteroid-panel a:focus-visible { outline:3px solid #fbc770; outline-offset:3px; }
+    .asteroid-panel a { color:#8cdbff; overflow-wrap:anywhere; }
+    .asteroid-panel article { padding:15px; margin:14px 0; border:1px solid #36586a; border-radius:12px; background:#102132; overflow-wrap:anywhere; }
+    .asteroid-panel p { margin:8px 0; }
+    .asteroid-panel textarea { box-sizing:border-box; width:100%; min-height:110px; background:#04111c; color:#dcfff9; padding:10px; }
+    .asteroid-panel img { width:160px; max-width:100%; border-radius:10px; }
+    .asteroid-panel pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+    .asteroid-status { color:#ffdb87; white-space:pre-wrap; }
+    .asteroid-panel nav { display:flex; flex-wrap:wrap; gap:8px; }
+    .asteroid-panel [aria-selected=true] { background:#215c60; }
+    .reward-rolodex { display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; padding:12px 4px 24px; }
+    .asteroid-panel .reward-thumbnail { flex:0 0 190px; display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px; margin:0; scroll-snap-align:start; }
+    .reward-thumbnail img { height:150px; object-fit:contain; }
+    .reward-thumbnail strong { line-height:1.5; }
+    .reward-thumbnail span { color:#bdd0e4; }
+    #voyager-reward-detail .reward-card img { display:block; width:min(360px,100%); margin:20px auto; }
+  `, { id: "asteroid-stamp-style" });
+  document.head.append(style);
+}
+function createDialog(title, id) {
+  installStyle();
+  const dialog2 = node("dialog", "", { id, className: "asteroid-panel", "aria-labelledby": `${id}-title` });
+  const heading = node("div", "", { className: "panel-heading" });
+  const close = button("\xD7", () => dialog2.close());
+  close.className = "panel-close";
+  close.setAttribute("aria-label", `Close ${title}`);
+  heading.append(node("h2", title, { id: `${id}-title` }), close);
+  dialog2.append(heading);
+  bindBackdropClose(dialog2);
+  dialog2.addEventListener("keydown", (event) => event.stopPropagation());
+  dialog2.addEventListener("keyup", (event) => event.stopPropagation());
+  document.body.append(dialog2);
+  return dialog2;
+}
+function bindBackdropClose(dialog2, dismiss = () => dialog2.close()) {
+  let outside = false;
+  const isOutside = (event) => {
+    const box = dialog2.getBoundingClientRect();
+    return event.target === dialog2 && (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom);
+  };
+  dialog2.addEventListener("pointerdown", (event) => {
+    outside = isOutside(event);
+  });
+  dialog2.addEventListener("click", (event) => {
+    if (outside && isOutside(event)) dismiss();
+    outside = false;
+  });
+}
+function openDialog(dialog2) {
+  const game = window.asteroidGame;
+  if (game?.state === "playing") {
+    game.handleAction?.("pause");
+    window.asteroidDraw?.();
+  }
+  if (!dialog2.open) dialog2.showModal();
+}
+var init_ui = __esm({
+  "src/js/dnft/ui.mjs"() {
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/config.js
+function mergeConfig(base3, override = {}) {
+  const result = { ...base3 };
+  for (const [key, value] of Object.entries(override)) {
+    if (["__proto__", "constructor", "prototype"].includes(key) || value === void 0) continue;
+    result[key] = plain(value) && plain(base3[key]) ? mergeConfig(base3[key], value) : value;
+  }
+  return result;
+}
+var defaults, plain, config;
+var init_config = __esm({
+  "src/vendor/decent-head/2.0.0/js/config.js"() {
+    defaults = {
+      version: "2.0.0",
+      appName: "DecentHead",
+      subtitle: "Your dapp. Your data. Your wallet.",
+      enableIPFS: true,
+      theme: {},
+      art: { ipfsIcon: null, titleIcon: null, walletIcon: null, titleEnds: ["::-", "-::"] },
+      ens: { enabled: true, rpcUrl: "https://ethereum-rpc.publicnode.com" },
+      chain: {
+        chainId: 8453,
+        chainName: "Base",
+        rpcUrls: ["https://mainnet.base.org"],
+        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+        blockExplorerUrls: ["https://basescan.org"]
+      },
+      providers: {
+        default: "pinata",
+        pinata: { uploadUrl: "https://api.pinata.cloud/pinning/pinFileToIPFS" },
+        local: { apiUrl: "http://127.0.0.1:5001" },
+        gateway: "https://ipfs.io/ipfs/",
+        ucanAuth: null
+      },
+      about: { title: "About DecentHead", summary: "The customizable web3 head for Decent dapps.", sections: [] },
+      links: [],
+      relatedDapps: [],
+      supporterDnft: null
+    };
+    plain = (value) => value !== null && typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype;
+    config = mergeConfig(defaults, globalThis.DECENT_CONFIG);
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/wallet-logic.js
+function chainParams(chain) {
+  const id = BigInt(chain.chainId);
+  if (id <= 0n) throw new Error("chainId must be positive");
+  const chainId = `0x${id.toString(16)}`;
+  return { switchParams: [{ chainId }], addParams: [{
+    chainId,
+    chainName: chain.chainName,
+    nativeCurrency: chain.nativeCurrency,
+    rpcUrls: chain.rpcUrls,
+    blockExplorerUrls: chain.blockExplorerUrls
+  }] };
+}
+function discoverProvider(providers, detail) {
+  if (!detail?.provider || typeof detail.provider.request !== "function" || !detail.info || typeof detail.info.uuid !== "string" || !detail.info.uuid || typeof detail.info.name !== "string") return providers;
+  if (providers.some((entry) => entry.info.uuid === detail.info.uuid || entry.provider === detail.provider)) return providers;
+  return [...providers, { info: { ...detail.info }, provider: detail.provider }].sort((a, b) => Number(b.info.rdns === "io.metamask") - Number(a.info.rdns === "io.metamask"));
+}
+async function switchChain(provider, chain) {
+  const { switchParams, addParams } = chainParams(chain);
+  if (BigInt(await provider.request({ method: "eth_chainId" })) === BigInt(chain.chainId)) return;
+  try {
+    await provider.request({ method: "wallet_switchEthereumChain", params: switchParams });
+  } catch (error) {
+    if (Number(error.code ?? error.data?.originalError?.code) !== 4902) throw error;
+    await provider.request({ method: "wallet_addEthereumChain", params: addParams });
+    await provider.request({ method: "wallet_switchEthereumChain", params: switchParams });
+  }
+  if (BigInt(await provider.request({ method: "eth_chainId" })) !== BigInt(chain.chainId)) {
+    throw new Error("Wallet did not switch to the configured chain");
+  }
+}
+var init_wallet_logic = __esm({
+  "src/vendor/decent-head/2.0.0/js/wallet-logic.js"() {
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/ens.js
+var ens_exports = {};
+__export(ens_exports, {
+  lookupWalletName: () => lookupWalletName
+});
+async function lookupWalletName(address) {
+  const { JsonRpcProvider, FetchRequest } = await loadEthers();
+  if (!mainnet) {
+    const request = new FetchRequest(config.ens.rpcUrl);
+    request.timeout = 8e3;
+    mainnet = new JsonRpcProvider(request, 1, { staticNetwork: true });
+  }
+  const name = await mainnet.lookupAddress(address);
+  if (!name) return null;
+  const resolved = await mainnet.resolveName(name);
+  return resolved?.toLowerCase() === address.toLowerCase() ? name : null;
+}
+var mainnet;
+var init_ens = __esm({
+  "src/vendor/decent-head/2.0.0/js/ens.js"() {
+    init_config();
+    init_wallet();
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/wallet.js
+var wallet_exports = {};
+__export(wallet_exports, {
+  WalletSession: () => WalletSession,
+  loadEthers: () => loadEthers,
+  wallet: () => wallet
+});
+function loadEthers() {
+  if (globalThis.ethers) return Promise.resolve(globalThis.ethers);
+  return ethersPromise ||= new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = new URL("./vendor/ethers.umd.min.js", new URL("vendor/decent-head/2.0.0/js/wallet.js", document.baseURI).href).href;
+    script.onload = () => resolve(globalThis.ethers);
+    script.onerror = () => {
+      ethersPromise = null;
+      reject(new Error("Could not load ethers"));
+    };
+    document.head.append(script);
+  });
+}
+var ethersPromise, emit, WalletSession, wallet;
+var init_wallet = __esm({
+  "src/vendor/decent-head/2.0.0/js/wallet.js"() {
+    init_config();
+    init_wallet_logic();
+    emit = (detail) => window.dispatchEvent(new CustomEvent("decenthead:wallet", { detail }));
+    WalletSession = class {
+      constructor({ lookupName } = {}) {
+        this.lookupName = lookupName || (async (address) => (await Promise.resolve().then(() => (init_ens(), ens_exports))).lookupWalletName(address));
+        this.identityRequest = 0;
+        this.providers = [];
+        this.state = { connected: false, address: null, chainId: null, provider: null, ensName: null, ensStatus: "idle" };
+        this.generation = 0;
+        this.announce = (event) => {
+          this.providers = discoverProvider(this.providers, event.detail);
+          window.dispatchEvent(new CustomEvent("decenthead:providers"));
+        };
+        window.addEventListener("eip6963:announceProvider", this.announce);
+        window.dispatchEvent(new Event("eip6963:requestProvider"));
+      }
+      available() {
+        if (this.providers.length) return this.providers;
+        return window.ethereum ? [{ info: { name: window.ethereum.isMetaMask ? "MetaMask" : "Browser wallet", uuid: "fallback" }, provider: window.ethereum }] : [];
+      }
+      snapshot() {
+        return { ...this.state };
+      }
+      async connect(provider = this.available()[0]?.provider) {
+        if (!provider) throw new Error("No injected wallet. Open this page in a wallet browser.");
+        this.forget();
+        const generation = this.generation;
+        const accounts = await provider.request({ method: "eth_requestAccounts" });
+        if (!accounts?.length) throw new Error("Wallet returned no accounts");
+        await switchChain(provider, config.chain);
+        const ethers = await loadEthers();
+        const chainId = await provider.request({ method: "eth_chainId" });
+        if (generation !== this.generation) return;
+        this.rawProvider = provider;
+        this.browserProvider = new ethers.BrowserProvider(provider, "any");
+        this.state = { connected: true, address: accounts[0], chainId, provider: this.browserProvider, ensName: null, ensStatus: "idle" };
+        this.handlers = {
+          accountsChanged: (accounts2) => {
+            if (!accounts2.length) {
+              this.forget();
+              return;
+            }
+            this.state = { ...this.state, address: accounts2[0], ensName: null, ensStatus: "idle" };
+            emit(this.snapshot());
+            void this.resolveIdentity();
+          },
+          chainChanged: (chainId2) => {
+            this.browserProvider = new ethers.BrowserProvider(provider, "any");
+            this.state = { ...this.state, chainId: chainId2, provider: this.browserProvider };
+            emit(this.snapshot());
+          },
+          disconnect: () => this.forget()
+        };
+        for (const [event, handler] of Object.entries(this.handlers)) provider.on?.(event, handler);
+        emit(this.snapshot());
+        void this.resolveIdentity();
+        return this.snapshot();
+      }
+      async resolveIdentity() {
+        const request = ++this.identityRequest, address = this.state.address;
+        if (!address || !config.ens.enabled) return;
+        this.state = { ...this.state, ensStatus: "loading" };
+        emit(this.snapshot());
+        try {
+          const ensName = await this.lookupName(address);
+          if (request !== this.identityRequest || address !== this.state.address) return;
+          this.state = { ...this.state, ensName, ensStatus: ensName ? "resolved" : "not-found" };
+        } catch (error) {
+          if (request !== this.identityRequest || address !== this.state.address) return;
+          this.state = { ...this.state, ensName: null, ensStatus: "unavailable" };
+          console.warn("[DecentHead ENS] Name lookup failed:", error.message);
+        }
+        emit(this.snapshot());
+      }
+      async ensureChain(chain = config.chain) {
+        if (!this.rawProvider) throw new Error("Connect a wallet first");
+        const provider = this.rawProvider, generation = this.generation;
+        await switchChain(provider, chain);
+        const ethers = await loadEthers();
+        const chainId = await provider.request({ method: "eth_chainId" });
+        if (generation !== this.generation) throw new Error("Wallet session changed; retry the action");
+        this.browserProvider = new ethers.BrowserProvider(provider, "any");
+        this.state = { ...this.state, chainId, provider: this.browserProvider };
+        emit(this.snapshot());
+        return this.browserProvider;
+      }
+      forget(notify = true) {
+        this.generation++;
+        this.identityRequest++;
+        for (const [event, handler] of Object.entries(this.handlers || {})) this.rawProvider?.removeListener?.(event, handler);
+        this.handlers = null;
+        this.rawProvider = null;
+        this.browserProvider = null;
+        this.state = { connected: false, address: null, chainId: null, provider: null, ensName: null, ensStatus: "idle" };
+        if (notify) emit(this.snapshot());
+      }
+    };
+    wallet = typeof window === "undefined" ? null : new WalletSession();
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/ipfs-host.js
+function validateIPFSHost(adapter) {
+  if (!adapter || adapter.version !== 1 || !text(adapter.label) || typeof adapter.getStatus !== "function" || !adapter.capabilities || typeof adapter.capabilities !== "object" || Array.isArray(adapter.capabilities)) {
+    throw new Error("Configure a version 1 IPFS host adapter with a label, getStatus and capabilities.");
+  }
+  for (const [key, capability] of Object.entries(adapter.capabilities)) {
+    if (!Object.hasOwn(IPFS_CAPABILITIES, key) || !capability || typeof capability.open !== "function") {
+      throw new Error(`Invalid IPFS host capability: ${key}`);
+    }
+  }
+  return adapter;
+}
+async function readIPFSHostStatus(adapter) {
+  validateIPFSHost(adapter);
+  const status2 = await adapter.getStatus();
+  if (!status2 || typeof status2 !== "object" || Array.isArray(status2)) {
+    throw new Error("IPFS host status must be an object.");
+  }
+  const result = {};
+  for (const key of Object.keys(IPFS_CAPABILITIES)) {
+    if (!Object.hasOwn(adapter.capabilities, key)) {
+      result[key] = { state: "unavailable", detail: "Not configured by this app." };
+      continue;
+    }
+    const entry = status2[key];
+    if (!entry || !STATES.includes(entry.state) || !text(entry.detail)) {
+      throw new Error(`IPFS host must report an explicit state and detail for ${key}.`);
+    }
+    result[key] = { state: entry.state, detail: entry.detail };
+  }
+  return result;
+}
+async function openIPFSHostControls(adapter, capability) {
+  validateIPFSHost(adapter);
+  if (!Object.hasOwn(IPFS_CAPABILITIES, capability) || !Object.hasOwn(adapter.capabilities, capability)) {
+    throw new Error(`IPFS controls are not configured for ${capability}.`);
+  }
+  await adapter.capabilities[capability].open();
+}
+var IPFS_CAPABILITIES, STATES, text;
+var init_ipfs_host = __esm({
+  "src/vendor/decent-head/2.0.0/js/ipfs-host.js"() {
+    IPFS_CAPABILITIES = Object.freeze({
+      backup: "App backups",
+      replication: "Public community pins",
+      rewards: "Pinning reward participation"
+    });
+    STATES = ["unavailable", "idle", "pending", "ready", "error"];
+    text = (value) => typeof value === "string" && value.trim().length > 0;
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/ipfs.js
+function validCID2(cid) {
+  return typeof cid === "string" && /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{20,})$/.test(cid);
+}
+var IPFSSession, ipfs;
+var init_ipfs = __esm({
+  "src/vendor/decent-head/2.0.0/js/ipfs.js"() {
+    init_config();
+    IPFSSession = class {
+      constructor(options = config.providers) {
+        this.options = options;
+        this.provider = options.default;
+        this.credentials = {};
+        this.adapter = null;
+      }
+      configure({ provider, jwt = "", apiKey = "", apiSecret = "" }) {
+        if (!["pinata", "local"].includes(provider)) throw new Error("Unknown IPFS provider");
+        this.provider = provider;
+        this.credentials = { jwt, apiKey, apiSecret };
+        window.dispatchEvent(new CustomEvent("decenthead:ipfs", { detail: this.snapshot() }));
+      }
+      snapshot() {
+        return { provider: this.provider, adapter: this.adapter, credentialsConfigured: !!(this.credentials.jwt || this.credentials.apiKey), ucanAuth: "planned" };
+      }
+      headers() {
+        const { jwt, apiKey, apiSecret } = this.credentials;
+        if (jwt) return { Authorization: `Bearer ${jwt}` };
+        if (apiKey && apiSecret) return { pinata_api_key: apiKey, pinata_secret_api_key: apiSecret };
+        if (this.options.pinata.uploadUrl === "https://api.pinata.cloud/pinning/pinFileToIPFS") throw new Error("Enter your Pinata JWT or API key + secret. No shared key is bundled.");
+        return {};
+      }
+      async request(url, options) {
+        const response = await fetch(url, { ...options, signal: AbortSignal.timeout(6e4) });
+        if (!response.ok) throw new Error(`IPFS request failed (HTTP ${response.status})`);
+        return response;
+      }
+      async upload(data) {
+        const body = new FormData();
+        body.append("file", new Blob([JSON.stringify(data)], { type: "application/json" }), "backup.json");
+        let cid;
+        if (this.provider === "local") {
+          const response = await this.request(`${this.options.local.apiUrl.replace(/\/$/, "")}/api/v0/add?pin=true`, { method: "POST", body });
+          const result = JSON.parse((await response.text()).trim().split("\n").at(-1));
+          cid = result.Hash;
+        } else {
+          const result = await (await this.request(this.options.pinata.uploadUrl, { method: "POST", headers: this.headers(), body })).json();
+          cid = result.IpfsHash;
+        }
+        if (!validCID2(cid)) throw new Error("Provider returned an invalid CID");
+        window.dispatchEvent(new CustomEvent("decenthead:ipfs", { detail: { ...this.snapshot(), action: "backup", cid } }));
+        return cid;
+      }
+      async restore(cid) {
+        if (!validCID2(cid)) throw new Error("Enter a valid CID (not a URL)");
+        const response = this.provider === "local" ? await this.request(`${this.options.local.apiUrl.replace(/\/$/, "")}/api/v0/cat?arg=${encodeURIComponent(cid)}`, { method: "POST" }) : await this.request(`${this.options.gateway.replace(/\/?$/, "/")}${encodeURIComponent(cid)}`, {});
+        return response.json();
+      }
+      async pin(cid, { consent = false } = {}) {
+        if (!consent) throw new Error("Community pinning requires explicit opt-in");
+        if (!validCID2(cid)) throw new Error("Enter a valid CID");
+        if (this.provider === "local") {
+          await this.request(`${this.options.local.apiUrl.replace(/\/$/, "")}/api/v0/pin/add?arg=${encodeURIComponent(cid)}`, { method: "POST" });
+        } else {
+          const url = this.options.pinata.pinUrl || "https://api.pinata.cloud/pinning/pinByHash";
+          await this.request(url, { method: "POST", headers: { ...this.headers(), "Content-Type": "application/json" }, body: JSON.stringify({ hashToPin: cid }) });
+        }
+        return { cid, detail: "Pin request accepted; not proof of retention or reward eligibility." };
+      }
+    };
+    ipfs = new IPFSSession();
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/ui.js
+function safeURL(value) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    const url = new URL(value, globalThis.document?.baseURI);
+    return ["https:", "http:", "ipfs:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+function bindModalClose(dialog2) {
+  dialog2.querySelector("[data-close]").onclick = () => dialog2.close();
+  let outside = false;
+  const isOutside = (event) => {
+    const box = dialog2.getBoundingClientRect();
+    return event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
+  };
+  dialog2.addEventListener("pointerdown", (event) => {
+    outside = event.target === dialog2 && isOutside(event);
+  });
+  dialog2.addEventListener("click", (event) => {
+    if (outside && event.target === dialog2 && isOutside(event)) dialog2.close();
+    outside = false;
+  });
+}
+function modalHeading(title, id, icon2) {
+  return `<div class="modal-heading"><h2 id="${id}"><span aria-hidden="true">${icon2}</span> ${escapeHTML(title)}</h2>
+    <button class="modal-close" data-close type="button" aria-label="Close" title="Close (Esc)">&#215;</button></div>`;
+}
+var escapeHTML, modalStyles;
+var init_ui2 = __esm({
+  "src/vendor/decent-head/2.0.0/js/ui.js"() {
+    escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+    modalStyles = `
+  :host { font:14px/1.5 system-ui,sans-serif; color:var(--dh-text,#eef8ff); }
+  dialog { box-sizing:border-box; width:min(560px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); overflow:auto; padding:0 24px 24px; border:1px solid color-mix(in srgb,var(--dh-accent,#80edd2) 50%,transparent); border-radius:22px; background:var(--dh-bg-1,#0b1424); color:inherit; box-shadow:0 24px 100px #0009; }
+  dialog::backdrop { background:#000b; backdrop-filter:blur(4px); }
+  button,input,select { font:inherit; padding:9px; border-radius:7px; border:1px solid var(--dh-accent,#80edd2); color:inherit; background:var(--dh-bg-2,#192c40); box-sizing:border-box; max-width:100%; }
+  button { cursor:pointer; } button:disabled { opacity:.5; cursor:default; } a { color:var(--dh-accent,#80edd2); }
+  button:focus-visible,a:focus-visible,input:focus-visible { outline:3px solid var(--dh-accent,#80edd2); outline-offset:3px; }
+  label { display:block; margin:16px 0; } p { overflow-wrap:anywhere; margin:12px 0; } h2 { margin:0; font-size:20px; } h3 { font-size:15px; margin:0; }
+  .modal-heading { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0; background:var(--dh-bg-1,#0b1424); }
+  .modal-heading h2 span { color:var(--dh-accent,#80edd2); margin-right:6px; }
+  .modal-close { display:grid; place-items:center; flex:none; width:40px; height:40px; padding:0; border:1px solid #ffffff22; border-radius:50%; font-size:26px; background:#ffffff08; }
+  .modal-close:hover { background:#ffffff18; }
+  details, section { border:1px solid #ffffff18; border-radius:14px; padding:14px 16px; margin:12px 0; background:#ffffff03; }
+  details > summary { cursor:pointer; font-weight:600; padding:2px 0; }
+  details[open] > summary { margin-bottom:16px; }
+  details details { padding:10px 12px; }
+  input:not([type=checkbox]),select { display:block; width:100%; margin-top:6px; }
+  input[type=checkbox] { width:18px; height:18px; vertical-align:middle; margin-right:8px; }
+  ul { list-style:none; padding:0; margin:8px 0; display:flex; flex-wrap:wrap; gap:12px; }
+  .quiet { color:var(--dh-muted,#bdd0e4); font-size:12px; }
+  .modal-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:20px; }
+  [hidden] { display:none !important; }
+  @media(max-width:600px) { dialog { padding:0 16px 20px; } }
+`;
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/components/Header/IPFSControls.js
+var base, IPFSControls;
+var init_IPFSControls = __esm({
+  "src/vendor/decent-head/2.0.0/js/components/Header/IPFSControls.js"() {
+    init_ipfs_host();
+    init_ipfs();
+    init_config();
+    init_ui2();
+    base = new URL("../../../", new URL("vendor/decent-head/2.0.0/js/components/Header/IPFSControls.js", document.baseURI).href).href;
+    IPFSControls = class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+        this.busy = false;
+        this.operation = null;
+        this.request = 0;
+      }
+      connectedCallback() {
+        this.shadowRoot.innerHTML = `
+      <style>
+        ${modalStyles}
+        :host { display: block; font: 14px/1.5 system-ui, sans-serif; color: var(--dh-text, #edf9ff); }
+        button { font: inherit; cursor: pointer; }
+        button:focus-visible { outline: 3px solid var(--dh-accent, #73e8df); outline-offset: 3px; }
+        button:disabled { cursor: not-allowed; opacity: .55; }
+        #open { display: grid; place-items: center; width: 64px; height: 64px; padding: 0; border: 0; border-radius: 50%;
+          background: radial-gradient(circle at 32% 28%, #ffffff2b, #ffffff08 62%), var(--dh-bg-1, #0a1220);
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--dh-accent-2, #8d7cf7) 25%, transparent),
+            0 0 26px color-mix(in srgb, var(--dh-accent-2, #8d7cf7) 50%, transparent), 0 10px 26px #0008;
+          transition: transform .18s ease; }
+        #open:hover { transform: scale(1.05); }
+        #open:active { transform: scale(.97); }
+        :host([data-docked]) #open { width: 100%; height: 100%; }
+        #open img { width: 60%; height: 60%; object-fit: contain; filter: drop-shadow(0 2px 6px #0009); }
+        dialog { box-sizing: border-box; width: min(30rem, calc(100vw - 24px)); max-height: calc(100dvh - 24px);
+          overflow: auto;
+          background: var(--dh-bg-1, #101b27); color: var(--dh-text, #edf9ff); overflow-wrap: anywhere; }
+        dialog::backdrop { background: #000a; }
+        section button, #refresh { padding: 8px 12px; }
+        #message { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+          overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+        @media (max-width: 600px) { :host(:not([data-docked])) #open { width: 42px; height: 42px; } }
+      </style>
+      <button id="open" type="button" aria-label="Open IPFS controls" aria-haspopup="dialog">
+        <img src="${escapeHTML(safeURL(config.art.ipfsIcon) || `${base}img/IPFS_Logo.png`)}" alt="" />
+      </button>
+      <p id="message" role="status" aria-live="polite"></p>
+      <dialog aria-labelledby="title">
+        ${modalHeading("IPFS data controls", "title", "\u2B21")}
+        <p>Choose your storage. Back up only what you want to share.</p>
+        <p id="app" class="quiet"></p>
+        <details id="provider-settings"><summary><span aria-hidden="true">\u2B21</span> <span>Storage provider</span></summary>
+          <label for="provider">Provider</label><select id="provider"><option value="pinata">Pinata (default)</option><option value="local">IPFS Desktop / local Kubo</option></select>
+          <p class="quiet">Credentials stay in this tab. Selecting a provider uploads nothing.</p>
+          <div id="pinata-settings"><label>Own Pinata JWT <input id="jwt" type="password" autocomplete="off" /></label>
+          <details><summary>API key instead</summary>
+            <label>API key <input id="key" type="password" autocomplete="off" /></label>
+            <label>API secret <input id="secret" type="password" autocomplete="off" /></label>
+          </details></div>
+          <p id="local-settings" class="quiet" hidden>Use your running IPFS Desktop / Kubo node. Allow this dapp\u2019s origin in its CORS settings. See the setup guide below.</p>
+          <button id="save-provider">Use provider</button>
+          <p id="provider-message" role="status"></p>
+        </details>
+        <section id="data-controls" hidden><h3>Backup / restore</h3>
+          <p class="quiet">IPFS is public. Only app-selected data is exported; encrypt private data first.</p>
+          <button id="backup">Upload backup</button>
+          <details><summary>Restore a backup</summary><label>Backup CID <input id="restore-cid" /></label><button id="restore">Restore backup</button></details>
+          <p id="data-message" role="status"></p>
+        </section>
+        <details id="community-settings"><summary><span aria-hidden="true">\u25CE</span> <span>Community pinning</span></summary>
+          <p class="quiet">Keep a public copy using your provider. Pinning alone does not earn rewards.</p>
+          <label>Public content CID <input id="pin-cid" /></label>
+          <label><input id="consent" type="checkbox" /> I opt in to publicly pin this content with my provider.</label>
+          <button id="pin">Request community pin</button>
+          <p id="pin-message" role="status"></p>
+        </details>
+        ${Object.entries(IPFS_CAPABILITIES).map(([key, label]) => `
+          <section data-host-capability="${key}"><h3>${{ backup: "\u21A5", replication: "\u25CE", rewards: "\u25C8" }[key] || "\u2197"} ${label}</h3><p class="quiet" id="${key}-status">Not checked.</p>
+            <button type="button" data-capability="${key}" disabled>Open ${label.toLowerCase()} controls</button>
+          </section>`).join("")}
+        <p id="status-error" role="alert"></p>
+        <div class="modal-footer"><a href="${base}docs/ADOPTING.md#storage-controls" target="_blank" rel="noopener noreferrer">Storage setup guide \u2197</a>
+        <button id="refresh" type="button">Refresh status</button></div>
+      </dialog>`;
+        const root = this.shadowRoot;
+        this.dialog = root.querySelector("dialog");
+        bindModalClose(this.dialog);
+        root.getElementById("provider").value = ipfs.provider;
+        const showProvider = () => {
+          const local = root.getElementById("provider").value === "local";
+          root.getElementById("local-settings").hidden = !local;
+          root.getElementById("pinata-settings").hidden = local;
+        };
+        root.getElementById("provider").onchange = showProvider;
+        showProvider();
+        root.getElementById("save-provider").onclick = () => {
+          try {
+            ipfs.configure({
+              provider: root.getElementById("provider").value,
+              jwt: root.getElementById("jwt").value.trim(),
+              apiKey: root.getElementById("key").value.trim(),
+              apiSecret: root.getElementById("secret").value.trim()
+            });
+            for (const id of ["jwt", "key", "secret"]) root.getElementById(id).value = "";
+            root.getElementById("provider-message").textContent = `${ipfs.provider} selected; not yet verified. No data uploaded.`;
+          } catch (error) {
+            root.getElementById("provider-message").textContent = error.message;
+          }
+        };
+        this.action = async (id, run) => {
+          const button2 = root.getElementById(id), message = root.getElementById(id === "pin" ? "pin-message" : "data-message");
+          if (this.dataBusy) return;
+          this.dataBusy = true;
+          button2.disabled = true;
+          message.textContent = "Working\u2026";
+          try {
+            message.textContent = await run();
+          } catch (error) {
+            message.textContent = error.message;
+          } finally {
+            this.dataBusy = false;
+            button2.disabled = false;
+          }
+        };
+        root.getElementById("backup").onclick = () => this.action("backup", async () => {
+          if (!config.data?.export) throw new Error("Host export is not configured");
+          if (!confirm("Upload the host-selected data to public IPFS? Encrypt private data first.")) return "Cancelled.";
+          return `Backup CID: ${await ipfs.upload(await config.data.export())}`;
+        });
+        root.getElementById("restore").onclick = () => this.action("restore", async () => {
+          if (!config.data?.import) throw new Error("Host import is not configured");
+          const data = await ipfs.restore(root.getElementById("restore-cid").value.trim());
+          if (!confirm("Restore this backup? The host will validate and apply it; existing data may change.")) return "Cancelled.";
+          await config.data.import(data);
+          return "Host restore completed.";
+        });
+        root.getElementById("pin").onclick = () => this.action("pin", async () => {
+          const result = await ipfs.pin(root.getElementById("pin-cid").value.trim(), { consent: root.getElementById("consent").checked });
+          root.getElementById("consent").checked = false;
+          return result.detail;
+        });
+        root.getElementById("open").addEventListener("click", () => {
+          this.dialog.showModal();
+          this.refresh();
+        });
+        this.dialog.addEventListener("close", () => {
+          if (this.operation === "status") {
+            this.request++;
+            this.setBusy(false);
+            root.getElementById("message").textContent = "Status check dismissed. Open the controls to retry.";
+          }
+        });
+        root.getElementById("refresh").addEventListener("click", () => this.refresh());
+        root.querySelectorAll("[data-capability]").forEach((button2) => {
+          button2.addEventListener("click", () => this.openControls(button2.dataset.capability));
+        });
+      }
+      openBackup() {
+        this.shadowRoot.getElementById("data-controls").hidden = false;
+        this.shadowRoot.getElementById("backup").disabled = !config.data?.export;
+        this.shadowRoot.getElementById("restore").disabled = !config.data?.import;
+        if (!this.dialog.open) this.dialog.showModal();
+        this.shadowRoot.getElementById("data-controls").scrollIntoView({ block: "nearest" });
+      }
+      disconnectedCallback() {
+        this.request++;
+        this.dialog?.close();
+        this.busy = false;
+        this.operation = null;
+      }
+      setBusy(busy) {
+        this.busy = busy;
+        if (!busy) this.operation = null;
+        this.shadowRoot.getElementById("open").disabled = busy;
+        this.shadowRoot.getElementById("refresh").disabled = busy;
+        this.shadowRoot.querySelectorAll("[data-capability]").forEach((button2) => {
+          button2.disabled = true;
+        });
+      }
+      async refresh() {
+        if (this.busy) return;
+        const request = ++this.request;
+        this.operation = "status";
+        this.setBusy(true);
+        const root = this.shadowRoot;
+        root.getElementById("status-error").textContent = "";
+        root.getElementById("app").textContent = "";
+        root.getElementById("message").textContent = "Checking app-reported IPFS status...";
+        root.querySelectorAll('[id$="-status"]').forEach((el) => {
+          el.textContent = "Checking...";
+        });
+        try {
+          validateIPFSHost(this.adapter);
+          root.getElementById("app").textContent = this.adapter.label;
+          const status2 = await readIPFSHostStatus(this.adapter);
+          if (request !== this.request) return;
+          this.setBusy(false);
+          for (const [key, entry] of Object.entries(status2)) {
+            root.querySelector(`[data-host-capability="${key}"]`).hidden = !Object.hasOwn(this.adapter.capabilities, key);
+            root.getElementById(`${key}-status`).textContent = `${entry.state}: ${entry.detail}`;
+            root.querySelector(`[data-capability="${key}"]`).disabled = entry.state === "unavailable" || entry.state === "pending";
+          }
+          root.getElementById("message").textContent = "Status supplied by this app; not independent storage or reward verification.";
+        } catch (error) {
+          if (request !== this.request) return;
+          this.setBusy(false);
+          root.getElementById("status-error").textContent = `IPFS status unavailable: ${error.message}`;
+          root.getElementById("message").textContent = "IPFS configuration or status failed. No storage action was performed.";
+          root.querySelectorAll('[id$="-status"]').forEach((el) => {
+            el.textContent = "Status unavailable; see error below.";
+          });
+          console.warn("[DecentHead IPFS]", error);
+        }
+      }
+      async openControls(capability) {
+        if (this.busy) return;
+        const request = ++this.request;
+        this.operation = "controls";
+        this.setBusy(true);
+        this.dialog.close();
+        const message = this.shadowRoot.getElementById("message");
+        message.textContent = "Opening app controls...";
+        try {
+          await openIPFSHostControls(this.adapter, capability);
+          if (request !== this.request) return;
+          message.textContent = "App controls opened. This is not confirmation of a backup, pin or reward.";
+        } catch (error) {
+          if (request !== this.request) return;
+          this.dialog.showModal();
+          this.shadowRoot.getElementById("status-error").textContent = `Could not open controls: ${error.message}`;
+          message.textContent = "App controls failed to open.";
+          console.warn("[DecentHead IPFS]", error);
+        } finally {
+          if (request === this.request) this.setBusy(false);
+        }
+      }
+    };
+    if (!customElements.get("ipfs-controls")) customElements.define("ipfs-controls", IPFSControls);
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/components/Header/orbit.js
+function constellation() {
+  const points = SPARKS.map(point), lines = [];
+  points.forEach((from, i) => {
+    const to = points[(i + 2) % points.length];
+    const length = Math.hypot(to.x - from.x, to.y - from.y).toFixed(1);
+    const attrs = `x1="${from.x.toFixed(1)}" y1="${from.y.toFixed(1)}" x2="${to.x.toFixed(1)}" y2="${to.y.toFixed(1)}"`;
+    lines.push(`<line class="link-base" ${attrs}/><line class="link-pulse" ${attrs} style="--len:${length};--dur:${(3 + i * 0.7).toFixed(1)}s;--delay:${(-i * 0.9).toFixed(1)}s;stroke-dasharray:6 ${length}"/>`);
+  });
+  return lines.join("");
+}
+function orbitMarkup(core) {
+  const id = `dh-ring-${++uid}`;
+  return `<div class="orb" part="orbit" data-state="idle">
+    <svg class="orb-links" viewBox="0 0 200 200" aria-hidden="true">${constellation()}</svg>
+    ${SPARKS.map(([a, d], i) => `<span class="spark" aria-hidden="true" style="--a:${a}deg;--d:${d};--i:${i}"></span>`).join("")}
+    <span class="rail" aria-hidden="true"></span>
+    <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+      <path id="${id}" fill="none" d="M100,100 m-${RING},0 a${RING},${RING} 0 1,1 ${RING * 2},0 a${RING},${RING} 0 1,1 -${RING * 2},0"/>
+      <text><textPath href="#${id}" textLength="${(2 * Math.PI * RING - 8).toFixed(1)}" lengthAdjust="spacing"></textPath></text>
+    </svg>
+    <div class="core">${core}</div>
+  </div>`;
+}
+function setRing(root, text2, state3) {
+  const orb = root.querySelector(".orb");
+  if (!orb) return;
+  orb.dataset.state = state3;
+  orb.querySelector("textPath").textContent = text2;
+}
+var SPARKS, RING, uid, point, orbitCSS;
+var init_orbit = __esm({
+  "src/vendor/decent-head/2.0.0/js/components/Header/orbit.js"() {
+    SPARKS = [[-58, 0.68], [-18, 1.06], [22, 0.66], [64, 1.08], [128, 0.7], [182, 1.05], [236, 0.67], [292, 1.07]];
+    RING = 80;
+    uid = 0;
+    point = ([angle, distance]) => {
+      const radians = (angle - 90) * Math.PI / 180, radius = distance * 92;
+      return { x: 100 + radius * Math.cos(radians), y: 100 + radius * Math.sin(radians) };
+    };
+    orbitCSS = `
+  .orb { --orb-size:var(--dh-orbit-size,132px); position:relative; width:var(--orb-size); height:var(--orb-size); flex:none; display:grid; place-items:center; }
+  .orb > svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+  .rail { position:absolute; inset:14%; border-radius:50%; border:1px solid color-mix(in srgb,var(--dh-accent-2,#8d7cf7) 45%,transparent);
+    box-shadow:0 0 26px color-mix(in srgb,var(--dh-accent-2,#8d7cf7) 28%,transparent), inset 0 0 22px color-mix(in srgb,var(--dh-accent,#7af0c6) 12%,transparent); }
+  .spark { position:absolute; top:50%; left:50%; width:5%; height:5%; border-radius:30%;
+    background:linear-gradient(135deg,var(--dh-accent-2,#8d7cf7),var(--dh-accent,#7af0c6)); border:1px solid #ffffff33;
+    box-shadow:0 0 10px color-mix(in srgb,var(--dh-accent-2,#8d7cf7) 45%,transparent);
+    transform:translate(-50%,-50%) rotate(var(--a)) translateY(calc(var(--orb-size) * -.46 * var(--d))) rotate(45deg);
+    animation:dh-twinkle calc(2.4s + var(--i) * .35s) ease-in-out infinite; animation-delay:calc(var(--i) * -.7s); }
+  .spark:nth-of-type(2n) { background:linear-gradient(135deg,var(--dh-accent,#7af0c6),var(--dh-accent-2,#8d7cf7)); }
+  .link-base { stroke:color-mix(in srgb,var(--dh-accent,#7af0c6) 12%,transparent); stroke-width:1; }
+  .link-pulse { stroke:var(--dh-accent,#7af0c6); stroke-width:1.3; stroke-linecap:round; stroke-dashoffset:var(--len);
+    filter:drop-shadow(0 0 3px var(--dh-accent,#7af0c6)); animation:dh-shoot var(--dur) linear infinite; animation-delay:var(--delay); }
+  .ring { animation:dh-spin 18s linear infinite; transition:opacity .4s ease; opacity:.55; }
+  .ring text { fill:var(--dh-accent,#7af0c6); font:700 12.5px ui-monospace,SFMono-Regular,Menlo,monospace; filter:drop-shadow(0 0 4px var(--dh-accent,#7af0c6)); }
+  .orb[data-state="connected"] .ring, .orb[data-state="ready"] .ring { opacity:1; }
+  .orb[data-state="error"] .ring text { fill:#ff8a8a; filter:drop-shadow(0 0 4px #ff6b6b); }
+  .core { position:relative; z-index:1; width:52%; height:52%; display:grid; place-items:center; }
+  @keyframes dh-spin { to { transform:rotate(360deg); } }
+  @keyframes dh-twinkle { 0%,100% { opacity:.35; filter:brightness(.8); } 50% { opacity:1; filter:brightness(1.8) drop-shadow(0 0 6px #eef8ff); } }
+  @keyframes dh-shoot { from { stroke-dashoffset:var(--len); } to { stroke-dashoffset:0; } }
+  @media (prefers-reduced-motion:reduce) { .ring, .spark, .link-pulse { animation:none; } .link-pulse { display:none; } }
+  @media (max-width:600px) { .orb { --orb-size:var(--dh-orbit-size-mobile,92px); } .ring text { font-size:14px; } }
+`;
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/components/Header/IPFSStatus.js
+var PROVIDER_LABELS, IPFSStatus;
+var init_IPFSStatus = __esm({
+  "src/vendor/decent-head/2.0.0/js/components/Header/IPFSStatus.js"() {
+    init_IPFSControls();
+    init_config();
+    init_ipfs();
+    init_orbit();
+    PROVIDER_LABELS = { pinata: "PINATA", local: "YOUR NODE" };
+    IPFSStatus = class extends HTMLElement {
+      connectedCallback() {
+        if (!config.enableIPFS) return;
+        if (this.shadowRoot) {
+          window.addEventListener("decenthead:ipfs", this.update);
+          this.renderState();
+          return;
+        }
+        this.attachShadow({ mode: "open" }).innerHTML = `<style>${orbitCSS}
+      :host { display:grid; justify-items:center; align-content:start; gap:4px; font:12px/1.35 system-ui,sans-serif; color:var(--dh-muted,#b9cfe0); }
+      ::slotted(ipfs-controls) { width:100%; height:100%; }
+      p { margin:0; letter-spacing:.04em; text-align:center; }
+      @media(max-width:600px) { :host { font-size:10.5px; } }
+      </style>${orbitMarkup("<slot></slot>")}<p id="label"></p>`;
+        const controls = document.createElement("ipfs-controls");
+        controls.dataset.docked = "";
+        const hasData = typeof config.data?.export === "function" || typeof config.data?.import === "function";
+        controls.adapter = config.ipfsAdapter || {
+          version: 1,
+          label: config.appName,
+          capabilities: hasData ? { backup: { open: () => controls.openBackup() } } : {},
+          getStatus: async () => hasData ? { backup: { state: "idle", detail: "Host data controls available; no backup verified." } } : {}
+        };
+        ipfs.adapter = controls.adapter;
+        this.replaceChildren(controls);
+        this.update = (event) => this.renderState(event?.detail);
+        window.addEventListener("decenthead:ipfs", this.update);
+        this.renderState();
+      }
+      disconnectedCallback() {
+        window.removeEventListener("decenthead:ipfs", this.update);
+      }
+      orbRect() {
+        return this.shadowRoot?.querySelector(".orb")?.getBoundingClientRect();
+      }
+      renderState(detail = ipfs.snapshot()) {
+        const provider = PROVIDER_LABELS[detail.provider] || String(detail.provider || "IPFS").toUpperCase();
+        const ready = detail.credentialsConfigured || detail.provider === "local";
+        const cid = detail.cid ? ` \u2726 ${detail.cid.slice(0, 12)}\u2026` : "";
+        setRing(this.shadowRoot, `\u2726 IPFS \u2726 ${provider}${cid} \u2726 YOUR DATA \u2726 YOUR CHOICE `, ready ? "ready" : "idle");
+        this.shadowRoot.querySelector("#label").textContent = `IPFS \xB7 ${detail.provider === "local" ? "your node" : detail.provider}`;
+      }
+    };
+    if (!customElements.get("ipfs-status")) customElements.define("ipfs-status", IPFSStatus);
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/components/Header/AppTitle.js
+var AppTitle;
+var init_AppTitle = __esm({
+  "src/vendor/decent-head/2.0.0/js/components/Header/AppTitle.js"() {
+    init_config();
+    init_ui2();
+    AppTitle = class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+      }
+      connectedCallback() {
+        this.shadowRoot.innerHTML = `<style>
+      :host { display:block; text-align:center; min-width:0; position:relative; z-index:1; container-type:inline-size; }
+      button { cursor:pointer; border:0; background:none; padding:4px 8px; display:inline-flex; align-items:center; justify-content:center; gap:.3em; max-width:100%;
+        font:800 clamp(18px,10cqi,56px)/1.1 var(--dh-title-font,'Avenir Next','Trebuchet MS',system-ui,sans-serif); letter-spacing:.01em;
+        color:var(--dh-title,#e9fff7); animation:dh-breathe 6s ease-in-out infinite;
+        text-shadow:0 0 4px #fff8,0 0 12px var(--dh-accent,#7af0c6),0 0 28px var(--dh-accent,#7af0c6),0 0 54px color-mix(in srgb,var(--dh-accent-2,#8d7cf7) 70%,transparent); }
+      button:focus-visible { outline:2px solid var(--dh-accent,#7af0c6); outline-offset:4px; border-radius:10px; }
+      .name { overflow-wrap:break-word; min-width:0; }
+      .end { font:700 .42em ui-monospace,Menlo,monospace; color:var(--dh-accent,#7af0c6); opacity:.9; letter-spacing:.08em; white-space:nowrap; }
+      img { width:.8em; height:.8em; object-fit:contain; filter:drop-shadow(0 0 8px var(--dh-accent,#7af0c6)); }
+      p { margin:4px 0 0; font:600 12px/1.4 system-ui,sans-serif; letter-spacing:.12em; color:var(--dh-muted,#b9cfe0); }
+      @keyframes dh-breathe { 50% { filter:brightness(1.18) drop-shadow(0 0 6px color-mix(in srgb,var(--dh-accent,#7af0c6) 45%,transparent)); } }
+      @media(prefers-reduced-motion:reduce) { button { animation:none; } }
+      @media(max-width:600px) { .end { display:none; } button { font-size:clamp(16px,13cqi,30px); } p { font-size:10px; letter-spacing:.06em; } }
+      </style><button type="button" aria-haspopup="dialog"><span class="end" aria-hidden="true"></span><span class="name"></span><span class="end" aria-hidden="true"></span></button><p></p>`;
+        const button2 = this.shadowRoot.querySelector("button");
+        const [left, right] = Array.isArray(config.art.titleEnds) ? config.art.titleEnds : ["::-", "-::"];
+        const ends = button2.querySelectorAll(".end");
+        ends[0].textContent = left ?? "";
+        ends[1].textContent = right ?? "";
+        button2.querySelector(".name").textContent = config.appName;
+        const icon2 = safeURL(config.art.titleIcon);
+        if (icon2) {
+          const image = document.createElement("img");
+          image.src = icon2;
+          image.alt = "";
+          button2.querySelector(".name").before(image);
+        }
+        this.shadowRoot.querySelector("p").textContent = config.subtitle;
+        button2.onclick = () => this.dispatchEvent(new CustomEvent("decenthead:about", { bubbles: true, composed: true }));
+      }
+      endRects() {
+        return [...this.shadowRoot.querySelectorAll(".end")].filter((end) => end.offsetParent).map((end) => end.getBoundingClientRect());
+      }
+    };
+    if (!customElements.get("app-title")) customElements.define("app-title", AppTitle);
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/chains.js
+var icon, CHAIN_ICONS;
+var init_chains = __esm({
+  "src/vendor/decent-head/2.0.0/js/chains.js"() {
+    icon = (name) => new URL(`../img/chains/${name}.svg`, new URL("vendor/decent-head/2.0.0/js/chains.js", document.baseURI).href).href;
+    CHAIN_ICONS = Object.freeze({ 1: icon("ethereum"), 10: icon("optimism"), 8453: icon("base") });
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/components/Header/WalletConnect.js
+var base2, chainName, WalletConnect;
+var init_WalletConnect = __esm({
+  "src/vendor/decent-head/2.0.0/js/components/Header/WalletConnect.js"() {
+    init_wallet();
+    init_config();
+    init_ui2();
+    init_chains();
+    init_orbit();
+    base2 = new URL("../../../", new URL("vendor/decent-head/2.0.0/js/components/Header/WalletConnect.js", document.baseURI).href).href;
+    chainName = (chainId) => {
+      const id = BigInt(chainId);
+      if (id === BigInt(config.chain.chainId)) return config.chain.chainName;
+      return { 1: "Ethereum", 10: "Optimism", 137: "Polygon", 8453: "Base", 42161: "Arbitrum" }[Number(id)] || `chain ${id}`;
+    };
+    WalletConnect = class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+      }
+      connectedCallback() {
+        const icon2 = safeURL(config.art.walletIcon) || `${base2}img/MetaMaskFox.png`;
+        this.shadowRoot.innerHTML = `<style>${orbitCSS}
+      :host { display:grid; justify-items:center; align-content:start; gap:4px; font:12px/1.35 system-ui,sans-serif; color:var(--dh-text,#eef8ff); }
+      #connect { width:100%; height:100%; border:0; border-radius:50%; padding:0; cursor:pointer; display:grid; place-items:center;
+        background:radial-gradient(circle at 32% 28%,#ffffff2b,#ffffff08 62%),var(--dh-bg-1,#0a1220);
+        --glow:#ff6b6bbf; box-shadow:0 0 0 2px #ff6b6b22,0 0 26px #ff6b6b5c,0 10px 26px #0008; transition:transform .18s ease, box-shadow .3s ease; }
+      #connect::before { content:''; position:absolute; inset:-14%; z-index:-1; border-radius:50%; background:radial-gradient(circle,var(--glow) 0%,transparent 62%); filter:blur(6px); }
+      #connect:hover:not(:disabled) { transform:scale(1.05); } #connect:active:not(:disabled) { transform:scale(.97); }
+      #connect:disabled { cursor:default; filter:grayscale(.55) brightness(.8); }
+      #connect:focus-visible { outline:3px solid var(--dh-accent,#7af0c6); outline-offset:4px; }
+      #connect img { width:64%; height:64%; object-fit:contain; filter:drop-shadow(0 2px 6px #0009); }
+      .orb[data-state="connected"] #connect { --glow:color-mix(in srgb,var(--dh-accent,#7af0c6) 78%,transparent);
+        box-shadow:0 0 0 2px color-mix(in srgb,var(--dh-accent,#7af0c6) 18%,transparent),0 0 28px color-mix(in srgb,var(--dh-accent,#7af0c6) 45%,transparent),0 10px 26px #0008; }
+      .meta { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px; max-width:200px; text-align:center; }
+      select,a { font:inherit; color:var(--dh-text,#eef8ff); background:color-mix(in srgb,var(--dh-bg-2,#10202a) 85%,transparent);
+        border:1px solid color-mix(in srgb,var(--dh-accent,#7af0c6) 55%,transparent); border-radius:999px; padding:3px 10px; text-decoration:none; }
+      select { max-width:150px; }
+      select:focus-visible,a:focus-visible { outline:2px solid var(--dh-accent,#7af0c6); outline-offset:2px; }
+      .account-orbit { position:absolute; inset:0; pointer-events:none; animation:dh-spin 18s linear infinite; }
+      .account-orbit .ring { position:absolute; inset:0; width:100%; height:100%; overflow:visible; animation:none; }
+      .account-orbit .ring text { dominant-baseline:central; }
+      .account-logos { position:absolute; inset:0; opacity:.35; }
+      .account-logos img { position:absolute; left:50%; top:50%; width:10%; height:10%; border-radius:50%;
+        transform:translate(-50%,-50%) rotate(var(--angle)) translateY(calc(var(--orb-size) * -.4));
+        filter:drop-shadow(0 0 5px var(--dh-accent,#7af0c6)); }
+      .orb[data-state="connected"] .account-logos { opacity:1; }
+      .spark.chain { background:none; border:0; border-radius:50%; width:8%; height:8%; object-fit:contain; }
+      .identity-note { font-size:10px; color:var(--dh-muted,#b9cfe0); margin:0; text-align:center; }
+      @media(prefers-reduced-motion:reduce) { .account-orbit { animation:none; } }
+      #status { margin:0; color:var(--dh-muted,#b9cfe0); letter-spacing:.04em; overflow-wrap:anywhere; }
+      [hidden] { display:none !important; }
+      @media(max-width:600px) { :host { font-size:10.5px; } .meta { max-width:104px; gap:3px; } select { max-width:100px; } select,a { padding:2px 7px; } }
+      </style>${orbitMarkup(`<button id="connect" type="button" aria-label="Connect wallet"><img alt="" src="${escapeHTML(icon2)}" /></button>`)}
+      <div class="meta"><select aria-label="Choose wallet"></select>
+      <a id="mobile" hidden>Open MetaMask</a><p id="status" role="status"></p></div><p class="identity-note" role="status"></p>`;
+        const logos = document.createElement("div");
+        logos.className = "account-logos";
+        logos.setAttribute("aria-hidden", "true");
+        for (const angle of [180, 204, 228, 252]) {
+          const picture = document.createElement("picture");
+          const still = document.createElement("source");
+          still.media = "(prefers-reduced-motion: reduce)";
+          still.srcset = `${base2}img/Ens_Eth_Breathe-still.png`;
+          const image = document.createElement("img");
+          image.src = `${base2}img/Ens_Eth_Breathe.png`;
+          image.alt = "";
+          image.style.setProperty("--angle", `${angle}deg`);
+          picture.append(still, image);
+          logos.append(picture);
+        }
+        const orbit = document.createElement("div");
+        orbit.className = "account-orbit";
+        orbit.append(this.shadowRoot.querySelector(".ring"), logos);
+        this.shadowRoot.querySelector(".orb").append(orbit);
+        this.shadowRoot.querySelectorAll(".spark").forEach((spark, i) => {
+          if (i % 2) return;
+          const image = document.createElement("img");
+          image.className = "spark chain";
+          image.style.cssText = spark.style.cssText;
+          image.alt = "";
+          image.hidden = true;
+          spark.after(image);
+          spark.dataset.chainPlaceholder = "";
+        });
+        this.update = () => this.renderState();
+        window.addEventListener("decenthead:providers", this.update);
+        window.addEventListener("decenthead:wallet", this.update);
+        this.shadowRoot.querySelector("#connect").onclick = async () => {
+          if (this.connecting) return;
+          if (wallet.snapshot().connected) {
+            wallet.forget();
+            return;
+          }
+          this.connecting = true;
+          let failure;
+          this.renderState();
+          try {
+            const index = Number(this.shadowRoot.querySelector("select").value);
+            await wallet.connect(wallet.available()[index]?.provider);
+          } catch (error) {
+            failure = error.shortMessage || error.message;
+          } finally {
+            this.connecting = false;
+            this.renderState();
+            if (failure) {
+              this.shadowRoot.querySelector("#status").textContent = failure;
+              setRing(this.shadowRoot, "\u2726 CONNECTION FAILED \u2726 TAP THE FOX TO TRY AGAIN ", "error");
+            }
+          }
+        };
+        this.renderState();
+      }
+      disconnectedCallback() {
+        window.removeEventListener("decenthead:providers", this.update);
+        window.removeEventListener("decenthead:wallet", this.update);
+      }
+      orbRect() {
+        return this.shadowRoot.querySelector(".orb")?.getBoundingClientRect();
+      }
+      renderState() {
+        const root = this.shadowRoot, available = wallet.available(), state3 = wallet.snapshot();
+        const select = root.querySelector("select"), previous = select.value, connect = root.querySelector("#connect");
+        select.replaceChildren(...available.map((item, i) => new Option(item.info.name, String(i))));
+        if ([...select.options].some((option) => option.value === previous)) select.value = previous;
+        select.hidden = available.length < 2 || state3.connected;
+        connect.disabled = !state3.connected && (this.connecting || !available.length);
+        connect.setAttribute("aria-label", state3.connected ? "Disconnect wallet" : "Connect wallet");
+        connect.title = state3.connected ? `${state3.ensName || state3.address} \xB7 click to disconnect this dapp` : available.length ? "Connect wallet" : "No injected wallet detected";
+        connect.setAttribute("aria-pressed", String(state3.connected));
+        const mobile = root.querySelector("#mobile");
+        mobile.hidden = !!available.length;
+        mobile.href = `https://metamask.app.link/dapp/${location.host}${location.pathname}${location.search}${location.hash}`;
+        root.querySelector("#status").textContent = state3.connected ? `${state3.ensName || `${state3.address.slice(0, 6)}\u2026${state3.address.slice(-4)}`} \xB7 ${chainName(state3.chainId)}` : this.connecting ? "Check your wallet\u2026" : available.length ? "Connect only when you choose." : "No injected wallet detected.";
+        root.querySelector(".identity-note").textContent = state3.ensStatus === "unavailable" ? "ENS unavailable \xB7 showing address" : "";
+        setRing(root, "", state3.connected ? "connected" : "idle");
+        const path = root.querySelector("textPath");
+        path.setAttribute("textLength", "342");
+        path.setAttribute("lengthAdjust", "spacingAndGlyphs");
+        path.setAttribute("startOffset", "2%");
+        path.textContent = state3.connected ? `${state3.ensName || state3.address.slice(0, 6)} \xB7 ${state3.address.slice(-4)}` : this.connecting ? "CHECK YOUR WALLET" : "CONNECT WALLET";
+        const chainIcon = state3.connected ? CHAIN_ICONS[Number(BigInt(state3.chainId))] : null;
+        root.querySelectorAll(".spark.chain").forEach((image) => {
+          image.hidden = !chainIcon;
+          if (chainIcon) image.src = chainIcon;
+        });
+        root.querySelectorAll("[data-chain-placeholder]").forEach((spark) => {
+          spark.hidden = !!chainIcon;
+        });
+      }
+    };
+    if (!customElements.get("wallet-connect")) customElements.define("wallet-connect", WalletConnect);
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/components/Header/AboutModal.js
+var ZERO2, ESCROW_ABI2, ERC20_ABI2, links, AboutModal;
+var init_AboutModal = __esm({
+  "src/vendor/decent-head/2.0.0/js/components/Header/AboutModal.js"() {
+    init_config();
+    init_wallet();
+    init_ui2();
+    ZERO2 = "0x0000000000000000000000000000000000000000";
+    ESCROW_ABI2 = [
+      "function getListing(uint256) view returns (tuple(address nftContract,uint256 tokenId,uint256 priceETH,address priceToken,uint256 priceAmount,uint256 available,bool active,string note))",
+      "function getNFTBalance(address,uint256) view returns (uint256)",
+      "function purchaseWithETH(uint256,uint256) payable",
+      "function purchaseWithToken(uint256,uint256)"
+    ];
+    ERC20_ABI2 = ["function allowance(address,address) view returns (uint256)", "function approve(address,uint256) returns (bool)"];
+    links = (items) => (items || []).map((item) => {
+      const url = safeURL(item.url);
+      return url ? `<li><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.label || item.title || url)}</a></li>` : "";
+    }).join("");
+    AboutModal = class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+      }
+      connectedCallback() {
+        this.render();
+      }
+      open() {
+        this.shadowRoot.querySelector("dialog").showModal();
+      }
+      close() {
+        this.shadowRoot.querySelector("dialog").close();
+      }
+      render() {
+        const about = config.about, supporter = config.supporterDnft;
+        this.shadowRoot.innerHTML = `<style>${modalStyles}</style><dialog aria-labelledby="about-title">
+      ${modalHeading(about.title, "about-title", "\u2726")}<p>${escapeHTML(about.summary)}</p>
+      <ul>${links(config.links)}</ul>
+      ${(about.sections || []).map((section) => `<details><summary>${escapeHTML(section.title)}</summary><p>${escapeHTML(section.body || section.text)}</p></details>`).join("")}
+      ${config.relatedDapps.length ? `<details><summary>\u2197 Related Decent dapps</summary><ul>${links(config.relatedDapps)}</ul></details>` : ""}
+      ${supporter ? `<section><h3>\u25C8 ${escapeHTML(supporter.title || "Supporter DNFT")}</h3>
+        <ul>${links(supporter.marketUrl ? [{ label: "View on marketplace", url: supporter.marketUrl }] : [])}</ul>
+        ${supporter.escrowAddress && supporter.listingId !== void 0 ? '<button id="buy">Buy from escrow</button>' : ""}
+        <details><summary>Token details</summary><p class="quiet">Contract: ${escapeHTML(supporter.contract)} \xB7 Token: ${escapeHTML(supporter.tokenId)} \xB7 Chain: ${escapeHTML(supporter.chain?.chainName || supporter.chain?.chainId)}</p></details>
+        ${supporter.paypal?.clientId ? `<details><summary>Pay with PayPal</summary><label>Recipient wallet <input id="recipient" autocomplete="off" /></label><button id="paypal">Buy with PayPal \u2014 ${escapeHTML(supporter.paypal.amount)} ${escapeHTML(supporter.paypal.currency || "USD")}</button><div id="paypal-buttons"></div><p class="quiet">Merchant-verified manual fulfillment. This payment does not mint on-chain.</p></details>` : ""}
+        <p id="purchase-status" role="status"></p></section>` : ""}
+      <p class="quiet">Your wallet. Your data. Always your choice.</p></dialog>`;
+        bindModalClose(this.shadowRoot.querySelector("dialog"));
+        this.shadowRoot.querySelector("#buy")?.addEventListener("click", () => this.buy());
+        this.shadowRoot.querySelector("#paypal")?.addEventListener("click", () => this.paypal());
+      }
+      status(message) {
+        this.shadowRoot.querySelector("#purchase-status").textContent = message;
+      }
+      async buy() {
+        const button2 = this.shadowRoot.querySelector("#buy"), cfg = config.supporterDnft;
+        if (this.busy) return;
+        this.busy = true;
+        button2.disabled = true;
+        try {
+          if (!cfg.chain) throw new Error("Configure the supporter chain before purchasing");
+          if (!wallet.snapshot().connected) await wallet.connect();
+          const provider = await wallet.ensureChain(cfg.chain);
+          const ethers = await loadEthers(), signer = await provider.getSigner();
+          const escrow = new ethers.Contract(cfg.escrowAddress, ESCROW_ABI2, signer);
+          this.status("Checking listing and escrow stock\u2026");
+          const listing = await escrow.getListing(cfg.listingId);
+          if (listing.nftContract.toLowerCase() !== cfg.contract.toLowerCase() || listing.tokenId !== BigInt(cfg.tokenId)) throw new Error("Listing does not match configured supporter token");
+          if (!listing.active || listing.available < 1n || await escrow.getNFTBalance(cfg.contract, cfg.tokenId) < 1n) throw new Error("Supporter token is not available in escrow");
+          if (cfg.expectedPriceAmount !== void 0 && (listing.priceETH !== 0n || listing.priceAmount !== BigInt(cfg.expectedPriceAmount) || listing.priceToken.toLowerCase() !== cfg.paymentToken.toLowerCase())) {
+            throw new Error("Listing price changed. Reload and review the listing before purchasing.");
+          }
+          const price = cfg.expectedPriceAmount === "10000000" && cfg.paymentToken?.toLowerCase() === "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" ? "10 USDC" : listing.priceETH > 0n ? `${ethers.formatEther(listing.priceETH)} ETH` : `${listing.priceAmount} raw token units (${listing.priceToken === ZERO2 ? cfg.paymentToken : listing.priceToken})`;
+          if (!confirm(`Buy one supporter DNFT for ${price}? Review the wallet transaction before signing.`)) {
+            this.status("Cancelled.");
+            return;
+          }
+          let tx;
+          if (listing.priceETH > 0n) {
+            tx = await escrow.purchaseWithETH(cfg.listingId, 1, { value: listing.priceETH });
+          } else {
+            const tokenAddress = listing.priceToken === ZERO2 ? cfg.paymentToken : listing.priceToken;
+            if (!tokenAddress || tokenAddress === ZERO2) throw new Error("Configure the escrow default payment token");
+            const token = new ethers.Contract(tokenAddress, ERC20_ABI2, signer);
+            const buyer = await signer.getAddress();
+            if (await token.allowance(buyer, cfg.escrowAddress) < listing.priceAmount) {
+              this.status("Approve the exact token amount in your wallet\u2026");
+              await (await token.approve(cfg.escrowAddress, listing.priceAmount)).wait();
+            }
+            tx = await escrow.purchaseWithToken(cfg.listingId, 1);
+          }
+          this.status("Waiting for purchase confirmation\u2026");
+          await tx.wait();
+          this.status(`Purchase confirmed: ${tx.hash}`);
+        } catch (error) {
+          this.status(error.shortMessage || error.message);
+        } finally {
+          this.busy = false;
+          button2.disabled = false;
+        }
+      }
+      async paypal() {
+        const cfg = config.supporterDnft.paypal, button2 = this.shadowRoot.querySelector("#paypal");
+        const recipient = this.shadowRoot.querySelector("#recipient").value.trim();
+        if (!/^0x[0-9a-fA-F]{40}$/.test(recipient)) {
+          this.status("Enter a valid recipient wallet address.");
+          return;
+        }
+        if (!/^\d+(\.\d{1,2})?$/.test(String(cfg.amount)) || Number(cfg.amount) <= 0) {
+          this.status("Configure a positive PayPal amount.");
+          return;
+        }
+        button2.disabled = true;
+        try {
+          if (!window.paypal) await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(cfg.clientId)}&currency=${encodeURIComponent(cfg.currency || "USD")}&intent=capture`;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error("Could not load PayPal"));
+            document.head.append(script);
+          });
+          const container = this.shadowRoot.querySelector("#paypal-buttons");
+          container.replaceChildren();
+          await window.paypal.Buttons({
+            createOrder: (data, actions) => actions.order.create({ purchase_units: [{
+              description: `${config.appName} Supporter DNFT`,
+              custom_id: recipient,
+              amount: { currency_code: cfg.currency || "USD", value: String(cfg.amount) }
+            }] }),
+            onApprove: async (data, actions) => {
+              try {
+                const receipt = await actions.order.capture();
+                if (receipt.status !== "COMPLETED") throw new Error("Payment is not completed");
+                this.status(`Payment captured: ${receipt.id}. Contact the merchant for verified manual fulfillment to ${recipient}.`);
+                container.replaceChildren();
+                if (cfg.adminEmail) {
+                  const link2 = document.createElement("a");
+                  link2.textContent = "Email merchant with receipt";
+                  link2.href = `mailto:${encodeURIComponent(cfg.adminEmail)}?subject=Supporter%20DNFT%20receipt&body=${encodeURIComponent(`Receipt: ${receipt.id}
+Wallet: ${recipient}
+Amount: ${cfg.amount} ${cfg.currency || "USD"}`)}`;
+                  container.append(link2);
+                }
+              } catch (error) {
+                this.status(error.message);
+              }
+            },
+            onCancel: () => {
+              this.status("Payment cancelled.");
+              button2.disabled = false;
+            },
+            onError: (error) => {
+              this.status(error.message || "PayPal payment failed");
+              button2.disabled = false;
+            }
+          }).render(container);
+        } catch (error) {
+          this.status(error.message);
+          button2.disabled = false;
+        }
+      }
+    };
+    if (!customElements.get("about-modal")) customElements.define("about-modal", AboutModal);
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/components/Header/AnkhMenu.js
+var AnkhMenu;
+var init_AnkhMenu = __esm({
+  "src/vendor/decent-head/2.0.0/js/components/Header/AnkhMenu.js"() {
+    AnkhMenu = class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+      }
+      connectedCallback() {
+        const profile = this.getAttribute("side") === "right";
+        const label = profile ? "My Profile" : "Admin";
+        this.shadowRoot.innerHTML = `<style>
+      :host { display:block; position:relative; z-index:3; }
+      summary { list-style:none; display:grid; place-items:center; box-sizing:border-box; width:44px; height:44px;
+        border:1px solid var(--dh-accent,#7af0c6); border-radius:50%; cursor:pointer;
+        background:radial-gradient(circle at 40% 30%,#16333f,var(--dh-bg-1,#0a1220) 75%);
+        color:var(--dh-accent,#7af0c6); font:30px/1 system-ui;
+        text-shadow:0 0 7px currentColor; box-shadow:0 0 14px var(--dh-accent-2,#8d7cf7); }
+      summary::-webkit-details-marker { display:none; }
+      summary:hover, details[open] summary { box-shadow:0 0 20px var(--dh-accent,#7af0c6); }
+      summary:focus-visible, button:focus-visible { outline:2px solid var(--dh-accent,#7af0c6); outline-offset:4px; }
+      .options { position:absolute; top:calc(100% + 10px); ${profile ? "right" : "left"}:0; min-width:136px; padding:6px;
+        border:1px solid var(--dh-accent,#7af0c6); border-radius:12px; background:var(--dh-bg-1,#0a1220);
+        box-shadow:0 8px 24px #0009,0 0 16px color-mix(in srgb,var(--dh-accent-2,#8d7cf7) 35%,transparent); }
+      button { width:100%; border:0; border-radius:7px; padding:12px; background:transparent;
+        color:var(--dh-text,#eef8ff); font:600 14px system-ui; text-align:left; cursor:default; }
+      button:hover { background:color-mix(in srgb,var(--dh-accent,#7af0c6) 12%,transparent); }
+      @media(max-width:600px) { summary { width:30px; height:30px; font-size:23px; } }
+      </style><details><summary role="button" aria-label="${profile ? "Profile" : "Admin"} menu" aria-expanded="false" aria-controls="options">\u2625</summary>
+      <div class="options" id="options"><button type="button">${label}</button></div></details>`;
+        const details = this.shadowRoot.querySelector("details");
+        const summary = this.shadowRoot.querySelector("summary");
+        details.addEventListener("toggle", () => summary.setAttribute("aria-expanded", String(details.open)));
+        this.closeOutside = (event) => {
+          if (!event.composedPath().includes(this)) details.open = false;
+        };
+        this.shadowRoot.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && details.open) {
+            details.open = false;
+            summary.focus();
+            event.stopPropagation();
+          }
+        });
+        document.addEventListener("pointerdown", this.closeOutside);
+      }
+      disconnectedCallback() {
+        document.removeEventListener("pointerdown", this.closeOutside);
+      }
+    };
+    if (!customElements.get("ankh-menu")) customElements.define("ankh-menu", AnkhMenu);
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/components/Header.js
+var css, SVG, center, DecentHeader;
+var init_Header = __esm({
+  "src/vendor/decent-head/2.0.0/js/components/Header.js"() {
+    init_config();
+    init_IPFSStatus();
+    init_AppTitle();
+    init_WalletConnect();
+    init_AboutModal();
+    init_AnkhMenu();
+    css = new URL("../../css/decent-head.css", new URL("vendor/decent-head/2.0.0/js/components/Header.js", document.baseURI).href).href;
+    SVG = "http://www.w3.org/2000/svg";
+    center = (rect) => rect && rect.width ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null;
+    DecentHeader = class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+      }
+      connectedCallback() {
+        for (const [key, value] of Object.entries(config.theme)) {
+          const property = key.startsWith("--dh-") ? key : `--dh-${key}`;
+          if (/^--dh-[a-z0-9-]+$/.test(property)) this.style.setProperty(property, value);
+        }
+        this.shadowRoot.innerHTML = `<link rel="stylesheet" href="${css}" />
+      <header><div class="dh-background" aria-hidden="true"></div><svg class="dh-wires" aria-hidden="true"></svg>
+      <ipfs-status></ipfs-status><div class="dh-title-tools"><ankh-menu side="left"></ankh-menu><app-title></app-title><ankh-menu side="right"></ankh-menu></div><wallet-connect></wallet-connect></header><about-modal></about-modal>`;
+        this.shadowRoot.querySelector("app-title").addEventListener("decenthead:about", () => this.shadowRoot.querySelector("about-modal").open());
+        this.drawWires = () => cancelAnimationFrame(this.frame) || (this.frame = requestAnimationFrame(() => this.wire()));
+        this.observer = new ResizeObserver(this.drawWires);
+        this.observer.observe(this.shadowRoot.querySelector("header"));
+        document.fonts?.ready.then(this.drawWires);
+      }
+      disconnectedCallback() {
+        this.observer?.disconnect();
+        cancelAnimationFrame(this.frame);
+      }
+      // Pulsing curves that tie the IPFS dock, the title endpoints, and the wallet dock together.
+      wire() {
+        const root = this.shadowRoot, svg = root.querySelector(".dh-wires"), header2 = root.querySelector("header");
+        if (!svg || !header2) return;
+        const box = header2.getBoundingClientRect();
+        const local = (point2) => point2 && { x: point2.x - box.left, y: point2.y - box.top };
+        const ipfs2 = local(center(root.querySelector("ipfs-status").orbRect?.()));
+        const wallet2 = local(center(root.querySelector("wallet-connect").orbRect?.()));
+        const [leftEnd, rightEnd] = (root.querySelector("app-title").endRects?.() || []).map((rect) => local(center(rect)));
+        svg.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
+        svg.replaceChildren();
+        if (!ipfs2 || !wallet2) return;
+        const lanes = [];
+        if (leftEnd && rightEnd) lanes.push([ipfs2, leftEnd, -18], [rightEnd, wallet2, -18], [ipfs2, leftEnd, 22], [rightEnd, wallet2, 22]);
+        lanes.push([ipfs2, wallet2, box.height * 0.42], [ipfs2, wallet2, box.height * 0.62], [ipfs2, wallet2, -box.height * 0.2]);
+        lanes.forEach(([from, to, bend], index) => {
+          const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 + bend };
+          const d = `M${from.x.toFixed(1)},${from.y.toFixed(1)} Q${mid.x.toFixed(1)},${mid.y.toFixed(1)} ${to.x.toFixed(1)},${to.y.toFixed(1)}`;
+          for (const kind of ["wire", "wire pulse"]) {
+            const path = document.createElementNS(SVG, "path");
+            path.setAttribute("d", d);
+            path.setAttribute("class", kind);
+            if (kind !== "wire") path.style.cssText = `--dur:${(5 + index * 1.3).toFixed(1)}s;--delay:${(-index * 1.7).toFixed(1)}s`;
+            svg.append(path);
+          }
+          for (const t of [0.22, 0.5, 0.78]) {
+            const x = (1 - t) ** 2 * from.x + 2 * (1 - t) * t * mid.x + t ** 2 * to.x;
+            const y = (1 - t) ** 2 * from.y + 2 * (1 - t) * t * mid.y + t ** 2 * to.y;
+            const node2 = document.createElementNS(SVG, "circle");
+            node2.setAttribute("cx", x.toFixed(1));
+            node2.setAttribute("cy", y.toFixed(1));
+            node2.setAttribute("r", "1.8");
+            node2.setAttribute("class", "node");
+            node2.style.animationDelay = `${(-(index * 3 + t * 10) * 0.4).toFixed(1)}s`;
+            svg.append(node2);
+          }
+        });
+      }
+    };
+    if (!customElements.get("decent-header")) customElements.define("decent-header", DecentHeader);
+  }
+});
+
+// src/vendor/decent-head/2.0.0/js/main.js
+var main_exports = {};
+__export(main_exports, {
+  DecentHead: () => DecentHead
+});
+var DecentHead;
+var init_main = __esm({
+  "src/vendor/decent-head/2.0.0/js/main.js"() {
+    init_Header();
+    init_config();
+    init_ipfs();
+    init_wallet();
+    DecentHead = Object.freeze({
+      version: config.version,
+      getIpfs: () => ipfs,
+      getWallet: () => wallet,
+      on(event, callback) {
+        const name = event.startsWith("decenthead:") ? event : `decenthead:${event}`;
+        const handler = (event2) => callback(event2.detail);
+        window.addEventListener(name, handler);
+        return () => window.removeEventListener(name, handler);
+      }
+    });
+    window.DecentHead = DecentHead;
+    window.dispatchEvent(new CustomEvent("decenthead:ready", { detail: DecentHead }));
+  }
+});
+
+// src/js/pilots/whitelist.mjs
+function parsePilots(value) {
+  if (!Array.isArray(value?.contributors)) throw new Error("Pilot list requires a contributors array");
+  return value.contributors.filter((entry) => entry?.whitelisted !== false && ADDRESS.test(entry?.walletAddress || ""));
+}
+async function loadPilots(fetchImpl = globalThis.fetch) {
+  let lastError;
+  for (const url of [RAW, LOCAL.href]) {
+    try {
+      const response = await fetchImpl(url, { cache: "no-store", signal: AbortSignal.timeout(1e4) });
+      if (!response.ok) throw new Error(`Pilot list unavailable (${response.status})`);
+      return parsePilots(await response.json());
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw new Error(`Decent Pilots list could not be loaded: ${lastError?.message || "network unavailable"}`);
+}
+function isWhitelisted(address, entries) {
+  return !!address && ADDRESS.test(address) && entries.some((entry) => entry.walletAddress.toLowerCase() === address.toLowerCase());
+}
+function dispatchPilot(address, isPilot) {
+  window.dispatchEvent(new CustomEvent("voyager:pilot", { detail: { address: address || null, isPilot: !!isPilot } }));
+}
+async function contractPilot(address) {
+  const response = await fetch("./js/chain/addresses.json", { cache: "no-store" });
+  if (!response.ok) return null;
+  const addresses2 = await response.json();
+  const contracts = addresses2.contracts || addresses2;
+  const configured = contracts.VoyagerPilots || contracts.voyagerPilots || contracts.base?.VoyagerPilots || contracts["8453"]?.VoyagerPilots;
+  const contractAddress2 = typeof configured === "string" ? configured : configured?.address;
+  if (!ADDRESS.test(contractAddress2 || "")) return null;
+  const ethers = window.ethers || await (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
+  const provider = new ethers.JsonRpcProvider(window.DECENT_CONFIG?.chain?.rpcUrls?.[0] || "https://mainnet.base.org");
+  return new ethers.Contract(contractAddress2, ["function isPilot(address) view returns (bool)"], provider).isPilot(address);
+}
+function mountPilots({ fetchImpl = globalThis.fetch, readOnChain = contractPilot } = {}) {
+  let pilots = [], loading = null, generation = 0, currentAddress = null;
+  const note = document.getElementById("pilot-note");
+  const load = () => loading ||= loadPilots(fetchImpl).then((entries) => {
+    pilots = entries;
+  });
+  const update = async (state3) => {
+    const address = state3?.connected ? state3.address : null;
+    if (address?.toLowerCase() !== currentAddress?.toLowerCase()) {
+      currentAddress = address;
+      generation++;
+    }
+    const request = generation;
+    if (!address) {
+      dispatchPilot(null, false);
+      if (note) note.hidden = true;
+      return { address: null, isPilot: false };
+    }
+    try {
+      await load();
+    } catch (error) {
+      if (request === generation) {
+        loading = null;
+        dispatchPilot(address, false);
+        if (note) {
+          note.hidden = false;
+          note.textContent = error.message;
+        }
+      }
+      throw error;
+    }
+    let allowed = isWhitelisted(address, pilots);
+    if (allowed) {
+      try {
+        const chainResult = await readOnChain(address);
+        if (chainResult !== null) allowed = !!chainResult;
+      } catch {
+      }
+    }
+    if (request !== generation) throw new Error("Wallet changed during Pilot verification. Please retry.");
+    dispatchPilot(address, allowed);
+    if (note) {
+      note.hidden = allowed;
+      note.textContent = "This wallet is not on the Decent Pilots list yet. Ask in the DecentAgency Discord. Cadet has 10 free levels; Pilot and Ace have 20. NFT rewards require an eligible wallet.";
+    }
+    return { address, isPilot: allowed };
+  };
+  const refreshWallet = () => {
+    void update(window.DecentHead?.getWallet?.()?.snapshot?.()).catch((error) => {
+      console.warn("[Voyager Pilots]", error.message);
+    });
+  };
+  window.addEventListener("decenthead:ready", refreshWallet);
+  window.addEventListener("decenthead:wallet", refreshWallet);
+  if (window.DecentHead) refreshWallet();
+  return { refresh: update, entries: () => pilots };
+}
+var RAW, LOCAL, ADDRESS, pilotController;
+var init_whitelist = __esm({
+  "src/js/pilots/whitelist.mjs"() {
+    RAW = "https://raw.githubusercontent.com/TheJollyLaMa/DecentVoyager/main/contributor-accounts.json";
+    LOCAL = new URL("../../../contributor-accounts.json", new URL("js/pilots/whitelist.mjs", document.baseURI).href);
+    ADDRESS = /^0x[\da-f]{40}$/i;
+    pilotController = typeof window !== "undefined" && typeof document !== "undefined" ? mountPilots() : null;
+  }
+});
+
+// src/js/pilots/run-outbox.mjs
+function browserStorage() {
+  try {
+    return globalThis.localStorage;
+  } catch {
+    return null;
+  }
+}
+function createRunOutbox({ storage = browserStorage(), fetchImpl = globalThis.fetch, baseUrl = () => globalThis.DECENT_CONFIG?.voyager?.refereeUrl || "", onChange = () => {
+}, onAccepted = () => {
+} } = {}) {
+  let memory = [], retrying = null, storageFailed = false;
+  const read = () => {
+    if (storageFailed) return [...memory];
+    try {
+      const value = JSON.parse(storage?.getItem(OUTBOX_KEY) ?? JSON.stringify(memory));
+      return Array.isArray(value) ? value : [];
+    } catch {
+      return [...memory];
+    }
+  };
+  const write = (items) => {
+    memory = items;
+    try {
+      storage?.setItem(OUTBOX_KEY, JSON.stringify(items));
+      storageFailed = false;
+    } catch (error) {
+      storageFailed = true;
+      onChange();
+      throw new Error(`Could not persist signed flight evidence: ${error.message}. Keep this page open and free browser storage before retrying.`);
+    }
+    onChange();
+  };
+  async function submit(item) {
+    const url = baseUrl();
+    if (!url) throw new Error("Referee server is not configured");
+    const response = await fetchImpl(`${url.replace(/\/$/, "")}/${item.checkpoint ? "captures" : "runs"}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(item) });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error || `Referee rejected run (${response.status})`);
+    }
+    return response.json();
+  }
+  async function enqueue(item) {
+    const items = read();
+    if (!items.some((entry) => entry.runHash === item.runHash && entry.address?.toLowerCase() === item.address?.toLowerCase())) items.push({ ...item, queuedAt: (/* @__PURE__ */ new Date()).toISOString() });
+    write(items);
+    await retry();
+    return read();
+  }
+  function retry() {
+    if (retrying) return retrying;
+    const request = retryBatch().finally(() => {
+      if (retrying === request) retrying = null;
+    });
+    retrying = request;
+    return request;
+  }
+  async function retryBatch() {
+    const batch = read();
+    const remaining = [];
+    for (const item of batch) {
+      try {
+        onAccepted(item, await submit(item));
+      } catch (error) {
+        remaining.push({ ...item, lastError: error.message });
+      }
+    }
+    const added = read().filter((item) => !batch.some((entry) => entry.runHash === item.runHash && entry.address?.toLowerCase() === item.address?.toLowerCase()));
+    write([...remaining, ...added]);
+    return { sent: read().length === 0, pending: read().length };
+  }
+  return { read, enqueue, retry, submit };
+}
+var OUTBOX_KEY;
+var init_run_outbox = __esm({
+  "src/js/pilots/run-outbox.mjs"() {
+    OUTBOX_KEY = "decent-voyager-run-outbox/1";
+  }
+});
+
+// src/js/pilots/ticket.mjs
+function parseSeed(value) {
+  const seed = typeof value === "string" && /^0x[\da-f]+$/i.test(value) ? Number.parseInt(value, 16) : Number(value);
+  return Number.isInteger(seed) && seed >= 0 && seed <= 4294967295 ? seed >>> 0 : null;
+}
+function timestamp(value) {
+  if (typeof value === "number" || typeof value === "string" && /^\d+(?:\.\d+)?$/.test(value)) {
+    const number = Number(value);
+    return number < 1e12 ? number * 1e3 : number;
+  }
+  return Date.parse(value);
+}
+function isExpired(ticket, now) {
+  const expiresAt = timestamp(ticket.expiresAt);
+  return !Number.isFinite(expiresAt) || expiresAt <= now;
+}
+function createRunTicketManager({
+  fetchImpl = globalThis.fetch,
+  baseUrl = () => globalThis.DECENT_CONFIG?.voyager?.refereeUrl || "",
+  getGame = () => globalThis.window?.voyager?.game || globalThis.window?.asteroidGame,
+  now = () => Date.now(),
+  onStatus = () => {
+  },
+  getRecentOffers = () => [],
+  pollInterval = 1e3,
+  setIntervalImpl = globalThis.setInterval,
+  clearIntervalImpl = globalThis.clearInterval
+} = {}) {
+  let pilot2 = { address: null, isPilot: false };
+  let ticket = null, appliedId = null, inFlight = null, generation = 0, lastRunId = null;
+  const desiredDifficulty = () => getGame()?.selectedDifficulty;
+  const report = (text2) => onStatus(text2);
+  function ready() {
+    const game = getGame();
+    return !!(pilot2.isPilot && pilot2.address && baseUrl() && typeof game?.setNextRunSeed === "function");
+  }
+  function applyBeforeLaunch() {
+    const game = getGame();
+    if (!ready() || !["title", "gameOver"].includes(game?.state) || !ticket || isExpired(ticket.ticket, now()) || appliedId === ticket.ticket.id) return false;
+    try {
+      game.setNextRunSeed(ticket.seed, { ticket: ticket.ticket, mac: ticket.mac });
+      appliedId = ticket.ticket.id;
+      report("Referee flight ticket ready for your next launch.");
+      return true;
+    } catch (error) {
+      report(`Could not prepare referee flight ticket: ${error.message}`);
+      return false;
+    }
+  }
+  async function fetchTicket() {
+    const address = pilot2.address, url = baseUrl(), token = generation;
+    const difficulty = desiredDifficulty();
+    if (!pilot2.isPilot || !address) {
+      report("Connect a Decent Pilot wallet to prepare referee flight tickets.");
+      return null;
+    }
+    if (!url) {
+      report("Rewards need a referee flight ticket. The GitHub fallback remains in \u2625 profile \u2192 Flight Logs \u2192 Request mint on GitHub.");
+      return null;
+    }
+    const game = getGame();
+    if (typeof game?.setNextRunSeed !== "function") {
+      report("This game build cannot use referee flight tickets. Rewards need the referee; GitHub fallback remains in \u2625 profile \u2192 Flight Logs.");
+      return null;
+    }
+    try {
+      const response = await fetchImpl(`${url.replace(/\/$/, "")}/tickets`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          address,
+          ...difficulty ? { difficulty, recentOffers: getRecentOffers(address) } : {}
+        })
+      });
+      if (!response.ok) throw new Error(`Referee ticket request failed (${response.status})`);
+      const result = await response.json();
+      const value = result?.ticket, seed = parseSeed(value?.seed);
+      if (token !== generation || pilot2.address?.toLowerCase() !== address.toLowerCase() || difficulty !== desiredDifficulty()) return null;
+      if (!value || typeof value.id !== "string" || !value.id || !/^0x[\da-f]{40}$/i.test(value.address || "") || value.address.toLowerCase() !== address.toLowerCase() || seed === null || !result.mac || isExpired(value, now())) {
+        throw new Error("Referee returned an invalid or expired flight ticket");
+      }
+      ticket = { ticket: value, mac: result.mac, seed, requestedDifficulty: difficulty };
+      appliedId = null;
+      applyBeforeLaunch();
+      return ticket;
+    } catch (error) {
+      if (token === generation) report(`Rewards need a referee flight ticket (${error.message}). GitHub fallback: \u2625 profile \u2192 Flight Logs \u2192 Request mint on GitHub.`);
+      return null;
+    }
+  }
+  function ensureTicket() {
+    if (!ready()) return Promise.resolve(null);
+    if (ticket && ticket.requestedDifficulty !== desiredDifficulty()) {
+      ticket = null;
+      appliedId = null;
+    }
+    if (ticket && !isExpired(ticket.ticket, now())) {
+      applyBeforeLaunch();
+      return Promise.resolve(ticket);
+    }
+    if (inFlight) return inFlight;
+    const request = fetchTicket().finally(() => {
+      if (inFlight === request) inFlight = null;
+    });
+    inFlight = request;
+    return request;
+  }
+  function setPilot(state3 = {}) {
+    const address = state3.address || null, isPilot = !!state3.isPilot;
+    const changed = address?.toLowerCase() !== pilot2.address?.toLowerCase() || isPilot !== pilot2.isPilot;
+    if (changed) {
+      generation++;
+      ticket = null;
+      appliedId = null;
+      inFlight = null;
+      lastRunId = null;
+    }
+    pilot2 = { address, isPilot };
+    if (isPilot && address) {
+      if (!baseUrl()) report("Rewards need a referee flight ticket. The GitHub fallback remains in \u2625 profile \u2192 Flight Logs \u2192 Request mint on GitHub.");
+      else if (typeof getGame()?.setNextRunSeed !== "function") report("This game build cannot use referee flight tickets. Rewards need the referee; GitHub fallback remains in \u2625 profile \u2192 Flight Logs.");
+      else void ensureTicket();
+    } else report("");
+  }
+  function runStarted(runId2) {
+    if (runId2 && runId2 === lastRunId) return;
+    lastRunId = runId2 || `run-${now()}`;
+    report("");
+    if (appliedId || ticket) {
+      ticket = null;
+      appliedId = null;
+    }
+    if (pilot2.isPilot) void ensureTicket();
+  }
+  const timer = setIntervalImpl(() => {
+    if (!pilot2.isPilot) return;
+    const game = getGame();
+    if (["title", "gameOver"].includes(game?.state)) {
+      void ensureTicket();
+      applyBeforeLaunch();
+    }
+  }, pollInterval);
+  return {
+    ensureTicket,
+    setPilot,
+    runStarted,
+    refresh: () => {
+      if (ticket && isExpired(ticket.ticket, now())) {
+        ticket = null;
+        appliedId = null;
+      }
+      return ensureTicket();
+    },
+    current: () => ticket,
+    stop: () => clearIntervalImpl(timer)
+  };
+}
+var init_ticket = __esm({
+  "src/js/pilots/ticket.mjs"() {
+  }
+});
+
+// src/js/pilots/reward-state.mjs
+function createRewardState({ storage = globalThis.localStorage, onChange = () => {
+} } = {}) {
+  const read = () => {
+    const value = JSON.parse(storage.getItem(REWARD_KEY) || "[]");
+    if (!Array.isArray(value)) throw new Error("Saved reward history is invalid.");
+    return value;
+  };
+  const put = (entry) => {
+    const entries = read();
+    const index = entries.findIndex((item) => item.id === entry.id && item.address.toLowerCase() === entry.address.toLowerCase());
+    if (index < 0) entries.push(entry);
+    else entries[index] = { ...entries[index], ...entry };
+    storage.setItem(REWARD_KEY, JSON.stringify(entries));
+    onChange();
+    return entry;
+  };
+  const accept = (item, result) => {
+    put({ id: `verification:${item.runHash}`, kind: "verification", address: item.address, runId: item.run.runId, runHash: item.runHash, status: "verified", result });
+    for (const voucher of result.vouchers || []) {
+      const previous = read().find((entry) => entry.id === `voucher:${voucher.digest}` && entry.address.toLowerCase() === item.address.toLowerCase());
+      put({
+        id: `voucher:${voucher.digest}`,
+        address: item.address,
+        kind: "voucher",
+        voucher,
+        runId: previous?.runId || item.run.runId,
+        status: previous?.status || "verified"
+      });
+    }
+    const capture = read().filter((entry) => entry.kind === "capture" && entry.run?.runId === item.run.runId && entry.address.toLowerCase() === item.address.toLowerCase());
+    for (const entry of capture) {
+      const voucher = (result.vouchers || []).find((value) => value.kind === "prize" && String(value.tokenId ?? value.voucher?.tokenId) === String(entry.capture.prize?.tokenId ?? entry.capture.tokenId));
+      if (voucher) put({ ...entry, voucher, status: entry.status === "collected" ? "collected" : "verified" });
+      else if (result.queue?.some((value) => value.status === "already-claimed" && String(value.tokenId) === String(entry.capture.prize?.tokenId ?? entry.capture.tokenId))) put({ ...entry, status: "collected" });
+    }
+  };
+  return { read, put, accept };
+}
+function rewardState() {
+  if (!state) state = createRewardState({ onChange: () => window.dispatchEvent(new CustomEvent("voyager:reward-history-changed")) });
+  return state;
+}
+var REWARD_KEY, state;
+var init_reward_state = __esm({
+  "src/js/pilots/reward-state.mjs"() {
+    REWARD_KEY = "decent-voyager-rewards/1";
+  }
+});
+
+// src/js/pilots/reward-transfer.mjs
+function contractAddress(book, name) {
+  const values = book?.contracts || book || {};
+  const value = values[name] || values[name[0].toLowerCase() + name.slice(1)] || values.base?.[name] || values["8453"]?.[name];
+  return typeof value === "string" ? value : value?.address || null;
+}
+async function rewardContract(entry, { wallet: wallet2, ethers, fetchImpl = globalThis.fetch, address, readOnly = false } = {}) {
+  if (!readOnly && !wallet2?.snapshot?.().connected) throw new Error("Connect your Decent Pilot wallet with the header fox.");
+  const response = await fetchImpl("./js/chain/addresses.json", { cache: "no-store" });
+  if (!response.ok) throw new Error("Claim contracts are not configured.");
+  const bundle = entry.kind === "prize" && entry.protocol === "reward-bundle/1";
+  const name = entry.kind === "stamp" ? "VoyagerStamps" : bundle ? "VoyagerRewards" : "VoyagerPrizes";
+  const target = contractAddress(await response.json(), name);
+  if (!ADDRESS2.test(target || "")) throw new Error(`${name} address is not configured.`);
+  const provider = readOnly ? new ethers.JsonRpcProvider(BASE.rpcUrls[0], BASE.chainId) : await wallet2.ensureChain(BASE);
+  const signer = readOnly ? provider : await provider.getSigner();
+  if (!readOnly && (await signer.getAddress()).toLowerCase() !== address?.toLowerCase()) throw new Error("Wallet changed; reconnect and retry.");
+  const args = entry.voucher || entry;
+  if (args.player?.toLowerCase() !== address?.toLowerCase()) throw new Error("This reward belongs to a different wallet.");
+  const abi = entry.kind === "stamp" ? ["function mintWithVoucher(bytes32 gameId,(address player,bytes32 recordId,uint16 level,uint8 difficulty,string metadataURI,uint256 deadline) voucher,bytes signature)", "function usedRecordId(bytes32) view returns (bool)"] : bundle ? ["function claim((bytes32 gameId,address player,address nftContract,uint256 tokenId,uint256 nftAmount,address paymentToken,uint256 tokenAmount,uint256 nativeAmount,bytes32 awardId,bytes32 claimId,bytes32 recordId,uint256 deadline) reward,bytes signature)", "function claimedToken(address,address,uint256) view returns (bool)"] : ["function claim(bytes32 gameId,(address player,address nftContract,uint256 tokenId,uint8 tier,bytes32 runId,uint256 deadline) voucher,bytes signature)", "function claimedToken(address,uint256) view returns (bool)"];
+  const contract = new ethers.Contract(target, abi, signer);
+  const claimed = () => entry.kind === "stamp" ? contract.usedRecordId(args.recordId) : bundle ? contract.claimedToken(address, args.nftContract, args.tokenId) : contract.claimedToken(address, args.tokenId);
+  return { contract, args, claimed, bundle, provider };
+}
+async function transferReward(entry, options = {}) {
+  const { onStatus = () => {
+  }, onSubmitted = () => {
+  }, onConfirmed = () => {
+  } } = options;
+  const { contract, args, claimed, bundle } = await rewardContract(entry, options);
+  if (await claimed()) {
+    onConfirmed({ status: "collected" });
+    onStatus("This reward was already collected on Base.");
+    return;
+  }
+  if (!Number.isFinite(Number(args.deadline)) || Number(args.deadline) * 1e3 <= Date.now()) throw new Error("Reward voucher expired. It cannot be transferred as-is.");
+  const signature = entry.signature || entry.sig;
+  if (!signature) throw new Error("Reward voucher signature is missing.");
+  const parameters = bundle ? [args, signature] : [options.ethers.id("decent-voyager"), args, signature];
+  const method = entry.kind === "stamp" ? "mintWithVoucher" : "claim";
+  const estimate = await contract[method].estimateGas(...parameters);
+  if (options.wallet.snapshot().address?.toLowerCase() !== options.address?.toLowerCase()) throw new Error("Wallet changed before transfer; reconnect and retry.");
+  onStatus("Approve the Base transfer in your wallet.");
+  const tx = await contract[method](...parameters, { gasLimit: estimate * 120n / 100n });
+  onSubmitted({ status: "submitted", txHash: tx.hash });
+  onStatus("Transfer submitted. Waiting for Base confirmation...");
+  let receipt;
+  try {
+    receipt = await tx.wait();
+  } catch (error) {
+    if (error.code !== "TRANSACTION_REPLACED" || error.cancelled || !error.receipt) throw error;
+    receipt = error.receipt;
+  }
+  if (!receipt || Number(receipt.status) !== 1) throw new Error("Base transfer was not confirmed successfully.");
+  if (!await claimed()) throw new Error("Base did not confirm the reward collection.");
+  onConfirmed({ status: "collected", txHash: receipt.hash || tx.hash });
+  onStatus("Collected! Base confirmed the transfer to your wallet.");
+}
+var ADDRESS2, BASE;
+var init_reward_transfer = __esm({
+  "src/js/pilots/reward-transfer.mjs"() {
+    ADDRESS2 = /^0x[\da-f]{40}$/i;
+    BASE = { chainId: 8453, chainName: "Base", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: ["https://mainnet.base.org"], blockExplorerUrls: ["https://basescan.org"] };
+  }
+});
+
+// src/js/pilots/flight-log.mjs
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+function logHash(runLog, ethers = globalThis.ethers) {
+  if (!ethers?.keccak256 || !ethers?.toUtf8Bytes) throw new Error("Wallet signing library is unavailable");
+  return ethers.keccak256(ethers.toUtf8Bytes(stableJson(runLog)));
+}
+function mountFlightLog({ getGame = () => window.voyager?.game || window.asteroidGame, getWallet = () => window.DecentHead?.getWallet?.(), onStatus = () => {
+}, fetchImpl = globalThis.fetch } = {}) {
+  const action = document.getElementById("flight-sign");
+  const prompt = document.getElementById("flight-sign-prompt");
+  const promptNote = document.getElementById("flight-sign-note");
+  const status2 = document.getElementById("flight-status");
+  const transferring = /* @__PURE__ */ new Set();
+  let statusTimer = null;
+  const notify = (text2) => {
+    clearTimeout(statusTimer);
+    if (status2) status2.textContent = text2;
+    if (promptNote && prompt && !prompt.hidden && text2 && text2 !== "Referee flight ticket ready for your next launch.") promptNote.textContent = text2;
+    onStatus(text2);
+    if (text2 === "Referee flight ticket ready for your next launch.") {
+      statusTimer = setTimeout(() => {
+        if (status2?.textContent === text2) status2.textContent = "";
+        onStatus("");
+      }, 5e3);
+    }
+  };
+  const offerKey = "decent-voyager-recent-offers/1";
+  const offers = () => {
+    const value = JSON.parse(localStorage.getItem(offerKey) || "{}");
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Saved Supporter offer history is invalid.");
+    return value;
+  };
+  const tickets = createRunTicketManager({
+    fetchImpl,
+    getGame,
+    onStatus: notify,
+    getRecentOffers: (address) => offers()[address.toLowerCase()] || []
+  });
+  const refreshPrompt = () => {
+    if (!prompt) return;
+    const state3 = getGame()?.state;
+    prompt.hidden = !action || action.hidden || !["gameOver", "victory"].includes(state3);
+    prompt.toggleAttribute("data-victory", state3 === "victory");
+  };
+  window.setInterval(refreshPrompt, 250);
+  const retryEvidence = () => {
+    void outbox.retry().catch((error) => notify(error.message));
+  };
+  window.addEventListener("voyager:pilot", (event) => {
+    pilot.address = event.detail?.address || null;
+    pilot.isPilot = !!event.detail?.isPilot;
+    tickets.setPilot(pilot);
+    if (!pilot.isPilot && action) action.hidden = true;
+    if (pilot.isPilot) retryEvidence();
+  });
+  window.setInterval(() => {
+    if (pilot.isPilot && outbox.read().length) retryEvidence();
+  }, 6e4);
+  window.addEventListener("asteroid:event", (event) => {
+    const detail = event.detail || {};
+    if (detail.type === "vaultSpawned") {
+      try {
+        const game = getGame(), tokenId = game?.vault?.prize?.tokenId, address = game?.pilot?.address?.toLowerCase();
+        if (address && Number.isSafeInteger(tokenId)) {
+          const history = offers();
+          history[address] = [...(history[address] || []).filter((token) => token !== tokenId), tokenId].slice(-2);
+          localStorage.setItem(offerKey, JSON.stringify(history));
+        }
+      } catch (error) {
+        notify(`Could not save Supporter rotation history: ${error.message}`);
+      }
+    }
+    if (detail.type === "levelStart") {
+      const currentId = getGame()?.getRunLog?.()?.runId || null;
+      if (currentId && currentId !== runId) {
+        records = [];
+        captures = [];
+        promptedRun = null;
+        notify("");
+        if (action) action.hidden = true;
+        tickets.runStarted(currentId);
+      }
+      runId = currentId || runId;
+    }
+    if (detail.type === "levelRecord" && detail.record && !records.some((record) => record.id === detail.record.id)) {
+      records.push(detail.record);
+    }
+    if (detail.type === "supporterCaptured") {
+      captures.push(detail);
+      queueMicrotask(() => {
+        try {
+          const run = getGame()?.getRunLog?.();
+          if (pilot.address && run?.ticket) rewardState().put({
+            id: `capture:${run.runId}:${detail.prize?.tokenId ?? detail.tokenId}`,
+            kind: "capture",
+            address: run.pilot.address,
+            run,
+            capture: detail,
+            status: "captured"
+          });
+        } catch (error) {
+          notify(`Could not save captured reward: ${error.message}`);
+        }
+      });
+    }
+    if (detail.type === "victory" || detail.type === "gameOver") {
+      if (detail.type === "gameOver") void tickets.refresh();
+      const game = getGame();
+      runId = game?.getRunLog?.()?.runId || runId || `voyager-${Date.now()}`;
+      if (pilot.isPilot && promptedRun !== runId && (records.some((record) => record.level === 20) || captures.length)) {
+        promptedRun = runId;
+        const hasTicket = !!game?.getRunLog?.()?.ticket;
+        if (!hasTicket) notify("Rewards need a referee flight ticket. No ticket was attached; GitHub fallback: \u2625 profile \u2192 Flight Logs \u2192 Request mint on GitHub.");
+        if (action) {
+          action.hidden = !hasTicket;
+          action.disabled = false;
+          action.textContent = "Sign & collect rewards";
+          if (promptNote) promptNote.textContent = "Verify this flight, then approve the Base transfer in your wallet.";
+          action.onclick = async () => {
+            action.disabled = true;
+            action.textContent = "Confirm in your wallet";
+            try {
+              await signFlight();
+              action.hidden = true;
+            } catch (error) {
+              notify(error.message);
+              action.disabled = false;
+              action.textContent = "Sign & collect rewards";
+            } finally {
+              refreshPrompt();
+            }
+          };
+        }
+      }
+    }
+    refreshPrompt();
+  });
+  async function transfer(entry, onStatus2 = notify) {
+    if (!pilot.isPilot || !pilot.address) throw new Error("Decent Pilot wallet required.");
+    const address = pilot.address;
+    const identity = `${address.toLowerCase()}:${entry.digest}`;
+    if (transferring.has(identity)) throw new Error("This reward transfer is already in progress. Check your wallet.");
+    transferring.add(identity);
+    try {
+      const ethers = window.ethers || await (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
+      const remember = (update) => {
+        rewardState().put({ id: `voucher:${entry.digest}`, kind: "voucher", address, voucher: entry, ...update });
+      };
+      const previous = rewardState().read().find((item) => item.id === `voucher:${entry.digest}` && item.address.toLowerCase() === address.toLowerCase());
+      if (previous?.status === "submitted") {
+        const context = await rewardContract(entry, { ethers, address, fetchImpl, readOnly: true });
+        try {
+          if (await context.claimed()) {
+            remember({ status: "collected", txHash: previous.txHash });
+            onStatus2("Base confirmed this reward was collected.");
+            return;
+          }
+          const receipt = await context.provider.getTransactionReceipt(previous.txHash);
+          if (!receipt) throw new Error("Your transfer is still pending or its receipt is unavailable. Check the BaseScan link in Flight Logs; no duplicate transaction was sent.");
+          if (Number(receipt.status) === 1) throw new Error("Transaction succeeded but reward collection is not confirmed. Inspect its BaseScan receipt before retrying.");
+          remember({ status: "verified", txHash: previous.txHash });
+        } finally {
+          context.provider.destroy?.();
+        }
+      }
+      await transferReward(entry, { wallet: getWallet(), address, ethers, fetchImpl, onStatus: onStatus2, onSubmitted: remember, onConfirmed: remember });
+    } finally {
+      transferring.delete(identity);
+    }
+  }
+  async function retryAndCollect(onStatus2 = notify) {
+    if (!pilot.isPilot || !pilot.address) throw new Error("Decent Pilot wallet required.");
+    const address = pilot.address;
+    await outbox.retry();
+    if (pilot.address !== address) throw new Error("Wallet changed; reconnect and retry.");
+    const pending = outbox.read().filter((entry) => entry.address.toLowerCase() === address.toLowerCase());
+    if (pending.length) throw new Error(`Verification is queued. ${pending[0].lastError || ""}`);
+    const entries = rewardState().read().filter((entry) => entry.kind === "voucher" && entry.address.toLowerCase() === address.toLowerCase() && entry.status !== "collected");
+    for (const entry of entries) await transfer(entry.voucher, onStatus2);
+    if (!entries.length) onStatus2("No uncollected verified rewards. Open Flight Logs to inspect past captures.");
+  }
+  async function signFlight({ runLog: savedRun, checkpoint = false, tokenId, onStatus: onStatus2 = notify } = {}) {
+    if (!pilot.isPilot || !pilot.address) throw new Error("Decent Pilot wallet required");
+    const session = getWallet(), game = getGame();
+    if (!session?.browserProvider || !game?.getRunLog) throw new Error("Wallet or flight log is unavailable");
+    const runLog = savedRun || game.getRunLog();
+    if (!runLog || typeof runLog !== "object") throw new Error("Run log is unavailable");
+    if (!runLog.ticket) throw new Error("Rewards need a referee flight ticket. GitHub fallback: \u2625 profile \u2192 Flight Logs \u2192 Request mint on GitHub.");
+    if (runLog.pilot?.address?.toLowerCase() !== pilot.address.toLowerCase()) throw new Error("This captured flight belongs to a different wallet.");
+    const address = pilot.address;
+    const ethers = window.ethers || await (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
+    const runHash = logHash(runLog, ethers);
+    const state3 = rewardState();
+    const verified = () => state3.read().find((entry) => entry.id === `verification:${runHash}` && entry.address.toLowerCase() === address.toLowerCase());
+    if (!verified()) {
+      const queued = outbox.read().find((entry) => entry.runHash === runHash && entry.address.toLowerCase() === address.toLowerCase());
+      let signature = queued?.signature;
+      if (!signature) {
+        const signer = await session.browserProvider.getSigner();
+        if ((await signer.getAddress()).toLowerCase() !== address.toLowerCase()) throw new Error("Wallet changed; reconnect and retry");
+        onStatus2("Sign the captured flight evidence in your wallet.");
+        signature = await signer.signMessage(runHash);
+      }
+      if (pilot.address !== address) throw new Error("Wallet changed; reconnect and retry.");
+      onStatus2("Verifying the flight with the referee...");
+      await outbox.enqueue({ address, run: runLog, runHash, signature, checkpoint });
+    }
+    const result = verified()?.result;
+    if (!result) throw new Error(`Signed evidence saved; verification is queued. ${outbox.read().find((entry) => entry.runHash === runHash)?.lastError || "Retry from Flight Logs."}`);
+    if (pilot.address !== address) throw new Error("Wallet changed; reconnect and retry.");
+    const entries = (result.vouchers || []).filter((entry) => tokenId == null || entry.kind === "prize" && String(entry.tokenId ?? entry.voucher?.tokenId) === String(tokenId));
+    for (const entry of entries) await transfer(entry, onStatus2);
+    if (!entries.length) {
+      if (result.queue?.some((entry) => entry.status === "already-claimed")) onStatus2("Base reports these captured rewards were already collected.");
+      else throw new Error("No transferable reward was returned. Your evidence is saved; inspect Flight Logs.");
+    }
+    return result;
+  }
+  return { signFlight, transfer, retryAndCollect, outbox, tickets, records: () => [...records], captures: () => [...captures] };
+}
+var pilot, records, captures, runId, promptedRun, outbox, flightLog;
+var init_flight_log = __esm({
+  "src/js/pilots/flight-log.mjs"() {
+    init_run_outbox();
+    init_ticket();
+    init_reward_state();
+    init_reward_transfer();
+    pilot = { address: null, isPilot: false };
+    records = [];
+    captures = [];
+    runId = null;
+    promptedRun = null;
+    outbox = createRunOutbox({ onAccepted: (item, result) => rewardState().accept(item, result), onChange: () => {
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("voyager:flight-outbox-changed"));
+    } });
+    flightLog = typeof window !== "undefined" && typeof document !== "undefined" ? mountFlightLog() : null;
+  }
+});
+
+// src/js/shell/launch-reminder.mjs
+var launch_reminder_exports = {};
+__export(launch_reminder_exports, {
+  mountLaunchReminder: () => mountLaunchReminder,
+  prepareWalletLaunch: () => prepareWalletLaunch
+});
+async function prepareWalletLaunch({ wallet: wallet2, pilots, tickets, difficulty }) {
+  const snapshot = wallet2?.snapshot();
+  if (!snapshot?.connected) throw new Error("Connect your wallet first.");
+  const pilot2 = await pilots.refresh(snapshot);
+  if (!pilot2.isPilot) throw new Error("Wallet connected, but it is not on the Decent Pilots list. You can play the free 10-level voyage; ask in Discord for reward access.");
+  if (difficulty === "cadet") return pilot2;
+  const ticket = await tickets.ensureTicket();
+  if (!ticket) throw new Error("The referee flight ticket is not ready. Retry before launching for awards, or choose a practice voyage.");
+  const current = wallet2.snapshot();
+  if (!current.connected || current.address?.toLowerCase() !== pilot2.address?.toLowerCase()) {
+    throw new Error("Wallet changed while preparing this flight. Please retry.");
+  }
+  return pilot2;
+}
+function mountLaunchReminder() {
+  const dialog2 = document.getElementById("wallet-launch");
+  const connect = dialog2.querySelector("[data-wallet-launch-connect]");
+  const guest = dialog2.querySelector("[data-wallet-launch-guest]");
+  const status2 = dialog2.querySelector("[data-wallet-launch-status]");
+  const canvas = document.getElementById("gameCanvas");
+  let pending = null, generation = 0, busy = false;
+  const wallet2 = () => window.DecentHead?.getWallet?.();
+  const close = () => {
+    generation++;
+    pending = null;
+    dialog2.close();
+    canvas?.focus({ preventScroll: true });
+  };
+  const launch = () => {
+    const action = pending;
+    close();
+    action?.();
+    window.asteroidDraw?.();
+  };
+  const prepare = async () => {
+    if (busy || !pending) return;
+    const request = generation;
+    busy = true;
+    connect.disabled = guest.disabled = true;
+    status2.textContent = "Connect in your wallet, then we will check Pilot access and prepare your flight.";
+    try {
+      const session = wallet2();
+      if (!session) throw new Error("Wallet tools are still loading. Please retry.");
+      if (!session.snapshot().connected) {
+        const header2 = document.querySelector("decent-header")?.shadowRoot;
+        const selected = Number(header2?.querySelector("wallet-connect")?.shadowRoot?.querySelector("select")?.value || 0);
+        await session.connect(session.available()[selected]?.provider);
+      }
+      if (request !== generation) return;
+      status2.textContent = "Wallet connected. Checking Pilot access and referee ticket...";
+      await prepareWalletLaunch({
+        wallet: session,
+        pilots: pilotController,
+        tickets: flightLog.tickets,
+        difficulty: window.asteroidGame.selectedDifficulty
+      });
+      if (request === generation) launch();
+    } catch (error) {
+      if (request === generation) {
+        status2.textContent = error.shortMessage || error.message;
+        connect.textContent = "Retry wallet & flight check";
+        guest.textContent = "Play a practice voyage";
+      }
+    } finally {
+      busy = false;
+      connect.disabled = guest.disabled = false;
+    }
+  };
+  connect.addEventListener("click", () => void prepare());
+  guest.addEventListener("click", () => {
+    window.asteroidGame.setPilot({ address: wallet2()?.snapshot().address || null, isPilot: false });
+    launch();
+  });
+  dialog2.querySelector("[data-wallet-launch-cancel]").addEventListener("click", close);
+  dialog2.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    close();
+  });
+  bindBackdropClose(dialog2, close);
+  window.addEventListener("voyager:launch-request", (event) => {
+    event.preventDefault();
+    if (pending) return;
+    pending = event.detail.launch;
+    generation++;
+    status2.textContent = "";
+    connect.textContent = "Connect wallet & play";
+    guest.textContent = "Play without wallet";
+    dialog2.showModal();
+    if (wallet2()?.snapshot().connected) void prepare();
+  });
+}
+var init_launch_reminder = __esm({
+  "src/js/shell/launch-reminder.mjs"() {
+    init_whitelist();
+    init_flight_log();
+    init_ui();
+    if (typeof document !== "undefined") mountLaunchReminder();
+  }
+});
 
 // src/js/shell/about-modal.mjs
+init_ui();
 var Base = globalThis.HTMLElement || class {
 };
 var art = (name) => new URL(`../../assets/${name}`, new URL("js/shell/about-modal.mjs", document.baseURI).href).href;
@@ -179,7 +2406,7 @@ var VoyagerAbout = class extends Base {
     this.shadowRoot.querySelector("dialog")?.close();
   }
   render() {
-    const config = window.DECENT_CONFIG || {}, supporter = config.supporterDnft;
+    const config2 = window.DECENT_CONFIG || {}, supporter = config2.supporterDnft;
     const listed = !!(supporter && supporter.escrowAddress && supporter.listingId !== void 0 && supporter.contract);
     const breathe = art("../vendor/decent-head/2.0.0/img/Ens_Eth_Breathe.png");
     const tokenTitle = supporter?.title || "Decent Voyager Supporter DNFT";
@@ -220,7 +2447,7 @@ var VoyagerAbout = class extends Base {
         <p>${esc(ABOUT.recovery)}</p><p>${esc(ABOUT.diagnostics)}</p>
         <p class="quiet">White Lotus lives do not erase lives lost for Perfect awards. Game over starts a fresh level-1 voyage; saved best scores and historical battle records remain. Phone controls work without a wallet; actual MetaMask/iPhone testing is device-specific.</p>
       </section>
-      <section aria-labelledby="links"><h2 id="links">Project links</h2><div class="chips">${chips(config.links)}${chips(config.relatedDapps)}</div></section>
+      <section aria-labelledby="links"><h2 id="links">Project links</h2><div class="chips">${chips(config2.links)}${chips(config2.relatedDapps)}</div></section>
       <footer>Another Decent Frankenstein brought to you by TheJollyLaMa and A Decent Agency</footer>
     </dialog>`;
     const dialog2 = this.shadowRoot.querySelector("dialog");
@@ -236,7 +2463,7 @@ var VoyagerAbout = class extends Base {
     if (node2) node2.textContent = message;
   }
   async ethers() {
-    return window.ethers || (await import("./chunks/wallet-HETDYOBF.js")).loadEthers();
+    return window.ethers || (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
   }
   async refreshListing() {
     const cfg = window.DECENT_CONFIG?.supporterDnft, label = this.shadowRoot.querySelector("#listing");
@@ -268,10 +2495,10 @@ var VoyagerAbout = class extends Base {
     this.busy = true;
     button2.disabled = true;
     try {
-      const wallet = window.DecentHead?.getWallet?.();
-      if (!wallet) throw new Error("Wallet is unavailable. Reload and try again.");
-      if (!wallet.snapshot().connected) await wallet.connect();
-      const provider = await wallet.ensureChain(cfg.chain || window.DECENT_CONFIG.chain);
+      const wallet2 = window.DecentHead?.getWallet?.();
+      if (!wallet2) throw new Error("Wallet is unavailable. Reload and try again.");
+      if (!wallet2.snapshot().connected) await wallet2.connect();
+      const provider = await wallet2.ensureChain(cfg.chain || window.DECENT_CONFIG.chain);
       const ethers = await this.ethers(), signer = await provider.getSigner();
       const escrow = new ethers.Contract(cfg.escrowAddress, ESCROW_ABI, signer);
       this.status("Checking the listing and escrow stock\u2026");
@@ -496,14 +2723,14 @@ function installProgressPanel(host = window) {
 
 // src/js/shell/main.mjs
 window.DECENT_CONFIG.ipfsAdapter = installProgressPanel();
-await import("./chunks/main-H7XFSSC6.js");
+await Promise.resolve().then(() => (init_main(), main_exports));
 var header = document.querySelector("decent-header").shadowRoot;
-var quiet = (selector, css) => {
+var quiet = (selector, css2) => {
   const root = header.querySelector(selector)?.shadowRoot;
   if (!root || root.querySelector("style[data-voyager]")) return;
   const style = document.createElement("style");
   style.dataset.voyager = "";
-  style.textContent = css;
+  style.textContent = css2;
   root.append(style);
 };
 if (!header.querySelector("style[data-voyager]")) {
@@ -535,7 +2762,7 @@ button{min-height:44px}`);
     document.querySelector(".site-header").classList.toggle("menu-open", open);
   });
 }
-await import("./chunks/launch-reminder-FR43NHCN.js");
+await Promise.resolve().then(() => (init_launch_reminder(), launch_reminder_exports));
 var centreDisc = () => {
   const root = header.querySelector("app-title")?.shadowRoot, name = root?.querySelector(".name"), disc = root?.querySelector("button > img");
   if (!name || !disc || name.dataset.voyager) return;
@@ -565,7 +2792,7 @@ button,select{padding:1px 6px}.now{flex:1;min-width:0;padding:0;font-size:11px;o
   root.append(style);
 };
 var mountRadio = async () => {
-  radioMount ||= (await import("./chunks/widget-IX6MQ3EG.js")).mount;
+  radioMount ||= (await import(new URL("./build/radio.js", document.baseURI).href)).mount;
   radio = radioMount(document.getElementById("dbusk-radio"), {
     workerUrl: "https://decentbusking.onrender.com",
     compact: true,
@@ -612,6 +2839,7 @@ document.addEventListener("keydown", (event) => {
 }, { passive: false });
 
 // src/js/shell/capture-briefing.mjs
+init_flight_log();
 function mountCaptureBriefing({
   getGame = () => window.asteroidGame,
   getDetails = (tokenId) => window.AsteroidRender.supporterDetails(tokenId),
@@ -639,8 +2867,8 @@ function mountCaptureBriefing({
     collect.onclick = async () => {
       collect.disabled = true;
       try {
-        await flightLog.signFlight({ runLog: capture.run, checkpoint: !capture.kind, tokenId, onStatus: (text) => {
-          if (current === presentation) transferStatus.textContent = text;
+        await flightLog.signFlight({ runLog: capture.run, checkpoint: !capture.kind, tokenId, onStatus: (text2) => {
+          if (current === presentation) transferStatus.textContent = text2;
         } });
         if (current === presentation) collect.textContent = "Collected";
       } catch (error) {
@@ -728,6 +2956,7 @@ function mountCaptureBriefing({
 if (typeof document !== "undefined") mountCaptureBriefing();
 
 // src/js/shell/flight-reports.mjs
+init_ui();
 var dialog = createDialog("Battle diagnostics", "flight-diagnostics");
 dialog.append(
   node("button", "Download report", { id: "diagnostic-download", type: "button" }),
@@ -795,7 +3024,16 @@ window.addEventListener("voyager:diagnostic", refresh);
 window.addEventListener("asteroid:ready", refresh);
 refresh();
 
+// src/js/shell/app-entry.mjs
+init_whitelist();
+init_flight_log();
+
 // src/js/pilots/rewards.mjs
+init_ui();
+init_flight_log();
+init_run_outbox();
+init_reward_state();
+init_reward_transfer();
 function normalizeVouchers(value) {
   const payload = value || {};
   const entries = Array.isArray(payload) ? payload : payload.vouchers || [];
@@ -824,10 +3062,10 @@ function mountRewardGallery(root, {
     const opener2 = [...list.querySelectorAll("button")].find((item) => item.getAttribute("aria-label") === detailOpener?.getAttribute("aria-label"));
     opener2?.focus();
   });
-  let generation = 0, pilot = window.__voyagerPilot || {};
+  let generation = 0, pilot2 = window.__voyagerPilot || {};
   let active = false;
-  const message = (text) => {
-    status2.textContent = text;
+  const message = (text2) => {
+    status2.textContent = text2;
   };
   const local = (address) => rewardState().read().filter((entry) => entry.address.toLowerCase() === address.toLowerCase());
   function draw(address, remote = []) {
@@ -854,22 +3092,22 @@ function mountRewardGallery(root, {
           row.append(node("p", "Artwork unavailable; project and metadata links remain below."));
         }, { once: true });
         row.append(image, node("p", details.description));
-        const links = node("nav", "", { "aria-label": `${details.name} project links` });
+        const links2 = node("nav", "", { "aria-label": `${details.name} project links` });
         for (const [label, key] of [["Explore project", "projectUrl"], [`Support project \xB7 ${details.supportPriceUSDC} USDC listing`, "supportUrl"], ["DecentCanopy", "canopyUrl"], ["NFT metadata", "metadataUrl"], ["NFT on Base", "tokenUrl"]]) {
-          if (details[key]) links.append(link(label, details[key]));
+          if (details[key]) links2.append(link(label, details[key]));
         }
-        row.append(links);
+        row.append(links2);
       }
       if (voucher?.awardKind) row.append(node("p", voucher.awardKind.replaceAll("-", " ")));
       if (voucher?.bonus) row.append(node("p", "NFT and bonus transfer together in this Base transaction."));
-      const state2 = node("p", entry.status === "collected" ? "Collected on Base." : entry.status === "submitted" ? "Transfer submitted; checking Base confirmation." : voucher ? "Verified. Checking Base collection status..." : "Captured checkpoint saved on this device. Ready to sign & collect.", { role: "status" });
-      row.append(state2);
+      const state3 = node("p", entry.status === "collected" ? "Collected on Base." : entry.status === "submitted" ? "Transfer submitted; checking Base confirmation." : voucher ? "Verified. Checking Base collection status..." : "Captured checkpoint saved on this device. Ready to sign & collect.", { role: "status" });
+      row.append(state3);
       if (entry.txHash) row.append(link("Transfer on BaseScan", `https://basescan.org/tx/${entry.txHash}`));
       const collect = button(voucher ? "Collect to wallet" : "Sign & collect", async () => {
         collect.disabled = true;
-        const report = (text) => {
-          state2.textContent = text;
-          message(text);
+        const report = (text2) => {
+          state3.textContent = text2;
+          message(text2);
         };
         try {
           if (voucher) await flightLog.transfer(voucher, report);
@@ -888,7 +3126,7 @@ function mountRewardGallery(root, {
         detail.querySelector("h2").textContent = name;
         detailBody.replaceChildren(row);
         detail.showModal();
-        if (voucher) void check(voucher, entry, state2, collect, address, generation);
+        if (voucher) void check(voucher, entry, state3, collect, address, generation);
       });
       inspect.className = "reward-thumbnail";
       inspect.setAttribute("aria-label", `Inspect ${name}`);
@@ -904,9 +3142,9 @@ function mountRewardGallery(root, {
     }
     window.dispatchEvent(new CustomEvent("voyager:rewards-count", { detail: { count: entries.filter((entry) => entry.status !== "collected").length } }));
   }
-  async function check(voucher, entry, state2, collect, address, request) {
+  async function check(voucher, entry, state3, collect, address, request) {
     try {
-      const ethers = window.ethers || await (await import("./chunks/wallet-HETDYOBF.js")).loadEthers();
+      const ethers = window.ethers || await (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
       const context = await rewardContract(voucher, { ethers, address, fetchImpl, readOnly: true });
       let claimed;
       try {
@@ -914,33 +3152,33 @@ function mountRewardGallery(root, {
       } finally {
         context.provider.destroy?.();
       }
-      if (request !== generation || address !== pilot.address || !active) return;
+      if (request !== generation || address !== pilot2.address || !active) return;
       if (claimed) {
-        state2.textContent = "Collected on Base.";
+        state3.textContent = "Collected on Base.";
         collect.textContent = "Collected";
         collect.disabled = true;
         if (entry.status !== "collected") rewardState().put({ id: `voucher:${voucher.digest}`, kind: "voucher", address, voucher, status: "collected" });
       } else if (entry.status === "submitted") {
-        state2.textContent = "Transfer submitted. Use Collect to check its receipt before retrying.";
+        state3.textContent = "Transfer submitted. Use Collect to check its receipt before retrying.";
         collect.textContent = "Check transfer";
         collect.disabled = false;
       } else {
         const expired = !Number.isFinite(Number(voucher.voucher.deadline)) || Number(voucher.voucher.deadline) * 1e3 <= Date.now();
-        state2.textContent = expired ? "Voucher expired. A new flight or support review is needed." : "Verified and ready. Approve the Base transfer to collect.";
+        state3.textContent = expired ? "Voucher expired. A new flight or support review is needed." : "Verified and ready. Approve the Base transfer to collect.";
         collect.disabled = expired;
       }
     } catch (error) {
-      if (request === generation && address === pilot.address) {
-        state2.textContent = `Base status unavailable: ${error.message}. Collect will recheck before sending.`;
+      if (request === generation && address === pilot2.address) {
+        state3.textContent = `Base status unavailable: ${error.message}. Collect will recheck before sending.`;
         collect.disabled = false;
       }
     }
   }
   async function load() {
     if (!active) return;
-    const request = ++generation, address = pilot.address;
+    const request = ++generation, address = pilot2.address;
     list.replaceChildren();
-    if (!pilot.isPilot || !address) {
+    if (!pilot2.isPilot || !address) {
       message("Connect a Decent Pilot wallet with the header fox to see its captured NFTs.");
       return;
     }
@@ -950,16 +3188,16 @@ function mountRewardGallery(root, {
       message(`Reward history unavailable: ${error.message}`);
       return;
     }
-    const base = window.DECENT_CONFIG?.voyager?.refereeUrl;
-    if (!base) {
+    const base3 = window.DECENT_CONFIG?.voyager?.refereeUrl;
+    if (!base3) {
       message("Referee unavailable. Saved checkpoints remain here; collection needs verification.");
       return;
     }
     try {
-      const response = await fetchImpl(`${base.replace(/\/$/, "")}/vouchers/${encodeURIComponent(address)}`, { cache: "no-store" });
+      const response = await fetchImpl(`${base3.replace(/\/$/, "")}/vouchers/${encodeURIComponent(address)}`, { cache: "no-store" });
       if (!response.ok) throw new Error(`Voucher service unavailable (${response.status})`);
       const normalized = normalizeVouchers(await response.json());
-      if (request !== generation || address !== pilot.address || !active) return;
+      if (request !== generation || address !== pilot2.address || !active) return;
       draw(address, [...normalized.stamps.map((entry) => ({ ...entry, kind: "stamp" })), ...normalized.prizes.map((entry) => ({ ...entry, kind: "prize" }))]);
       message("");
     } catch (error) {
@@ -968,7 +3206,7 @@ function mountRewardGallery(root, {
   }
   window.addEventListener("voyager:pilot", (event) => {
     if (detail.open) detail.close();
-    pilot = event.detail || {};
+    pilot2 = event.detail || {};
     void load();
   });
   window.addEventListener("voyager:reward-history-changed", () => void load());
@@ -1064,16 +3302,16 @@ function createArenaClient({ refereeUrl, WebSocketImpl = globalThis.WebSocket, o
 }
 
 // src/js/pilots/gate.mjs
-function isPilotState(state2) {
-  return !!state2?.isPilot;
+function isPilotState(state3) {
+  return !!state3?.isPilot;
 }
-function requirePilot(state2, action = "This wallet action") {
-  if (!isPilotState(state2)) throw new Error(`${action} is for Decent Pilots. Ask to join in the DecentAgency Discord.`);
+function requirePilot(state3, action = "This wallet action") {
+  if (!isPilotState(state3)) throw new Error(`${action} is for Decent Pilots. Ask to join in the DecentAgency Discord.`);
   return true;
 }
 
 // src/js/arena/lobby.mjs
-var state = createArenaState();
+var state2 = createArenaState();
 var modeValue = (mode) => mode === "versus" ? 1 : 0;
 async function addresses() {
   const response = await fetch(window.DECENT_CONFIG?.voyager?.contracts?.addressesUrl || "./js/chain/addresses.json", { cache: "no-store" });
@@ -1085,21 +3323,21 @@ function addressOf(source, name) {
   const value = source?.[name] || source?.[name[0].toLowerCase() + name.slice(1)] || source?.base?.[name] || source?.["8453"]?.[name];
   return typeof value === "string" ? value : value?.address || null;
 }
-var ADDRESS = /^0x[\da-f]{40}$/i;
-function parseInvites(text) {
-  const entries = String(text || "").split(/[\s,;]+/).map((value) => value.trim()).filter(Boolean);
+var ADDRESS3 = /^0x[\da-f]{40}$/i;
+function parseInvites(text2) {
+  const entries = String(text2 || "").split(/[\s,;]+/).map((value) => value.trim()).filter(Boolean);
   const seen = /* @__PURE__ */ new Set(), unique = entries.filter((value) => !seen.has(value.toLowerCase()) && seen.add(value.toLowerCase()));
   if (unique.length > 4) throw new Error("Invite up to four wingmates (five ships per group).");
-  for (const value of unique) if (!ADDRESS.test(value) && !/^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(value)) throw new Error(`${value} is not a wallet address or .eth name.`);
+  for (const value of unique) if (!ADDRESS3.test(value) && !/^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(value)) throw new Error(`${value} is not a wallet address or .eth name.`);
   return unique;
 }
 async function resolveInvites(entries) {
-  const names = entries.filter((value) => !ADDRESS.test(value));
+  const names = entries.filter((value) => !ADDRESS3.test(value));
   if (!names.length) return entries;
-  const ethers = window.ethers || await (await import("./chunks/wallet-HETDYOBF.js")).loadEthers();
+  const ethers = window.ethers || await (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
   const provider = new ethers.JsonRpcProvider(window.DECENT_CONFIG?.ens?.rpcUrl || "https://ethereum-rpc.publicnode.com");
   return Promise.all(entries.map(async (value) => {
-    if (ADDRESS.test(value)) return value;
+    if (ADDRESS3.test(value)) return value;
     const resolved = await provider.resolveName(value);
     if (!resolved) throw new Error(`${value} does not resolve to a wallet.`);
     return resolved;
@@ -1136,7 +3374,7 @@ function mountArena() {
     inviteList.hidden = !online || !inviteList.childElementCount;
     go.textContent = !online ? "Launch couch battle" : pairing === "invite" ? "Pay $10 & invite wingmates" : pairing === "round" ? "Pay $10 & join round" : "Pay $10 & find a battle";
     if (online && !currentPilot()) setStatus("Online rounds are for Decent Pilots. Connect your wallet with the fox; not on the list? Ask in the DecentAgency Discord.");
-    else if (["idle", "local", "error"].includes(state.get().phase)) setStatus(online ? "Each pilot pays $10 USDC on Base. Survivors split the pot." : "Free on this screen. Extra pilots press A on a gamepad.");
+    else if (["idle", "local", "error"].includes(state2.get().phase)) setStatus(online ? "Each pilot pays $10 USDC on Base. Survivors split the pot." : "Free on this screen. Extra pilots press A on a gamepad.");
   };
   const showRound = (active) => {
     for (const control of roundButtons) control.hidden = !active;
@@ -1156,14 +3394,14 @@ function mountArena() {
     void loadInvites();
   });
   async function loadInvites() {
-    const base = refereeBase(), address = window.__voyagerPilot?.isPilot ? window.__voyagerPilot.address : null;
+    const base3 = refereeBase(), address = window.__voyagerPilot?.isPilot ? window.__voyagerPilot.address : null;
     inviteList.replaceChildren();
-    if (!base || !address) {
+    if (!base3 || !address) {
       sync();
       return;
     }
     try {
-      const response = await fetch(`${base}/arena/invites/${address}`, { cache: "no-store" });
+      const response = await fetch(`${base3}/arena/invites/${address}`, { cache: "no-store" });
       if (!response.ok) return;
       for (const invite of (await response.json()).invites || []) {
         const join = document.createElement("button");
@@ -1212,11 +3450,11 @@ function mountArena() {
       setStatus("Local couch play is not available in this game build yet.");
       return;
     }
-    if (state.get().phase === "local") state.transition("idle");
+    if (state2.get().phase === "local") state2.transition("idle");
     const players = Math.max(2, Math.min(5, Number(playerCount?.value) || 2));
     if (game.selectedDifficulty !== difficulty.value && typeof game.setDifficulty === "function") game.setDifficulty(difficulty.value);
     game.setPlayers(players, { mode: mode.value });
-    state.transition("local", { mode: mode.value, network: "couch", players: Array.from({ length: players }, (_, index) => `local-${index + 1}`), message: "Free couch mode ready." });
+    state2.transition("local", { mode: mode.value, network: "couch", players: Array.from({ length: players }, (_, index) => `local-${index + 1}`), message: "Free couch mode ready." });
     window.dispatchEvent(new CustomEvent("voyager:arena-launch", { detail: { network: "couch", players, mode: mode.value } }));
   }
   startButton.addEventListener("click", () => {
@@ -1269,7 +3507,7 @@ function mountArena() {
         return;
       }
     }
-    if (state.get().phase === "local") state.transition("idle");
+    if (state2.get().phase === "local") state2.transition("idle");
     let contracts;
     try {
       contracts = await addresses();
@@ -1281,15 +3519,15 @@ function mountArena() {
       setStatus("Online arena unavailable: Base arena or USDC contract address is not configured.");
       return;
     }
-    const wallet = window.DecentHead?.getWallet?.();
-    if (!wallet?.snapshot?.().connected) {
+    const wallet2 = window.DecentHead?.getWallet?.();
+    if (!wallet2?.snapshot?.().connected) {
       setStatus("Connect your wallet using the header fox to join an online round.");
       return;
     }
     try {
-      state.transition("connecting", { mode: mode.value, network: "online" });
-      const provider = await wallet.ensureChain(window.DECENT_CONFIG.voyager.chainId ? { ...window.DECENT_CONFIG.chain, chainId: window.DECENT_CONFIG.voyager.chainId } : void 0);
-      const ethers = window.ethers || await (await import("./chunks/wallet-HETDYOBF.js")).loadEthers();
+      state2.transition("connecting", { mode: mode.value, network: "online" });
+      const provider = await wallet2.ensureChain(window.DECENT_CONFIG.voyager.chainId ? { ...window.DECENT_CONFIG.chain, chainId: window.DECENT_CONFIG.voyager.chainId } : void 0);
+      const ethers = window.ethers || await (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
       const signer = await provider.getSigner();
       const pilotAddress = await signer.getAddress();
       if (!currentPilot() || pilotAddress.toLowerCase() !== window.__voyagerPilot.address?.toLowerCase()) throw new Error("Decent Pilot wallet changed; reconnect and retry");
@@ -1306,7 +3544,7 @@ function mountArena() {
       }
       const details = roundId === null ? `Create a ${mode.value} round and join with $${ENTRY_USDC} USDC? Estimated gas: approval ${approvalGas}; create ${createGas}.` : `Join paid round ${roundId} with $${ENTRY_USDC} USDC? Estimated approval gas: ${approvalGas}.`;
       if (!window.confirm(`${details} Your wallet will request approval, arena, and session-signature actions.`)) {
-        state.transition("idle");
+        state2.transition("idle");
         return;
       }
       const approval = await usdc.approve(arenaAddress, fee);
@@ -1325,20 +3563,20 @@ function mountArena() {
       }
       const joinTx = await arena.join(roundId);
       await joinTx.wait();
-      const timestamp = Math.floor(Date.now() / 1e3), nonceBytes = crypto.getRandomValues(new Uint8Array(18));
+      const timestamp2 = Math.floor(Date.now() / 1e3), nonceBytes = crypto.getRandomValues(new Uint8Array(18));
       const nonce = btoa(String.fromCharCode(...nonceBytes)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
       const authMessage = `DecentVoyager arena session
 ${pilotAddress.toLowerCase()}
-${timestamp}
+${timestamp2}
 ${nonce}`;
       const signature = await signer.signMessage(authMessage);
       let latestSnapshot = null;
       client = createArenaClient({ refereeUrl, onState: (message) => setStatus(`Arena relay: ${message}`), onMessage: (message) => {
         if (message.type === "snapshot") latestSnapshot = message.state || message.snapshot;
-        if (message.type === "started" && state.get().phase === "lobby") state.transition("playing");
+        if (message.type === "started" && state2.get().phase === "lobby") state2.transition("playing");
         if (message.type === "settled" || message.type === "results" || message.type === "roundEnd") {
-          if (state.get().phase === "lobby") state.transition("playing");
-          state.transition("results", { roundId, message });
+          if (state2.get().phase === "lobby") state2.transition("playing");
+          state2.transition("results", { roundId, message });
           setStatus("Round finished. Review results to claim payout or refund on-chain.");
         }
         if (message.type === "group-full") setStatus("Group full \u2192 new group created for the extra players.");
@@ -1347,19 +3585,19 @@ ${nonce}`;
       const socket = client.connect();
       socket.addEventListener("open", () => {
         try {
-          client.send({ type: "join", address: pilotAddress, mode: mode.value, difficulty: difficulty.value, paidRoundId: roundId, timestamp, nonce, signature, visibility, invites: invitees });
+          client.send({ type: "join", address: pilotAddress, mode: mode.value, difficulty: difficulty.value, paidRoundId: roundId, timestamp: timestamp2, nonce, signature, visibility, invites: invitees });
         } catch (error) {
           setStatus(error.message);
         }
       }, { once: true });
       const networkMode = window.voyager?.setNetworkMode;
       if (typeof networkMode === "function") networkMode({ onInput: (inputs) => client?.send({ type: "input", roundId, input: Array.isArray(inputs) ? inputs[0] : inputs }), snapshots: () => latestSnapshot });
-      state.transition("lobby", { roundId, players: [pilotAddress], message: "Paid round joined." });
+      state2.transition("lobby", { roundId, players: [pilotAddress], message: "Paid round joined." });
       showRound(true);
       setStatus(`Joined round #${roundId} with $${ENTRY_USDC} USDC. ${visibility === "invite" ? "Share this round number with your invited wingmates." : "Waiting for pilots."} Up to 5 ships per group.`);
     } catch (error) {
       try {
-        state.transition("error", { message: error.message });
+        state2.transition("error", { message: error.message });
       } catch {
       }
       const message = /RoundFull|Round full/i.test(error.message) ? "Group full \u2192 create a new paid round for a new group." : `Online arena unavailable: ${error.message}`;
@@ -1375,7 +3613,7 @@ ${nonce}`;
       client?.close();
       window.voyager?.setNetworkMode?.(null);
       try {
-        state.transition("idle");
+        state2.transition("idle");
       } catch {
       }
       showRound(false);
@@ -1387,21 +3625,21 @@ ${nonce}`;
   async function settleAction(action) {
     try {
       const contracts = await addresses(), arenaAddress = addressOf(contracts, "VoyagerArena");
-      if (!arenaAddress || !state.get().roundId) throw new Error("Round contract is unavailable");
+      if (!arenaAddress || !state2.get().roundId) throw new Error("Round contract is unavailable");
       requirePilot(window.__voyagerPilot, "Arena claim or refund");
-      const wallet = window.DecentHead?.getWallet?.(), provider = wallet?.browserProvider;
+      const wallet2 = window.DecentHead?.getWallet?.(), provider = wallet2?.browserProvider;
       if (!provider) throw new Error("Connect the round wallet first");
-      const ethers = window.ethers || await (await import("./chunks/wallet-HETDYOBF.js")).loadEthers();
+      const ethers = window.ethers || await (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
       const method = action === "cancelExpiredRound" ? action : "claim";
       const contract = new ethers.Contract(arenaAddress, [`function ${method}(uint256)`], await provider.getSigner());
-      const tx = await contract[method](state.get().roundId);
+      const tx = await contract[method](state2.get().roundId);
       await tx.wait();
       setStatus(method === "claim" ? "Payout or refund claimed on-chain." : "Expired round cancelled; refund credited. Use Claim round payout to withdraw USDC.");
     } catch (error) {
       setStatus(error.message);
     }
   }
-  return { state, startOnline, client: () => client };
+  return { state: state2, startOnline, client: () => client };
 }
 if (typeof document !== "undefined") {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mountArena, { once: true });
@@ -1491,8 +3729,8 @@ var VictoryVault = class {
       this.error = "Browser storage is full/unavailable. Copy your claim JSON now; this claim is not durably saved.";
     }
   }
-  merge(records = []) {
-    for (const record of records) {
+  merge(records2 = []) {
+    for (const record of records2) {
       try {
         validateRecord(record);
       } catch {
@@ -1579,6 +3817,9 @@ function canvasBlob(canvas) {
   });
 }
 
+// src/js/dnft/claims.mjs
+init_ui();
+
 // src/js/dnft/flight-stats.mjs
 function flightStatGroups(totals = {}) {
   const number = (key) => Number(totals[key]) || 0;
@@ -1616,8 +3857,8 @@ ${json}
   return `https://github.com/TheJollyLaMa/DecentVoyager/issues/new?${params}`;
 }
 function walletAddress() {
-  const state2 = window.DecentHead?.getWallet?.()?.snapshot?.();
-  return state2?.connected && validAddress(state2.address) ? state2.address : null;
+  const state3 = window.DecentHead?.getWallet?.()?.snapshot?.();
+  return state3?.connected && validAddress(state3.address) ? state3.address : null;
 }
 function requireDecentPilot(action) {
   requirePilot(window.__voyagerPilot, action);
@@ -1779,10 +4020,10 @@ function mountClaims() {
               await navigator.clipboard.writeText(JSON.stringify(claim, null, 2));
               status2.textContent = "Claim JSON copied. Submit it in a victory-stamp GitHub issue.";
             } else {
-              const text = node("textarea", JSON.stringify(claim, null, 2), { "aria-label": "Claim JSON" });
-              status2.replaceChildren(text);
-              text.focus();
-              text.select();
+              const text2 = node("textarea", JSON.stringify(claim, null, 2), { "aria-label": "Claim JSON" });
+              status2.replaceChildren(text2);
+              text2.focus();
+              text2.select();
             }
           }));
           copy.disabled = !isPilot || busy.has(record.id);
@@ -2129,9 +4370,9 @@ function mountMobileControls({
     target?.addEventListener(type, fn);
     disposers.push(() => target?.removeEventListener(type, fn));
   };
-  const setState = (source, state2) => {
+  const setState = (source, state3) => {
     sources.add(source);
-    getVoyager()?.input?.setVirtualState(source, state2);
+    getVoyager()?.input?.setVirtualState(source, state3);
   };
   const wakeCanvas = () => {
     canvas.focus({ preventScroll: true });
@@ -2287,8 +4528,8 @@ if (typeof document !== "undefined") {
 // src/js/admin/config.mjs
 var DEFAULT_ADMIN = "0x807061DF657A7697c04045dA7d16D941861cAABc";
 var VERIFIED_CONTRACT = "0x64D5aDc50E5513975EfF7e9ba366B7eE58586fa3";
-function adminConfig(config = globalThis.window?.DECENT_CONFIG?.asteroid || {}) {
-  return { adminWallet: config.adminWallet || DEFAULT_ADMIN, contractAddress: config.contractAddress || VERIFIED_CONTRACT, royaltyFeeBps: config.royaltyFeeBps ?? 500, gateway: config.gateway || "https://ipfs.io/ipfs/", rpcUrl: config.rpcUrl || "https://mainnet.base.org" };
+function adminConfig(config2 = globalThis.window?.DECENT_CONFIG?.asteroid || {}) {
+  return { adminWallet: config2.adminWallet || DEFAULT_ADMIN, contractAddress: config2.contractAddress || VERIFIED_CONTRACT, royaltyFeeBps: config2.royaltyFeeBps ?? 500, gateway: config2.gateway || "https://ipfs.io/ipfs/", rpcUrl: config2.rpcUrl || "https://mainnet.base.org" };
 }
 function isAdmin(address, expected = adminConfig().adminWallet) {
   return typeof address === "string" && /^0x[\da-f]{40}$/i.test(address) && address.toLowerCase() === expected.toLowerCase();
@@ -2312,11 +4553,11 @@ function buildProducts(claims, { adminWallet, royaltyFeeBps = 500 }) {
     return { recipient: claim.claimant, amount: 1, maxSupply: 1, tokenURI: claim.tokenURI, royaltyReceiver: adminWallet, royaltyFeeBps };
   });
 }
-async function verifyContract(provider, Contract, config) {
-  const code = await provider.getCode(config.contractAddress);
+async function verifyContract(provider, Contract, config2) {
+  const code = await provider.getCode(config2.contractAddress);
   if (!code || code === "0x" || !code.toLowerCase().includes("04491a20")) throw new Error("Unverified/unavailable: deployed batch function could not be verified");
-  const contract = new Contract(config.contractAddress, PRODUCT_BATCH_ABI, provider);
-  if (!await contract.hasRole(`0x${"0".repeat(64)}`, config.adminWallet)) throw new Error("Unverified/unavailable: configured admin lacks DEFAULT_ADMIN_ROLE");
+  const contract = new Contract(config2.contractAddress, PRODUCT_BATCH_ABI, provider);
+  if (!await contract.hasRole(`0x${"0".repeat(64)}`, config2.adminWallet)) throw new Error("Unverified/unavailable: configured admin lacks DEFAULT_ADMIN_ROLE");
   return contract;
 }
 function reconcileReceipt(receipt, contract, products, owner) {
@@ -2338,6 +4579,9 @@ function reconcileReceipt(receipt, contract, products, owner) {
     return String(id);
   });
 }
+
+// src/js/admin/admin-panel.mjs
+init_ui();
 
 // src/js/admin/pending.mjs
 function isLegacySupporterRelease(entry) {
@@ -2410,14 +4654,14 @@ function createEnsCache({ storage = globalThis.localStorage, lookupName, lookupA
   } };
 }
 async function mainnetEnsCache() {
-  const ethers = window.ethers || await (await import("./chunks/wallet-HETDYOBF.js")).loadEthers();
+  const ethers = window.ethers || await (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
   const rpc = window.DECENT_CONFIG?.ens?.rpcUrl || "https://ethereum-rpc.publicnode.com";
   const provider = new ethers.JsonRpcProvider(rpc);
   return createEnsCache({ lookupName: (address) => provider.lookupAddress(address), lookupAvatar: (name) => provider.getAvatar(name) });
 }
 
 // src/js/admin/admin-panel.mjs
-var RAW = "https://raw.githubusercontent.com/TheJollyLaMa/DecentVoyager/main/";
+var RAW2 = "https://raw.githubusercontent.com/TheJollyLaMa/DecentVoyager/main/";
 var JOURNAL = "asteroid-mint-journal/1";
 var SUPPORTER_NFT = "0xe63EC9f8228720bAAC2fD528C0A6d06B3Dc5439B";
 var SUPPORTER_PRIZES = {
@@ -2434,7 +4678,7 @@ function assertLegacySupporterRelease(entries) {
   if (entries.some((entry) => entry.protocol || entry.bonus)) throw new Error("Atomic rewards must be claimed through VoyagerRewards; legacy NFT release would omit signed assets.");
 }
 async function loadLedger(name, fetchImpl = globalThis.fetch) {
-  for (const url of [RAW + name, new URL(`../../../${name}`, new URL("js/admin/admin-panel.mjs", document.baseURI).href).href]) {
+  for (const url of [RAW2 + name, new URL(`../../../${name}`, new URL("js/admin/admin-panel.mjs", document.baseURI).href).href]) {
     try {
       const response = await fetchImpl(url, { cache: "no-store", signal: AbortSignal.timeout(15e3) });
       if (response.ok) return await response.json();
@@ -2453,13 +4697,13 @@ function parseWorkers(input) {
 }
 async function ethersLibrary() {
   if (window.ethers) return window.ethers;
-  return (await import("./chunks/wallet-HETDYOBF.js")).loadEthers();
+  return (await Promise.resolve().then(() => (init_wallet(), wallet_exports))).loadEthers();
 }
 function mountAdmin() {
   if (document.getElementById("asteroid-admin")) return;
-  const config = adminConfig(), preview = new URLSearchParams(location.search).get("adminPreview") === "1";
-  const wallet = () => window.DecentHead?.getWallet?.();
-  const authorized = () => !!wallet()?.snapshot?.().connected && isAdmin(wallet().snapshot().address, config.adminWallet);
+  const config2 = adminConfig(), preview = new URLSearchParams(location.search).get("adminPreview") === "1";
+  const wallet2 = () => window.DecentHead?.getWallet?.();
+  const authorized = () => !!wallet2()?.snapshot?.().connected && isAdmin(wallet2().snapshot().address, config2.adminWallet);
   const dialog2 = createDialog("\u2625 Decent Voyager Admin", "asteroid-admin");
   dialog2.classList.add("voyager-admin");
   const status2 = node("p", preview ? "READ-ONLY PREVIEW \u2014 no wallet prompts, uploads, or transactions." : "UI gating is not security. Contract roles authorize on-chain actions.", { className: "asteroid-status", role: "status", "aria-live": "polite" });
@@ -2516,7 +4760,7 @@ function mountAdmin() {
   const switchButton = button("Switch wallet to Base", async () => {
     try {
       if (preview || !authorized()) throw new Error("Connect the admin wallet with the header fox.");
-      await wallet().ensureChain(BASE_CHAIN);
+      await wallet2().ensureChain(BASE_CHAIN);
       status2.textContent = "Wallet switched to Base.";
     } catch (error) {
       status2.textContent = error.message;
@@ -2529,7 +4773,7 @@ function mountAdmin() {
       if (!journal?.claims || !/^0x[\da-f]{64}$/i.test(recoveryHash.value.trim())) throw new Error("A saved mint attempt and a valid wallet-history transaction hash are required");
       const { contract, provider } = await contractContext();
       const transaction = await provider.getTransaction(recoveryHash.value.trim());
-      const products = buildProducts(journal.claims.map(validateClaim), config);
+      const products = buildProducts(journal.claims.map(validateClaim), config2);
       if (!transaction || !isAdmin(transaction.from, journal.owner) || transaction.to?.toLowerCase() !== journal.contractAddress.toLowerCase() || transaction.value !== 0n || transaction.data.toLowerCase() !== contract.interface.encodeFunctionData("registerAndMintProductsBatch", [products]).toLowerCase()) throw new Error("Transaction does not match the saved owner, contract and exact products");
       journal.txHash = transaction.hash;
       localStorage.setItem(JOURNAL, JSON.stringify(journal));
@@ -2600,20 +4844,20 @@ function mountAdmin() {
         let artwork = entry.image || entry.metadata?.image || "";
         if (!artwork && entry.metadataURI) {
           try {
-            const response = await fetch(gatewayUrl(entry.metadataURI, config.gateway), { signal: AbortSignal.timeout(1e4) });
+            const response = await fetch(gatewayUrl(entry.metadataURI, config2.gateway), { signal: AbortSignal.timeout(1e4) });
             if (response.ok) artwork = (await response.json()).image || "";
           } catch {
           }
         }
-        const icon = node("img", "", { src: artwork ? gatewayUrl(artwork, config.gateway) : "./assets/brand/mandelblum-gate.png", alt: `${entry.project || "Supporter"} token artwork`, loading: "lazy" });
-        icon.onerror = () => {
-          icon.src = "./assets/game/gate.png";
+        const icon2 = node("img", "", { src: artwork ? gatewayUrl(artwork, config2.gateway) : "./assets/brand/mandelblum-gate.png", alt: `${entry.project || "Supporter"} token artwork`, loading: "lazy" });
+        icon2.onerror = () => {
+          icon2.src = "./assets/game/gate.png";
         };
-        card.append(icon, node("h3", entry.label || `${entry.project || "Supporter NFT"} \xB7 #${entry.tokenId}`), node("p", `Tier ${entry.tier ?? "\u2014"} \xB7 token ${entry.tokenId ?? "\u2014"} \xB7 recipient ${entry.player || entry.claimant || "unassigned"}`));
+        card.append(icon2, node("h3", entry.label || `${entry.project || "Supporter NFT"} \xB7 #${entry.tokenId}`), node("p", `Tier ${entry.tier ?? "\u2014"} \xB7 token ${entry.tokenId ?? "\u2014"} \xB7 recipient ${entry.player || entry.claimant || "unassigned"}`));
         if (entry.protocol === "reward-bundle/1") card.append(node("p", `${entry.awardKind || "Atomic reward"} \xB7 player claims from VoyagerRewards${entry.bonus ? " \xB7 includes 100 BNut in the same transaction" : ""}. Never release through the legacy NFT-only batch.`));
         const metadataURI = entry.metadataURI || entry.tokenURI || entry.uri;
-        if (metadataURI) card.append(link("Prize metadata", gatewayUrl(metadataURI, config.gateway)));
-        if (artwork) card.append(link("Token artwork", gatewayUrl(artwork, config.gateway)));
+        if (metadataURI) card.append(link("Prize metadata", gatewayUrl(metadataURI, config2.gateway)));
+        if (artwork) card.append(link("Token artwork", gatewayUrl(artwork, config2.gateway)));
         const check2 = node("input", "", { type: "checkbox", "aria-label": `Select ${entry.label || `token ${entry.tokenId}`}` });
         check2.checked = selected.has(`prize:${index}`);
         check2.disabled = preview || !authorized() || Boolean(entry.protocol || entry.bonus);
@@ -2650,7 +4894,7 @@ function mountAdmin() {
       const configured = contracts.VoyagerArena || contracts.voyagerArena || contracts.base?.VoyagerArena || contracts["8453"]?.VoyagerArena;
       const arenaAddress = typeof configured === "string" ? configured : configured?.address;
       if (!validAddress(arenaAddress)) return null;
-      const ethers = await ethersLibrary(), provider = new ethers.JsonRpcProvider(config.rpcUrl);
+      const ethers = await ethersLibrary(), provider = new ethers.JsonRpcProvider(config2.rpcUrl);
       if ((await provider.getNetwork()).chainId !== 8453n) return null;
       const contract = new ethers.Contract(arenaAddress, ["function nextRoundId() view returns (uint256)", "function rounds(uint256) view returns (bytes32,address,uint8,uint8,uint256,uint256,uint8,uint256)"], provider);
       const next = Number(await contract.nextRoundId()), first = Math.max(1, next - 50);
@@ -2688,7 +4932,7 @@ function mountAdmin() {
       const prizeAddress = typeof prizeValue === "string" ? prizeValue : prizeValue?.address;
       const escrowAddress = contracts.DecentMarketEscrow || contracts.escrow || "0x31b07b83e99A9bdF379bf40225b8A80d3804C89d";
       if (!validAddress(prizeAddress) || !validAddress(escrowAddress)) throw new Error("Supporter release contract addresses are not configured");
-      const walletSession = wallet(), provider = walletSession.browserProvider;
+      const walletSession = wallet2(), provider = walletSession.browserProvider;
       if (!provider || (await provider.getNetwork()).chainId !== 8453n) throw new Error("Connect the admin wallet on Base.");
       const ethers = await ethersLibrary(), signer = await provider.getSigner();
       const escrow = new ethers.Contract(escrowAddress, ["function withdrawNFT(address,uint256,uint256,address)"], signer);
@@ -2752,17 +4996,17 @@ function mountAdmin() {
         else selected.delete(claim.recordId);
         mint.disabled = preview || !authorized() || minting || !!journal || !selected.size;
       });
-      const image = node("img", "", { src: gatewayUrl(claim.image, config.gateway), alt: `Battle card for L${claim.level} ${claim.difficulty}`, loading: "lazy", referrerpolicy: "no-referrer" });
+      const image = node("img", "", { src: gatewayUrl(claim.image, config2.gateway), alt: `Battle card for L${claim.level} ${claim.difficulty}`, loading: "lazy", referrerpolicy: "no-referrer" });
       image.addEventListener("error", () => {
         image.replaceWith(node("p", "Battle thumbnail unavailable \u2014 use the metadata gateway link."));
       }, { once: true });
-      card.append(select, image, node("h3", `L${claim.level} \xB7 ${claim.difficulty} \xB7 Score ${claim.score.total}`), node("p", `${claim.completedAt} \xB7 Claimant ${claim.claimant}`), link("Metadata on IPFS", gatewayUrl(claim.tokenURI, config.gateway)));
+      card.append(select, image, node("h3", `L${claim.level} \xB7 ${claim.difficulty} \xB7 Score ${claim.score.total}`), node("p", `${claim.completedAt} \xB7 Claimant ${claim.claimant}`), link("Metadata on IPFS", gatewayUrl(claim.tokenURI, config2.gateway)));
       if (claim.issueNumber) card.append(link(`Review GitHub issue #${claim.issueNumber}`, `https://github.com/TheJollyLaMa/DecentVoyager/issues/${claim.issueNumber}`));
       if (metadata.has(claim.recordId)) {
         card.append(node("pre", JSON.stringify(metadata.get(claim.recordId).properties.record.stats, null, 2)));
       } else card.append(button("Load & review every stat", async () => {
         try {
-          const response = await fetch(gatewayUrl(claim.tokenURI, config.gateway), { signal: AbortSignal.timeout(2e4) });
+          const response = await fetch(gatewayUrl(claim.tokenURI, config2.gateway), { signal: AbortSignal.timeout(2e4) });
           if (!response.ok) throw new Error(`Metadata unavailable (${response.status})`);
           const value = await response.json();
           assertJsonSafe(value);
@@ -2833,16 +5077,16 @@ function mountAdmin() {
   }
   async function contractContext() {
     if (preview || !authorized()) throw new Error("Admin wallet required. Click the header fox; preview cannot mint.");
-    const session = wallet(), provider = session.browserProvider;
+    const session = wallet2(), provider = session.browserProvider;
     if (!provider || (await provider.getNetwork()).chainId !== 8453n) throw new Error("Wallet must be on Base (8453). Use Switch wallet to Base.");
     const ethers = await ethersLibrary();
-    await verifyContract(provider, ethers.Contract, config);
+    await verifyContract(provider, ethers.Contract, config2);
     const signer = await provider.getSigner();
-    if (!isAdmin(await signer.getAddress(), config.adminWallet)) throw new Error("Wallet changed; reconnect the configured admin.");
-    return { contract: new ethers.Contract(config.contractAddress, PRODUCT_BATCH_ABI, signer), provider };
+    if (!isAdmin(await signer.getAddress(), config2.adminWallet)) throw new Error("Wallet changed; reconnect the configured admin.");
+    return { contract: new ethers.Contract(config2.contractAddress, PRODUCT_BATCH_ABI, signer), provider };
   }
   function publishExport(ids, receipt) {
-    report = journal.claims.map((claim, index) => ({ ...claim, tokenId: ids[index], txHash: receipt.hash || journal.txHash, chainId: 8453, contractAddress: config.contractAddress, mintedAt: (/* @__PURE__ */ new Date()).toISOString() }));
+    report = journal.claims.map((claim, index) => ({ ...claim, tokenId: ids[index], txHash: receipt.hash || journal.txHash, chainId: 8453, contractAddress: config2.contractAddress, mintedAt: (/* @__PURE__ */ new Date()).toISOString() }));
     exportArea.value = JSON.stringify({ minted: report }, null, 2);
     journal = { ...journal, confirmed: true, export: report };
     localStorage.setItem(JOURNAL, JSON.stringify(journal));
@@ -2860,19 +5104,19 @@ function mountAdmin() {
     try {
       const claims = queue.pending.filter((claim) => selected.has(claim.recordId));
       if (claims.some((claim) => !metadata.has(claim.recordId))) throw new Error("Review metadata for every selected record first");
-      const products = buildProducts(claims, config);
+      const products = buildProducts(claims, config2);
       let { contract } = await contractContext();
       const gas = await contract.registerAndMintProductsBatch.estimateGas(products), gasLimit = gas * 120n / 100n;
       if (gasLimit > 8000000n) throw new Error("Gas too high; select fewer stamps");
-      status2.textContent = `Estimated gas ${gas}. Limit with 20% margin ${gasLimit}. Contract ${config.contractAddress}`;
+      status2.textContent = `Estimated gas ${gas}. Limit with 20% margin ${gasLimit}. Contract ${config2.contractAddress}`;
       if (!window.confirm(`Mint ${claims.length} one-of-one victory stamps on Base?
 Estimated gas: ${gas}; limit: ${gasLimit}
-Contract: ${config.contractAddress}
+Contract: ${config2.contractAddress}
 Recipients: the listed claimants
-Royalty: ${config.royaltyFeeBps / 100}% to admin
+Royalty: ${config2.royaltyFeeBps / 100}% to admin
 Wallet will show the final fee.`)) return;
       ({ contract } = await contractContext());
-      journal = { claims, products, owner: config.adminWallet, contractAddress: config.contractAddress, startedAt: (/* @__PURE__ */ new Date()).toISOString() };
+      journal = { claims, products, owner: config2.adminWallet, contractAddress: config2.contractAddress, startedAt: (/* @__PURE__ */ new Date()).toISOString() };
       localStorage.setItem(JOURNAL, JSON.stringify(journal));
       let transaction;
       try {
@@ -2888,7 +5132,7 @@ Wallet will show the final fee.`)) return;
       localStorage.setItem(JOURNAL, JSON.stringify(journal));
       status2.textContent = `Broadcast ${transaction.hash}; waiting for confirmation. Do NOT retry.`;
       const receipt = await transaction.wait();
-      publishExport(reconcileReceipt(receipt, contract, products, config.adminWallet), receipt);
+      publishExport(reconcileReceipt(receipt, contract, products, config2.adminWallet), receipt);
     } catch (error) {
       status2.textContent = `${error.message}${journal ? "\nSaved transaction remains locked. Check receipt; do not re-mint." : ""}`;
     } finally {
@@ -2900,7 +5144,7 @@ Wallet will show the final fee.`)) return;
     if (!journal?.txHash) return;
     try {
       const { contract, provider } = await contractContext();
-      if (journal.contractAddress.toLowerCase() !== config.contractAddress.toLowerCase()) throw new Error("Saved transaction belongs to a different contract. Restore that configuration.");
+      if (journal.contractAddress.toLowerCase() !== config2.contractAddress.toLowerCase()) throw new Error("Saved transaction belongs to a different contract. Restore that configuration.");
       const receipt = await provider.getTransactionReceipt(journal.txHash);
       if (!receipt) throw new Error("Transaction still pending or unavailable. Minting remains locked.");
       if (Number(receipt.status) === 0) {
@@ -2909,8 +5153,8 @@ Wallet will show the final fee.`)) return;
         status2.textContent = "Saved transaction reverted; no mint was confirmed. Review before retrying.";
       } else {
         const claims = journal.claims.map(validateClaim);
-        const products = buildProducts(claims, config);
-        publishExport(reconcileReceipt(receipt, contract, products, config.adminWallet), receipt);
+        const products = buildProducts(claims, config2);
+        publishExport(reconcileReceipt(receipt, contract, products, config2.adminWallet), receipt);
       }
     } catch (error) {
       status2.textContent = error.message;
