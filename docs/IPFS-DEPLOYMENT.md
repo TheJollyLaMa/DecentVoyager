@@ -27,21 +27,29 @@ or a successful authenticated backup.
 
 ## Candidate pin and remaining gate
 
-The bundled frontend at commit `7fc92dcf2328cd3fae344843eb1fe41511d140c9`
+The bundled frontend at commit `a69453fcb80c3722691c89894691f4aedc34cb60`
 was pinned as
-`bafybeic22j6kj4g4qgqia456mjztjxvxj2r5t5ax2sf6mjg3hofswoanca` (182 files).
-The index, configuration, game bundle, shell entry, core/radio chunks and CSS
-were retrieved from Filebase and matched the commit's SHA-256 bytes. This is a
-**candidate**, not an accepted IPFS rollout. A fresh Chromium load on Filebase
-hit HTTP 429 for the launch-reminder chunk and displayed the intended retry
-fallback; its self-only CSP also blocked the Base RPC, referee and Pinata
-requests. Do not select Filebase as the app-serving gateway.
+`bafybeicefiheqclchbu5d24baedp4k65cckzx2wi6tcqmtjryz7x6sf4qa` (176 files).
+The index, configuration, game bundle, shell entry, core/radio bundles and
+both CSS files were retrieved from Filebase and matched the commit's SHA-256
+bytes. A fresh Chromium app check loaded the wallet, menus, About, IPFS dialog
+and game with six script requests and no failed requests. However, the
+gateway's self-only CSP blocked the Base RPC, referee and Pinata service
+probes. This is a **candidate**, not an accepted IPFS rollout; do not select
+Filebase as the app-serving gateway.
+
+Pages deployment
+[43442469928](https://github.com/TheJollyLaMa/DecentVoyager/actions/runs/43442469928)
+of the same source commit succeeded. A fresh desktop app check passed with six
+script requests; the mobile-emulated control smoke passed on retry after one
+portrait horizontal-overflow assertion failed. This is not physical-device
+evidence or a fully reliable mobile acceptance result.
 
 The current Ethereum resolver readback still serves the previous CID
 `bafybeib2gcanocvsn672opkxewptwrv37gfxfhtdu2g7nbpkddlwqe6amu`.
 The existing ENS `.eth.limo` origin passed the service probes above, but has
 not served the new candidate and cannot establish its full-app acceptance.
-The [prepared steward signing page](https://thejollylama.github.io/DecentHead/supporter/ens.html?name=voyager.decentagency.eth&cid=bafybeic22j6kj4g4qgqia456mjztjxvxj2r5t5ax2sf6mjg3hofswoanca&repo=TheJollyLaMa%2FDecentVoyager&version=7fc92dcf)
+The [prepared steward signing page](https://thejollylama.github.io/DecentHead/supporter/ens.html?name=voyager.decentagency.eth&cid=bafybeicefiheqclchbu5d24baedp4k65cckzx2wi6tcqmtjryz7x6sf4qa&repo=TheJollyLaMa%2FDecentVoyager&version=a69453fc)
 is **not authorization to sign before the gateway acceptance below**.
 No ENS transaction has been submitted.
 
