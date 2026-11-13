@@ -1,7 +1,7 @@
 const status = document.getElementById('shell-status');
 
 try {
-  await import('./main.mjs');
+  await import('../../build/app.js');
   if (!window.DecentHead || !document.querySelector('decent-header')?.shadowRoot) {
     throw new Error('Flight tools did not initialize');
   }
