@@ -10,7 +10,8 @@ supported replacement gateway. These observations can change.
 The checked-in shell bundle is generated with `npm ci && npm run build:shell`;
 Pages checks that it matches the source before deploying. It keeps shared
 module identity and source-relative asset URLs and isolates the optional radio
-chunk. The Playwright shell test limits startup to 12 script requests, verifies
+bundle. The Playwright shell test limits startup to six script requests with
+an injected mock wallet, verifies
 the About/IPFS dialogs, and injects core, loader and radio failures. A fallback
 links to retry and Pages. This alone does not establish a gateway rollout.
 

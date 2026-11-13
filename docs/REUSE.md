@@ -10,8 +10,8 @@ The existing Playwright harness pattern in `tests/mobile-controls.browser.mjs`
 is reused for `tests/shell-startup.browser.mjs`, including failed radio, core
 module and loader requests and About/IPFS dialog interactions. The bundled
 entry preserves original source-relative `import.meta.url` asset bases and
-shared module identity; esbuild provides static code splitting while retaining
-the optional radio chunk. Browser tests cover the receiving app, including
+shared module identity; esbuild consolidates core code while retaining a
+separate optional radio bundle. Browser tests cover the receiving app, including
 failure injection, dialogs, mobile emulation and mocked reward collection.
 Gateway/ENS deployment is not established by local tests.
 

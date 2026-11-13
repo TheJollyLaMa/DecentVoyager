@@ -12,9 +12,8 @@ await build({
   entryPoints: ['src/js/shell/app-entry.mjs'],
   outdir: output,
   entryNames: 'app',
-  chunkNames: 'chunks/[name]-[hash]',
   bundle: true,
-  splitting: true,
+  splitting: false,
   format: 'esm',
   target: ['es2022'],
   plugins: [{
@@ -33,4 +32,12 @@ await build({
       });
     }
   }]
+});
+await build({
+  absWorkingDir: root,
+  entryPoints: ['src/vendor/dbusk-radio/0.2.0/widget.js'],
+  outfile: path.join(output, 'radio.js'),
+  bundle: true,
+  format: 'esm',
+  target: ['es2022']
 });

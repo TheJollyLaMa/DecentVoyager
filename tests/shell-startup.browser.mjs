@@ -22,7 +22,7 @@ const origin = `http://127.0.0.1:${server.address().port}/`;
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const failedPath of ['', '/build/chunks/widget-', '/build/app.js', '/build/chunks/main-', '/js/shell/startup.mjs']) {
+  for (const failedPath of ['', '/build/radio.js', '/build/app.js', '/js/shell/startup.mjs']) {
     const context = await browser.newContext();
     await context.route('**/*', route => {
       const url = new URL(route.request().url());
@@ -44,7 +44,7 @@ try {
       if (request.url().startsWith(origin) && /\.(?:mjs|js)(?:\?|$)/.test(request.url())) scripts.add(new URL(request.url()).pathname);
     });
     await page.goto(origin, { waitUntil: 'load' });
-    if (failedPath.includes('/app.js') || failedPath.includes('startup.mjs') || failedPath.includes('/main-')) {
+    if (failedPath.includes('/app.js') || failedPath.includes('startup.mjs')) {
       await page.locator('#shell-status').waitFor({ state: 'visible' });
       assert.match(await page.locator('#shell-status').innerText(), /loading or unavailable|could not start/);
       assert.equal(await page.locator('#shell-status a').count(), 2);
@@ -63,7 +63,7 @@ try {
         await page.locator('decent-header app-title button').click();
         await page.locator('decent-header about-modal dialog[open]').waitFor();
         await page.keyboard.press('Escape');
-        assert.ok(scripts.size <= 12, `startup requested ${scripts.size} scripts: ${[...scripts].join(', ')}`);
+        assert.ok(scripts.size <= 6, `startup requested ${scripts.size} scripts: ${[...scripts].join(', ')}`);
         await page.getByRole('button', { name: 'Open IPFS controls' }).click();
         await page.locator('decent-header ipfs-controls dialog[open]').waitFor();
         await page.keyboard.press('Escape');
