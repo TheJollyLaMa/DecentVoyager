@@ -9,7 +9,7 @@ const { createTicketService } = require('../src/tickets');
 const { makeVoucherService } = require('../src/vouchers');
 const { runHash, stableJson } = require('../src/run-verifier');
 const { replayRun } = require('../src/game-adapter');
-const { affordablePrizes, affordablePrizesForSlot, validateRewardPlan, PERFECT_PRIZES } = require('../../src/js/prizes');
+const { affordablePrizes, affordablePrizesForSlot, validateRewardPlan, PERFECT_PRIZES, DHEARSE_PRIZE } = require('../../src/js/prizes');
 const { createRng } = require('../../src/js/rng');
 const { createVault } = require('../../src/js/vault');
 const Game = require('../../src/js/game');
@@ -18,14 +18,16 @@ const { supporterDetails } = require('../../src/js/supporter-catalog');
 test('shuffle bags cover every affordable project and avoid adjacent-flight repeats across 1000 flights', () => {
   for (const difficulty of ['pilot', 'ace']) {
     const rng = createRng(44);
-    const rotation = createRewardRotation({ choose: limit => Math.floor(rng() * limit) });
-    const ids = affordablePrizes(difficulty).map(prize => prize.tokenId);
+    const rewardPools = { level17To19: [DHEARSE_PRIZE] };
+    const rotation = createRewardRotation({ choose: limit => Math.floor(rng() * limit),
+      rewardPools });
+    const ids = affordablePrizesForSlot(difficulty, 0).map(prize => prize.tokenId);
     const counts = new Map(ids.map(id => [id, 0]));
     let previous = [];
     const first = [];
     for (let index = 0; index < 1000; index++) {
       const plan = rotation.next('wallet', difficulty);
-      validateRewardPlan(plan);
+      validateRewardPlan(plan, rewardPools);
       assert.equal(plan.version, 2);
       assert.ok([9, 10].includes(plan.levels[0]));
       assert.ok(plan.tokens.every(token => !previous.includes(token)));
@@ -49,7 +51,7 @@ test('recent actual offers survive server restart, difficulty switches stay elig
   assert.deepEqual(restarted.next('two', 'ace').tokens, first.tokens);
 });
 
-test('a configured future Supporter can enter only the level 9-10 slot', () => {
+test('DHearse and an additional Supporter enter only the level 9-10 slot', () => {
   const synthetic = {
     project: 'DHearse', version: '0.1.0', tokenId: 999,
     label: 'DHearse synthetic test candidate', metadataURI: 'ipfs://bafytest',
@@ -71,6 +73,17 @@ test('a configured future Supporter can enter only the level 9-10 slot', () => {
     observedEarlyCandidate ||= issued.tokens[0] === 999;
   }
   assert.equal(observedEarlyCandidate, true);
+  assert.equal(affordablePrizesForSlot('pilot', 0).some(prize => prize.tokenId === 81), true);
+  assert.equal(affordablePrizesForSlot('pilot', 1).some(prize => prize.tokenId === 81), false);
+  const actual = createRewardRotation({ choose: limit => Math.floor(rng() * limit) });
+  let observedDHearse = false;
+  for (let index = 0; index < 1000; index++) {
+    const issued = actual.next('funded-wallet', 'pilot');
+    validateRewardPlan(issued);
+    assert.notEqual(issued.tokens[1], 81);
+    observedDHearse ||= issued.tokens[0] === 81;
+  }
+  assert.equal(observedDHearse, true);
 
   const ticketService = createTicketService({
     secret: 'test-secret-with-at-least-thirty-two-bytes!', rewardPools,
@@ -160,7 +173,7 @@ test('a new affordable project captures at level 9 and replays to a funded vouch
   assert.ok(issued.ticket.rewardPlan.tokens.every(token => ![70, 71, 75, 76].includes(token)));
   assert.equal(issued.ticket.rewardPlan.version, 2);
   assert.ok([9, 10].includes(issued.ticket.rewardPlan.levels[0]));
-  const plan = { version: 2, difficulty: 'pilot', tokens: [79, 80], levels: [9, 17] };
+  const plan = { version: 2, difficulty: 'pilot', tokens: [81, 80], levels: [9, 17] };
   const ticket = service.ticketService.issue(player.address, plan);
   ticket.ticket.seed = 1;
   ticket.mac = `0x${createHmac('sha256', secret).update(stableJson(ticket.ticket)).digest('hex')}`;
@@ -169,7 +182,7 @@ test('a new affordable project captures at level 9 and replays to a funded vouch
   game.setPlayers(5);
   game.setNextRunSeed(1, ticket);
   game.startCampaign(9, 'pilot');
-  assert.equal(game.vault.prize.tokenId, 79);
+  assert.equal(game.vault.prize.tokenId, 81);
   for (let frame = 0; frame < 4000 && !game.runCaptures.length && game.state !== 'gameOver'; frame++) {
     game.step(game.ships.map((ship, index) => {
       const guards = game.vault.guards.filter(guard => guard.hp > 0);
@@ -188,7 +201,7 @@ test('a new affordable project captures at level 9 and replays to a funded vouch
   }
   const captured = await post(run);
   assert.equal(captured.status, 201, JSON.stringify(captured.body));
-  assert.equal(captured.body.vouchers[0].tokenId, '79');
+  assert.equal(captured.body.vouchers[0].tokenId, '81');
   fake = { ...game.summary(), captures: [{ tier: 1, level: 9, prize: PERFECT_PRIZES.ace }] };
   const denied = await post({ ...run, battleCards: {} });
   assert.equal(denied.status, 400);

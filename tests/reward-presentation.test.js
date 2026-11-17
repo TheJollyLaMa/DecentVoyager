@@ -2,13 +2,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { existsSync } = require('node:fs');
 const { supporterDetails } = require('../src/js/supporter-catalog');
-const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES } = require('../src/js/prizes');
+const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, DHEARSE_PRIZE } = require('../src/js/prizes');
 const { MANIFEST, supporterImageKey } = require('../src/js/render/assets');
 const { createFx, MAX_SCREEN_PARTICLES, MAX_WORLD_PARTICLES } = require('../src/js/render/fx');
 const Game = require('../src/js/game');
 
 test('every reward has metadata-derived artwork, release and filtered Canopy links', () => {
-    for (const prize of [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE, ...Object.values(PERFECT_PRIZES)]) {
+    for (const prize of [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE, DHEARSE_PRIZE, ...Object.values(PERFECT_PRIZES)]) {
         const details = supporterDetails(prize.tokenId);
         assert.equal(details.tokenId, prize.tokenId);
         assert.match(details.imageURI, /^ipfs:\/\/Qm/);

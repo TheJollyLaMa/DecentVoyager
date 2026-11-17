@@ -22,7 +22,12 @@ const PERFECT_PRIZES = {
 };
 const PILOT_BONUS = { chainId: 8453, token: '0x25ACb773159Af5a5c672DEfe31C7Fff6a9A93736', symbol: 'BNUT', decimals: 18, amount: '100000000000000000000' };
 const AFFORDABLE_PRIZES = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE];
-const LEVEL_9_10_PRIZES = [...AFFORDABLE_PRIZES];
+const DHEARSE_PRIZE = {
+    project: 'DHearse', version: '0.1.1', tokenId: 81,
+    label: 'DHearse v0.1.1 #81',
+    metadataURI: 'ipfs://QmQ37Qr941CLvu23WG5NAZV1yBrk3xET582xydd323fPAp'
+};
+const LEVEL_9_10_PRIZES = [...AFFORDABLE_PRIZES, DHEARSE_PRIZE];
 const LEVEL_17_19_PRIZES = [...AFFORDABLE_PRIZES];
 function affordablePrizes(difficulty) {
     return ['pilot', 'ace'].includes(difficulty) ? AFFORDABLE_PRIZES : [];
@@ -56,4 +61,4 @@ function validateRewardPlan(plan, additional = {}) {
     return plan;
 }
 module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS,
-    AFFORDABLE_PRIZES, affordablePrizes, affordablePrizesForSlot, validateRewardPlan };
+    AFFORDABLE_PRIZES, DHEARSE_PRIZE, affordablePrizes, affordablePrizesForSlot, validateRewardPlan };

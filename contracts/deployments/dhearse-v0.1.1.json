@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "chainId": 8453,
+  "project": "DHearse",
+  "version": "v0.1.1",
+  "nftContract": "0xe63EC9f8228720bAAC2fD528C0A6d06B3Dc5439B",
+  "tokenId": 81,
+  "quantity": 10,
+  "rewardsContract": "0xCa55A59BD2c15D0F11Ae5f7e7E96Bb58eb0B7DE5",
+  "fundingTxHash": "0x0cc3e30a261a27d8d7e59739ffc9dbeb0ab931b9e6a6412e8a36a8d1bc5a65b1",
+  "fundingBlock": 58734929,
+  "verifiedBlock": 58735010,
+  "balanceAtVerification": "10",
+  "eligibleLevels": [9, 10],
+  "listingId": 21,
+  "saleStockAtVerification": "990",
+  "release": "https://github.com/A-Decent-Agency/DHearse/releases/tag/v0.1.1",
+  "evidence": "https://github.com/A-Decent-Agency/DHearse/releases/download/v0.1.1/dhearse-voyager-funding.json"
+}

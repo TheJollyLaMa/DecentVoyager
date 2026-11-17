@@ -1,5 +1,5 @@
-const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, COLLECTION, ESCROW } = require('./prizes');
-const LISTINGS = { 70: 11, 71: 12, 75: 13, 76: 14, 77: 20, 78: 16, 79: 17, 80: 18 };
+const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, DHEARSE_PRIZE, COLLECTION, ESCROW } = require('./prizes');
+const LISTINGS = { 70: 11, 71: 12, 75: 13, 76: 14, 77: 20, 78: 16, 79: 17, 80: 18, 81: 21 };
 
 const IMAGE_CIDS = {
     70: 'QmcuhKLo46hwSdUQJm93VoHeB1YrpjhzeySg6Q7D9srabS',
@@ -9,7 +9,8 @@ const IMAGE_CIDS = {
     77: 'QmTaSEext8djzyBK2Wip22UQusL3aRpgNWbFiKrvjmSuWX',
     78: 'QmYtVkkDitdTnEabaZxPG8oquuenpWdVSzQ6b9VqbNrrVf',
     79: 'QmSrWH6EcmXsPfjfTa99G3D2xCqgXWSyLK6o5B1m7Smu3A',
-    80: 'QmRBdBUg73Cd3y1aAzTT6jVgcRaVbw3roPpb4KaCrVqxce'
+    80: 'QmRBdBUg73Cd3y1aAzTT6jVgcRaVbw3roPpb4KaCrVqxce',
+    81: 'Qmez9nA4XqLmsQjRjBpgcsutUqdpjRjMAkaoF1XeiF62Mn'
 };
 const PURPOSES = {
     DecentHead: 'A reusable Decent header with wallet connection, IPFS tools and project information.',
@@ -19,11 +20,12 @@ const PURPOSES = {
     DecentCanopy: 'Explore projects, creators, funding relationships and useful next steps across the ecosystem.',
     DecentBusking: 'Music participation, scheduled radio and accountable creator earnings.',
     BigNuten_Vanilla: 'Body-care and wellness participation with user-owned data and rewards.',
-    DecentVoyager: 'The Mandelblum arcade gauntlet, Supporter captures and twenty-level voyages.'
+    DecentVoyager: 'The Mandelblum arcade gauntlet, Supporter captures and twenty-level voyages.',
+    DHearse: 'A cloneable private audio rehearsal-room prototype for musicians and audio engineers.'
 };
-const prizes = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE, ...Object.values(PERFECT_PRIZES)];
+const prizes = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE, DHEARSE_PRIZE, ...Object.values(PERFECT_PRIZES)];
 const catalog = new Map(prizes.map(prize => {
-    const repository = `https://github.com/TheJollyLaMa/${prize.project}`;
+    const repository = `https://github.com/${prize.project === 'DHearse' ? 'A-Decent-Agency' : 'TheJollyLaMa'}/${prize.project}`;
     const metadataURI = prize.tokenId === 80 ? 'ipfs://QmYyFwg2BXcz63uVRSFF6L2crxe1Avhb234fzXdkwYCQaU' : prize.metadataURI;
     return [String(prize.tokenId), Object.freeze({
         ...prize, metadataURI,
