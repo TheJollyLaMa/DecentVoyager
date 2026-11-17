@@ -22,17 +22,38 @@ const PERFECT_PRIZES = {
 };
 const PILOT_BONUS = { chainId: 8453, token: '0x25ACb773159Af5a5c672DEfe31C7Fff6a9A93736', symbol: 'BNUT', decimals: 18, amount: '100000000000000000000' };
 const AFFORDABLE_PRIZES = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE];
+const LEVEL_9_10_PRIZES = [...AFFORDABLE_PRIZES];
+const LEVEL_17_19_PRIZES = [...AFFORDABLE_PRIZES];
 function affordablePrizes(difficulty) {
     return ['pilot', 'ace'].includes(difficulty) ? AFFORDABLE_PRIZES : [];
 }
-function validateRewardPlan(plan) {
+function affordablePrizesForSlot(difficulty, slot, additional = {}) {
+    if (!['pilot', 'ace'].includes(difficulty) || ![0, 1].includes(slot)) return [];
+    const base = slot === 0 ? LEVEL_9_10_PRIZES : LEVEL_17_19_PRIZES;
+    const extras = slot === 0 ? additional.level9To10 || [] : additional.level17To19 || [];
+    if (!Array.isArray(extras) || extras.some(prize =>
+        !prize || !Number.isSafeInteger(prize.tokenId) || prize.tokenId < 1 ||
+        typeof prize.project !== 'string' || typeof prize.version !== 'string' ||
+        typeof prize.label !== 'string' || !/^ipfs:\/\/\S+$/.test(prize.metadataURI || ''))) {
+        throw new Error('Reward slot candidates require valid Supporter metadata.');
+    }
+    const ids = new Set(base.map(prize => prize.tokenId));
+    for (const prize of extras) {
+        if (ids.has(prize.tokenId)) throw new Error('Reward slot candidates cannot duplicate a Supporter token ID.');
+        ids.add(prize.tokenId);
+    }
+    return [...base, ...extras];
+}
+function validateRewardPlan(plan, additional = {}) {
     if (!plan || ![1, 2].includes(plan.version) || !['pilot', 'ace'].includes(plan.difficulty) ||
         !Array.isArray(plan.tokens) || plan.tokens.length !== 2 || plan.tokens[0] === plan.tokens[1] ||
-        !plan.tokens.every(token => affordablePrizes(plan.difficulty).some(prize => prize.tokenId === token)) ||
+        !plan.tokens.every((token, slot) => affordablePrizesForSlot(plan.difficulty, slot, additional)
+            .some(prize => prize.tokenId === token)) ||
         !Array.isArray(plan.levels) || plan.levels.length !== 2 ||
         !(plan.version === 1 ? [4, 5, 6] : [9, 10]).includes(plan.levels[0]) || ![17, 18, 19].includes(plan.levels[1])) {
         throw new Error('Referee reward rotation plan is invalid.');
     }
     return plan;
 }
-module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS, AFFORDABLE_PRIZES, affordablePrizes, validateRewardPlan };
+module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS,
+    AFFORDABLE_PRIZES, affordablePrizes, affordablePrizesForSlot, validateRewardPlan };

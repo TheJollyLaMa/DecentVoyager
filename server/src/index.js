@@ -316,7 +316,8 @@ function createService(options = {}) {
       }
       const prizeList = completion ? [prizeDefinitions.MARATHON_PRIZE] :
         perfect ? [prizeDefinitions.PERFECT_PRIZES[run.difficulty]] :
-          run.ticket.ticket.rewardPlan ? prizeDefinitions.affordablePrizes(run.difficulty).filter(prize =>
+          run.ticket.ticket.rewardPlan ? prizeDefinitions.affordablePrizesForSlot(
+            run.difficulty, capture.tier - 1).filter(prize =>
             prize.tokenId === run.ticket.ticket.rewardPlan.tokens[capture.tier - 1] &&
             capture.level === run.ticket.ticket.rewardPlan.levels[capture.tier - 1]) : prizeDefinitions.PRIZES[capture.tier] || [];
       const canonicalPrize = prizeList.find((entry) => String(entry.tokenId) === String((capture.prize && capture.prize.tokenId) ?? capture.tokenId ?? ''));

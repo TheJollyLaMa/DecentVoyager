@@ -9,7 +9,7 @@ const { createTicketService } = require('../src/tickets');
 const { makeVoucherService } = require('../src/vouchers');
 const { runHash, stableJson } = require('../src/run-verifier');
 const { replayRun } = require('../src/game-adapter');
-const { affordablePrizes, validateRewardPlan, PERFECT_PRIZES } = require('../../src/js/prizes');
+const { affordablePrizes, affordablePrizesForSlot, validateRewardPlan, PERFECT_PRIZES } = require('../../src/js/prizes');
 const { createRng } = require('../../src/js/rng');
 const { createVault } = require('../../src/js/vault');
 const Game = require('../../src/js/game');
@@ -47,6 +47,36 @@ test('recent actual offers survive server restart, difficulty switches stay elig
   const next = restarted.next('one', 'pilot', first.tokens);
   assert.ok(next.tokens.every(token => !first.tokens.includes(token) && token !== 76));
   assert.deepEqual(restarted.next('two', 'ace').tokens, first.tokens);
+});
+
+test('a configured future Supporter can enter only the level 9-10 slot', () => {
+  const synthetic = {
+    project: 'DHearse', version: '0.1.0', tokenId: 999,
+    label: 'DHearse synthetic test candidate', metadataURI: 'ipfs://bafytest',
+  };
+  const rewardPools = { level9To10: [synthetic] };
+  const plan = { version: 2, difficulty: 'pilot', tokens: [999, 70], levels: [9, 17] };
+  assert.doesNotThrow(() => validateRewardPlan(plan, rewardPools));
+  assert.throws(() => validateRewardPlan({ ...plan, tokens: [70, 999] }, rewardPools), /invalid/);
+  assert.equal(affordablePrizesForSlot('pilot', 0, rewardPools).some(prize => prize.tokenId === 999), true);
+  assert.equal(affordablePrizesForSlot('pilot', 1, rewardPools).some(prize => prize.tokenId === 999), false);
+
+  const rng = createRng(123);
+  const rotation = createRewardRotation({ choose: limit => Math.floor(rng() * limit), rewardPools });
+  let observedEarlyCandidate = false;
+  for (let index = 0; index < 1000; index++) {
+    const issued = rotation.next('synthetic-wallet', 'pilot');
+    validateRewardPlan(issued, rewardPools);
+    assert.notEqual(issued.tokens[1], 999);
+    observedEarlyCandidate ||= issued.tokens[0] === 999;
+  }
+  assert.equal(observedEarlyCandidate, true);
+
+  const ticketService = createTicketService({
+    secret: 'test-secret-with-at-least-thirty-two-bytes!', rewardPools,
+  });
+  const ticket = ticketService.issue(Wallet.createRandom().address, plan);
+  assert.deepEqual(ticket.ticket.rewardPlan, plan);
 });
 
 test('new flights offer no Supporter before level 9 and spawn at either selected level, including the boss', () => {
