@@ -1,5 +1,5 @@
 const { pick, range } = require('./rng');
-const { PRIZES, affordablePrizes, validateRewardPlan } = require('./prizes');
+const { PRIZES, affordablePrizesForSlot, validateRewardPlan } = require('./prizes');
 const Asteroid = require('./asteroid');
 
 function chooseVaultLevel(tier, rng) { return tier === 1 ? pick(rng, [9, 10]) : pick(rng, [19, 20]); }
@@ -7,7 +7,8 @@ function createVault(tier, level, rng, rewardPlan = null) {
     const x = range(rng, 300, 500);
     const y = range(rng, 1700, 2400);
     if (rewardPlan) validateRewardPlan(rewardPlan);
-    const prize = rewardPlan ? affordablePrizes(rewardPlan.difficulty).find(entry => entry.tokenId === rewardPlan.tokens[tier - 1]) : pick(rng, PRIZES[tier]);
+    const prize = rewardPlan ? affordablePrizesForSlot(rewardPlan.difficulty, tier - 1)
+        .find(entry => entry.tokenId === rewardPlan.tokens[tier - 1]) : pick(rng, PRIZES[tier]);
     const easy = rewardPlan && tier === 1;
     const count = easy ? 4 : 8;
     const guards = Array.from({ length: count }, (_, index) => {

@@ -12,7 +12,7 @@ const { validateRewardPlan } = require('../../src/js/prizes');
 const TICKET_TTL_MS = 6 * 60 * 60 * 1000;
 const UINT32_MAX = 0xffffffff;
 
-function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TTL_MS } = {}) {
+function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TTL_MS, rewardPools = {} } = {}) {
   if (!secret) throw new Error('TICKET_SECRET is required.');
   const key = Buffer.isBuffer(secret) ? secret : Buffer.from(String(secret), 'utf8');
   if (key.length < 32) throw new Error('TICKET_SECRET must contain at least 32 bytes.');
@@ -30,7 +30,7 @@ function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TT
       seed: randomBytes(4).readUInt32BE(0),
       issuedAt: new Date(issuedAt).toISOString(),
       expiresAt: new Date(issuedAt + ttlMs).toISOString(),
-      ...(rewardPlan ? { rewardPlan: validateRewardPlan(rewardPlan) } : {})
+      ...(rewardPlan ? { rewardPlan: validateRewardPlan(rewardPlan, rewardPools) } : {})
     };
     return { ticket, mac: macFor(ticket) };
   }
@@ -42,7 +42,7 @@ function createTicketService({ secret, now = () => Date.now(), ttlMs = TICKET_TT
     }
     const ticket = claim.ticket;
     if (ticket.rewardPlan) {
-      validateRewardPlan(ticket.rewardPlan);
+      validateRewardPlan(ticket.rewardPlan, rewardPools);
       if (run.difficulty !== ticket.rewardPlan.difficulty && run.difficulty !== 'cadet') throw new Error('Flight difficulty does not match its reward rotation ticket.');
     }
     gameForRuleset(run.ruleset);

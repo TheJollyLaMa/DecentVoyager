@@ -90,6 +90,13 @@ project/Canopy links and Supporter purchase links with recorded listing prices;
 the purchase page rechecks the live listing. No new reserves or contract
 transactions are part of this update.
 
+The two affordable reward slots have separate candidate sets: a newly funded
+project can be added to level 9/10 without becoming eligible for the later
+17–19 pickup. DHearse v0.1.1 / Base token 81 has ten verified funded editions
+and is eligible only for the level 9/10 slot, not the later pickup. See
+[`docs/REWARD-POOL.md`](docs/REWARD-POOL.md) for the release/funding evidence
+and deployment order. This inventory snapshot is not a guarantee of future stock.
+
 Already-issued version-1 rotation plans retain their level 4/5/6 schedule for
 exact replay; new version-2 plans never offer a Supporter before level 9.
 Old tickets without a rotation plan and existing online arenas keep their original

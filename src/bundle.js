@@ -2962,20 +2962,46 @@ const PERFECT_PRIZES = {
 };
 const PILOT_BONUS = { chainId: 8453, token: '0x25ACb773159Af5a5c672DEfe31C7Fff6a9A93736', symbol: 'BNUT', decimals: 18, amount: '100000000000000000000' };
 const AFFORDABLE_PRIZES = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE];
+const DHEARSE_PRIZE = {
+    project: 'DHearse', version: '0.1.1', tokenId: 81,
+    label: 'DHearse v0.1.1 #81',
+    metadataURI: 'ipfs://QmQ37Qr941CLvu23WG5NAZV1yBrk3xET582xydd323fPAp'
+};
+const LEVEL_9_10_PRIZES = [...AFFORDABLE_PRIZES, DHEARSE_PRIZE];
+const LEVEL_17_19_PRIZES = [...AFFORDABLE_PRIZES];
 function affordablePrizes(difficulty) {
     return ['pilot', 'ace'].includes(difficulty) ? AFFORDABLE_PRIZES : [];
 }
-function validateRewardPlan(plan) {
+function affordablePrizesForSlot(difficulty, slot, additional = {}) {
+    if (!['pilot', 'ace'].includes(difficulty) || ![0, 1].includes(slot)) return [];
+    const base = slot === 0 ? LEVEL_9_10_PRIZES : LEVEL_17_19_PRIZES;
+    const extras = slot === 0 ? additional.level9To10 || [] : additional.level17To19 || [];
+    if (!Array.isArray(extras) || extras.some(prize =>
+        !prize || !Number.isSafeInteger(prize.tokenId) || prize.tokenId < 1 ||
+        typeof prize.project !== 'string' || typeof prize.version !== 'string' ||
+        typeof prize.label !== 'string' || !/^ipfs:\/\/\S+$/.test(prize.metadataURI || ''))) {
+        throw new Error('Reward slot candidates require valid Supporter metadata.');
+    }
+    const ids = new Set(base.map(prize => prize.tokenId));
+    for (const prize of extras) {
+        if (ids.has(prize.tokenId)) throw new Error('Reward slot candidates cannot duplicate a Supporter token ID.');
+        ids.add(prize.tokenId);
+    }
+    return [...base, ...extras];
+}
+function validateRewardPlan(plan, additional = {}) {
     if (!plan || ![1, 2].includes(plan.version) || !['pilot', 'ace'].includes(plan.difficulty) ||
         !Array.isArray(plan.tokens) || plan.tokens.length !== 2 || plan.tokens[0] === plan.tokens[1] ||
-        !plan.tokens.every(token => affordablePrizes(plan.difficulty).some(prize => prize.tokenId === token)) ||
+        !plan.tokens.every((token, slot) => affordablePrizesForSlot(plan.difficulty, slot, additional)
+            .some(prize => prize.tokenId === token)) ||
         !Array.isArray(plan.levels) || plan.levels.length !== 2 ||
         !(plan.version === 1 ? [4, 5, 6] : [9, 10]).includes(plan.levels[0]) || ![17, 18, 19].includes(plan.levels[1])) {
         throw new Error('Referee reward rotation plan is invalid.');
     }
     return plan;
 }
-module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS, AFFORDABLE_PRIZES, affordablePrizes, validateRewardPlan };
+module.exports = { COLLECTION, ESCROW, PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, PILOT_BONUS,
+    AFFORDABLE_PRIZES, DHEARSE_PRIZE, affordablePrizes, affordablePrizesForSlot, validateRewardPlan };
 
 },{}],16:[function(require,module,exports){
 // Image preloader. Renderers ask for images by key and fall back to vector
@@ -3027,7 +3053,8 @@ const MANIFEST = {
     'supporter-77': 'supporter-77.jpg',
     'supporter-78': 'supporter-78.jpg',
     'supporter-79': 'supporter-79.jpg',
-    'supporter-80': 'supporter-80.jpg'
+    'supporter-80': 'supporter-80.jpg',
+    'supporter-81': 'supporter-81.jpg'
 };
 
 const images = {};
@@ -7712,8 +7739,8 @@ module.exports = {
 };
 
 },{}],39:[function(require,module,exports){
-const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, COLLECTION, ESCROW } = require('./prizes');
-const LISTINGS = { 70: 11, 71: 12, 75: 13, 76: 14, 77: 20, 78: 16, 79: 17, 80: 18 };
+const { PRIZES, MARATHON_PRIZE, PERFECT_PRIZES, DHEARSE_PRIZE, COLLECTION, ESCROW } = require('./prizes');
+const LISTINGS = { 70: 11, 71: 12, 75: 13, 76: 14, 77: 20, 78: 16, 79: 17, 80: 18, 81: 21 };
 
 const IMAGE_CIDS = {
     70: 'QmcuhKLo46hwSdUQJm93VoHeB1YrpjhzeySg6Q7D9srabS',
@@ -7723,7 +7750,8 @@ const IMAGE_CIDS = {
     77: 'QmTaSEext8djzyBK2Wip22UQusL3aRpgNWbFiKrvjmSuWX',
     78: 'QmYtVkkDitdTnEabaZxPG8oquuenpWdVSzQ6b9VqbNrrVf',
     79: 'QmSrWH6EcmXsPfjfTa99G3D2xCqgXWSyLK6o5B1m7Smu3A',
-    80: 'QmRBdBUg73Cd3y1aAzTT6jVgcRaVbw3roPpb4KaCrVqxce'
+    80: 'QmRBdBUg73Cd3y1aAzTT6jVgcRaVbw3roPpb4KaCrVqxce',
+    81: 'Qmez9nA4XqLmsQjRjBpgcsutUqdpjRjMAkaoF1XeiF62Mn'
 };
 const PURPOSES = {
     DecentHead: 'A reusable Decent header with wallet connection, IPFS tools and project information.',
@@ -7733,11 +7761,12 @@ const PURPOSES = {
     DecentCanopy: 'Explore projects, creators, funding relationships and useful next steps across the ecosystem.',
     DecentBusking: 'Music participation, scheduled radio and accountable creator earnings.',
     BigNuten_Vanilla: 'Body-care and wellness participation with user-owned data and rewards.',
-    DecentVoyager: 'The Mandelblum arcade gauntlet, Supporter captures and twenty-level voyages.'
+    DecentVoyager: 'The Mandelblum arcade gauntlet, Supporter captures and twenty-level voyages.',
+    DHearse: 'A cloneable private audio rehearsal-room prototype for musicians and audio engineers.'
 };
-const prizes = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE, ...Object.values(PERFECT_PRIZES)];
+const prizes = [...PRIZES[1], ...PRIZES[2], MARATHON_PRIZE, DHEARSE_PRIZE, ...Object.values(PERFECT_PRIZES)];
 const catalog = new Map(prizes.map(prize => {
-    const repository = `https://github.com/TheJollyLaMa/${prize.project}`;
+    const repository = `https://github.com/${prize.project === 'DHearse' ? 'A-Decent-Agency' : 'TheJollyLaMa'}/${prize.project}`;
     const metadataURI = prize.tokenId === 80 ? 'ipfs://QmYyFwg2BXcz63uVRSFF6L2crxe1Avhb234fzXdkwYCQaU' : prize.metadataURI;
     return [String(prize.tokenId), Object.freeze({
         ...prize, metadataURI,
@@ -7761,7 +7790,7 @@ module.exports = { supporterDetails };
 
 },{"./prizes":15}],40:[function(require,module,exports){
 const { pick, range } = require('./rng');
-const { PRIZES, affordablePrizes, validateRewardPlan } = require('./prizes');
+const { PRIZES, affordablePrizesForSlot, validateRewardPlan } = require('./prizes');
 const Asteroid = require('./asteroid');
 
 function chooseVaultLevel(tier, rng) { return tier === 1 ? pick(rng, [9, 10]) : pick(rng, [19, 20]); }
@@ -7769,7 +7798,8 @@ function createVault(tier, level, rng, rewardPlan = null) {
     const x = range(rng, 300, 500);
     const y = range(rng, 1700, 2400);
     if (rewardPlan) validateRewardPlan(rewardPlan);
-    const prize = rewardPlan ? affordablePrizes(rewardPlan.difficulty).find(entry => entry.tokenId === rewardPlan.tokens[tier - 1]) : pick(rng, PRIZES[tier]);
+    const prize = rewardPlan ? affordablePrizesForSlot(rewardPlan.difficulty, tier - 1)
+        .find(entry => entry.tokenId === rewardPlan.tokens[tier - 1]) : pick(rng, PRIZES[tier]);
     const easy = rewardPlan && tier === 1;
     const count = easy ? 4 : 8;
     const guards = Array.from({ length: count }, (_, index) => {
